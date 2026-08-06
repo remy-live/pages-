@@ -4,15 +4,15 @@ Une page unique qui liste mes dépôts GitHub et pointe vers ceux qui ont un sit
 
 **Adresse du site :** https://remy-live.github.io/pages-/
 
-## Mettre le site en ligne (une seule fois)
+## Publication
 
-1. Ouvrir **Settings** → **Pages** dans ce dépôt.
-2. Dans **Build and deployment → Source**, choisir **GitHub Actions**.
-3. C'est tout : à chaque commit sur `main`, le workflow `.github/workflows/pages.yml`
-   republie la page. L'onglet **Actions** montre l'avancement.
+Le site est déjà en ligne. Dans **Settings → Pages**, la source est la branche
+`main`, dossier `/ (root)` : chaque commit sur `main` republie la page
+automatiquement, en une minute environ. L'onglet **Actions** montre l'avancement
+sous « pages build and deployment ».
 
-Si la branche de travail n'est pas encore fusionnée dans `main`, fusionner d'abord
-la pull request : le déploiement se déclenche sur `main`.
+Le fichier `.nojekyll` demande à GitHub de servir les fichiers tels quels, sans
+passer par Jekyll.
 
 ## Comment ça marche
 
