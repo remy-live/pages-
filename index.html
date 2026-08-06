@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A222A">
+<title>Mes projets GitHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --panel-a:#2B3742;
+  --panel-b:#212A33;
+  --jack:#151C22;
+  --edge:#3E4C57;
+  --silk:#E6E1D4;
+  --silk-dim:#93A0AA;
+  --led:#FFB347;
+  --led-glow:rgba(255,179,71,.55);
+  --led-off:#46545F;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  min-height:100dvh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #33414D 0%, #1A222A 62%, #141A20 100%);
+  color:var(--silk);
+  font-family:"Barlow",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding:
+    calc(env(safe-area-inset-top) + 14px)
+    calc(env(safe-area-inset-right) + 14px)
+    calc(env(safe-area-inset-bottom) + 28px)
+    calc(env(safe-area-inset-left) + 14px);
+}
+.panel{
+  max-width:820px;margin:0 auto;position:relative;
+  background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
+  background-image:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,var(--panel-a),var(--panel-b));
+  border:1px solid var(--edge);
+  border-radius:20px;
+  box-shadow:0 1px 0 rgba(255,255,255,.09) inset,0 22px 50px rgba(0,0,0,.45);
+  padding:22px 16px 20px;
+}
+.screw{position:absolute;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#6B7A85,#2C363E);
+  box-shadow:0 1px 1px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.35)}
+.screw::after{content:"";position:absolute;inset:4px 2px;background:#161D23;border-radius:1px;transform:rotate(28deg)}
+.screw.tl{top:10px;left:10px}.screw.tr{top:10px;right:10px}
+.screw.bl{bottom:10px;left:10px}.screw.br{bottom:10px;right:10px}
+
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--silk-dim);margin:0 0 6px
+}
+h1{
+  font-family:"Barlow Condensed",sans-serif;font-weight:700;
+  font-size:clamp(30px,9vw,46px);line-height:.92;letter-spacing:.01em;
+  text-transform:uppercase;margin:0
+}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:0 4px 16px}
+.count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--silk-dim);text-align:right;white-space:nowrap}
+.count b{display:block;font-size:26px;font-weight:500;color:var(--led);line-height:1}
+
+.rail{border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(0,0,0,.35);
+  padding:12px 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=search],input[type=text],input[type=password]{
+  flex:1 1 160px;min-width:0;background:var(--jack);border:1px solid #0D1216;
+  border-radius:10px;color:var(--silk);font-family:"Barlow",sans-serif;font-size:16px;
+  padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.4) inset}
+input::placeholder{color:#6E7B85}
+.chip,.btn{
+  font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em;
+  font-weight:600;font-size:14px;color:var(--silk-dim);
+  background:linear-gradient(180deg,#38454F,#2A343C);border:1px solid #45535E;
+  border-radius:10px;padding:9px 12px;cursor:pointer}
+.chip[aria-pressed=true]{color:#1D242A;background:linear-gradient(180deg,#FFC163,var(--led));border-color:#C98A2E}
+.btn{color:var(--silk)}
+:focus-visible{outline:2px solid var(--led);outline-offset:2px}
+
+.settings{display:none;padding:12px 4px 2px;gap:8px;flex-wrap:wrap}
+.settings.open{display:flex}
+.settings label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--silk-dim);flex:1 1 100%;margin-top:4px}
+.note{flex:1 1 100%;font-size:13px;color:var(--silk-dim);margin:2px 0 0}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--silk-dim)}
+
+.list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
+@media(min-width:600px){.list{grid-template-columns:1fr 1fr}}
+
+.sw{display:flex;background:linear-gradient(180deg,#38454F,#2B353D);
+  border:1px solid #47555F;border-radius:var(--radius);overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 14px rgba(0,0,0,.35)}
+.sw-main{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:0 12px;
+  align-items:start;padding:13px 14px;text-decoration:none;color:inherit}
+.sw-main:active{background:rgba(0,0,0,.22)}
+.led{grid-row:1/3;width:11px;height:11px;border-radius:50%;margin-top:5px;
+  background:var(--led-off);box-shadow:0 0 0 1px rgba(0,0,0,.5) inset}
+.on .led{background:var(--led);box-shadow:0 0 10px var(--led-glow),0 0 0 1px rgba(0,0,0,.4) inset}
+.name{font-family:"Barlow Condensed",sans-serif;font-weight:700;text-transform:uppercase;
+  font-size:20px;line-height:1.05;letter-spacing:.02em;overflow-wrap:anywhere}
+.desc{font-size:14px;line-height:1.35;color:#BFC8CF;margin-top:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{grid-column:2;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.08em;color:var(--silk-dim);margin-top:7px;text-transform:uppercase}
+.sw-alt{flex:0 0 58px;display:grid;place-items:center;text-decoration:none;
+  color:var(--silk-dim);background:var(--jack);border-left:1px solid #0E1418;
+  font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;
+  font-size:13px;font-weight:600}
+.sw-alt:active{color:var(--led)}
+
+.state{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.6;
+  color:var(--silk-dim);padding:26px 6px;text-align:center}
+.state b{color:var(--silk);font-weight:500}
+@media(prefers-reduced-motion:no-preference){
+  .sw{animation:up .32s ease both;animation-delay:calc(var(--i,0)*24ms)}
+  @keyframes up{from{opacity:0;transform:translateY(8px)}}
+}
+</style>
+</head>
+<body>
+<main class="panel">
+  <span class="screw tl"></span><span class="screw tr"></span>
+  <span class="screw bl"></span><span class="screw br"></span>
+
+  <div class="head">
+    <div>
+      <p class="eyebrow" id="userLine">github · remy-live</p>
+      <h1>Mes projets</h1>
+    </div>
+    <div class="count"><b id="num">—</b><span id="numLabel">dépôts</span></div>
+  </div>
+
+  <div class="rail">
+    <input type="search" id="q" placeholder="Chercher un projet" autocomplete="off" aria-label="Chercher un projet">
+    <button class="chip" id="fPages" aria-pressed="false">En ligne</button>
+    <button class="btn" id="gear" aria-expanded="false">Réglages</button>
+  </div>
+
+  <div class="settings" id="settings">
+    <label for="user">Compte GitHub</label>
+    <input type="text" id="user" value="remy-live" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label for="tok">Jeton d'accès (pour voir aussi les dépôts privés)</label>
+    <input type="password" id="tok" placeholder="ghp_…" autocomplete="off">
+    <div class="check"><input type="checkbox" id="save"> <label for="save" style="flex:0;margin:0;text-transform:none;letter-spacing:0;font-family:inherit;font-size:14px">Retenir sur cet appareil</label></div>
+    <button class="btn" id="reload">Charger</button>
+    <p class="note">Sans jeton, seuls les dépôts publics apparaissent. Un jeton en lecture seule (scope <code>repo</code>) suffit.</p>
+  </div>
+
+  <ul class="list" id="list"></ul>
+  <p class="state" id="state">Chargement des dépôts…</p>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const listEl = $("#list"), stateEl = $("#state");
+let repos = [], onlyPages = false;
+
+const store = {
+  async get(k){ try { const r = await window.storage.get(k); return r ? r.value : null; } catch { return null; } },
+  async set(k,v){ try { await window.storage.set(k,v); } catch {} },
+  async del(k){ try { await window.storage.delete(k); } catch {} }
+};
+
+function fmtDate(s){
+  const d = new Date(s);
+  return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"2-digit"});
+}
+
+function render(){
+  const q = $("#q").value.trim().toLowerCase();
+  const rows = repos.filter(r => {
+    if (onlyPages && !r.has_pages) return false;
+    if (!q) return true;
+    return (r.name + " " + (r.description||"") + " " + (r.language||"")).toLowerCase().includes(q);
+  });
+
+  listEl.innerHTML = "";
+  if (!rows.length){
+    stateEl.textContent = repos.length ? "Aucun projet ne correspond." : "";
+    return;
+  }
+  stateEl.textContent = "";
+
+  rows.forEach((r,i) => {
+    const site = r.has_pages ? `https://${r.owner.login}.github.io/${r.name}/` : null;
+    const li = document.createElement("li");
+    li.className = "sw" + (site ? " on" : "");
+    li.style.setProperty("--i", i);
+    const bits = [fmtDate(r.updated_at)];
+    if (r.language) bits.push(r.language);
+    if (r.private) bits.push("privé");
+    bits.push(site ? "site en ligne" : "dépôt");
+    li.innerHTML = `
+      <a class="sw-main" href="${site || r.html_url}" target="_blank" rel="noopener">
+        <span class="led"></span>
+        <span class="name">${r.name.replace(/[<&]/g,"")}</span>
+        <span class="desc">${(r.description||"Pas de description").replace(/[<&]/g,"")}</span>
+        <span class="meta">${bits.join(" · ")}</span>
+      </a>
+      ${site ? `<a class="sw-alt" href="${r.html_url}" target="_blank" rel="noopener" aria-label="Code source de ${r.name}">Code</a>` : ""}`;
+    listEl.appendChild(li);
+  });
+
+  $("#num").textContent = rows.length;
+  $("#numLabel").textContent = rows.length > 1 ? "projets" : "projet";
+}
+
+async function load(){
+  const user = $("#user").value.trim() || "remy-live";
+  const tok = $("#tok").value.trim();
+  $("#userLine").textContent = "github · " + user;
+  listEl.innerHTML = "";
+  stateEl.textContent = "Chargement des dépôts…";
+
+  const url = tok
+    ? "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner"
+    : `https://api.github.com/users/${encodeURIComponent(user)}/repos?per_page=100&sort=updated`;
+
+  try {
+    const res = await fetch(url, { headers: tok ? { Authorization: "Bearer " + tok } : {} });
+    if (res.status === 404) { stateEl.innerHTML = `<b>Compte introuvable.</b><br>Vérifie le nom dans Réglages.`; return; }
+    if (res.status === 401) { stateEl.innerHTML = `<b>Jeton refusé.</b><br>Recopie-le dans Réglages.`; return; }
+    if (res.status === 403) { stateEl.innerHTML = `<b>Trop de requêtes vers GitHub.</b><br>Réessaie dans une heure, ou ajoute un jeton.`; return; }
+    if (!res.ok) throw new Error(res.status);
+    repos = await res.json();
+    repos.sort((a,b) => (b.has_pages - a.has_pages) || (new Date(b.updated_at) - new Date(a.updated_at)));
+    render();
+  } catch (e) {
+    stateEl.innerHTML = `<b>GitHub n'a pas répondu.</b><br>Vérifie la connexion et recharge.`;
+  }
+}
+
+$("#q").addEventListener("input", render);
+$("#fPages").addEventListener("click", e => {
+  onlyPages = !onlyPages;
+  e.currentTarget.setAttribute("aria-pressed", String(onlyPages));
+  render();
+});
+$("#gear").addEventListener("click", e => {
+  const open = $("#settings").classList.toggle("open");
+  e.currentTarget.setAttribute("aria-expanded", String(open));
+});
+$("#reload").addEventListener("click", async () => {
+  if ($("#save").checked){
+    await store.set("gh:user", $("#user").value.trim());
+    await store.set("gh:tok", $("#tok").value.trim());
+  } else {
+    await store.del("gh:tok");
+  }
+  $("#settings").classList.remove("open");
+  $("#gear").setAttribute("aria-expanded","false");
+  load();
+});
+
+(async () => {
+  const u = await store.get("gh:user"), t = await store.get("gh:tok");
+  if (u) $("#user").value = u;
+  if (t) { $("#tok").value = t; $("#save").checked = true; }
+  load();
+})();
+</script>
+</body>
+</html>
