@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1A222A">
+<meta name="description" content="Tous mes dépôts GitHub et leurs sites en ligne, sur une seule page.">
+<meta property="og:title" content="Mes projets GitHub">
+<meta property="og:description" content="Tous mes dépôts GitHub et leurs sites en ligne, sur une seule page.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23212A33'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FFB347'/%3E%3C/svg%3E">
 <title>Mes projets GitHub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,9 +167,9 @@ const listEl = $("#list"), stateEl = $("#state");
 let repos = [], onlyPages = false;
 
 const store = {
-  async get(k){ try { const r = await window.storage.get(k); return r ? r.value : null; } catch { return null; } },
-  async set(k,v){ try { await window.storage.set(k,v); } catch {} },
-  async del(k){ try { await window.storage.delete(k); } catch {} }
+  get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} }
 };
 
 function fmtDate(s){
@@ -181,6 +186,8 @@ function render(){
   });
 
   listEl.innerHTML = "";
+  $("#num").textContent = rows.length;
+  $("#numLabel").textContent = rows.length > 1 ? "projets" : "projet";
   if (!rows.length){
     stateEl.textContent = repos.length ? "Aucun projet ne correspond." : "";
     return;
@@ -206,9 +213,6 @@ function render(){
       ${site ? `<a class="sw-alt" href="${r.html_url}" target="_blank" rel="noopener" aria-label="Code source de ${r.name}">Code</a>` : ""}`;
     listEl.appendChild(li);
   });
-
-  $("#num").textContent = rows.length;
-  $("#numLabel").textContent = rows.length > 1 ? "projets" : "projet";
 }
 
 async function load(){
@@ -246,20 +250,20 @@ $("#gear").addEventListener("click", e => {
   const open = $("#settings").classList.toggle("open");
   e.currentTarget.setAttribute("aria-expanded", String(open));
 });
-$("#reload").addEventListener("click", async () => {
+$("#reload").addEventListener("click", () => {
   if ($("#save").checked){
-    await store.set("gh:user", $("#user").value.trim());
-    await store.set("gh:tok", $("#tok").value.trim());
+    store.set("gh:user", $("#user").value.trim());
+    store.set("gh:tok", $("#tok").value.trim());
   } else {
-    await store.del("gh:tok");
+    store.del("gh:tok");
   }
   $("#settings").classList.remove("open");
   $("#gear").setAttribute("aria-expanded","false");
   load();
 });
 
-(async () => {
-  const u = await store.get("gh:user"), t = await store.get("gh:tok");
+(() => {
+  const u = store.get("gh:user"), t = store.get("gh:tok");
   if (u) $("#user").value = u;
   if (t) { $("#tok").value = t; $("#save").checked = true; }
   load();
