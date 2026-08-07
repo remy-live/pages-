@@ -562,6 +562,106 @@
 
         /* ==================== RÉSULTAT DE RECHERCHE AU CLAVIER ==================== */
         .sr-item.survol { background: #d6e9f8; }
+        /* ==================== MODE DÉBUTANT ====================
+           Un mode où l'on ne voit que l'essentiel : les réglages fins de la carte
+           n'ont aucun sens tant qu'on ne sait pas ce qu'est un vœu. */
+        body.mode-simple .avance { display: none !important; }
+
+        #ruban-niveau {
+            display: none; align-items: center; justify-content: center; gap: 10px;
+            background: #eaf3fb; color: #1b4f72; border-bottom: 1px solid #c9dff0;
+            padding: 6px 12px; font-size: .84rem;
+        }
+        body.mode-simple #ruban-niveau { display: flex; }
+        #ruban-niveau button {
+            background: #2980b9; color: #fff; border: 0; border-radius: 14px;
+            padding: 4px 12px; cursor: pointer; font-size: .82rem;
+        }
+        #ruban-niveau button:hover { background: #1f6797; }
+
+        /* ==================== ACCUEIL EN LANGAGE CLAIR ==================== */
+        #accueil .modal-content { max-width: 640px; border-top: 5px solid #e67e22; }
+        .accueil-intro {
+            background: #fdf6ee; border-left: 4px solid #e67e22; padding: 14px 16px;
+            border-radius: 5px; font-size: .95rem; line-height: 1.55; margin-bottom: 18px;
+        }
+        .accueil-intro p { margin: 0 0 10px; }
+        .accueil-intro p:last-child { margin-bottom: 0; }
+        .accueil-etapes { list-style: none; padding: 0; margin: 0 0 20px; counter-reset: etape; }
+        .accueil-etapes li {
+            position: relative; padding: 0 0 12px 40px; font-size: .93rem; line-height: 1.45;
+            counter-increment: etape;
+        }
+        .accueil-etapes li::before {
+            content: counter(etape); position: absolute; left: 0; top: 0;
+            width: 26px; height: 26px; border-radius: 50%; background: #2c3e50; color: #fff;
+            display: grid; place-items: center; font-weight: bold; font-size: .82rem;
+        }
+        .accueil-choix { display: flex; gap: 12px; flex-wrap: wrap; }
+        .accueil-choix button {
+            flex: 1 1 220px; text-align: left; border: 2px solid #dfe6e9; background: #fff;
+            border-radius: 8px; padding: 14px 16px; cursor: pointer; font-family: inherit;
+        }
+        .accueil-choix button:hover { border-color: #e67e22; background: #fffaf4; }
+        .accueil-choix b { display: block; font-size: 1rem; color: #2c3e50; margin-bottom: 4px; }
+        .accueil-choix span { font-size: .85rem; color: #7f8c8d; line-height: 1.4; }
+        .accueil-choix .principal { border-color: #e67e22; background: #fdf6ee; }
+
+        /* ==================== ASSISTANT PAS À PAS ==================== */
+        #assistant .modal-content { max-width: 620px; border-top: 5px solid #2980b9; }
+        .pas { display: none; }
+        .pas.actif { display: block; }
+        .pas h3 { border-bottom: 0; color: #2c3e50; font-size: 1.15rem; margin: 0 0 4px; padding: 0; }
+        .pas .sous { color: #7f8c8d; font-size: .88rem; margin: 0 0 16px; }
+        .pas .champ { margin-bottom: 18px; }
+        .pas .champ > label {
+            display: block; font-weight: bold; color: #2c3e50; margin-bottom: 6px; font-size: .95rem;
+        }
+        .pas select, .pas input[type=number] {
+            width: 100%; padding: 9px 10px; border: 1px solid #cfd8dc; border-radius: 5px;
+            font-size: 16px; font-family: inherit; background: #fff; color: #2c3e50;
+        }
+        .aide {
+            display: block; margin-top: 6px; font-size: .84rem; color: #5d6d7e;
+            background: #f4f8fb; border-left: 3px solid #aed6f1; padding: 7px 10px; border-radius: 4px;
+        }
+        .pas .oui-non { display: flex; flex-direction: column; gap: 8px; }
+        .pas .oui-non label {
+            display: flex; gap: 10px; align-items: flex-start; border: 1px solid #dfe6e9;
+            border-radius: 6px; padding: 10px 12px; cursor: pointer; font-size: .92rem; line-height: 1.4;
+        }
+        .pas .oui-non label:hover { background: #f7fbfe; border-color: #aed6f1; }
+        .pas .oui-non input { margin-top: 3px; flex: 0 0 auto; }
+        .pas .oui-non span small { display: block; color: #7f8c8d; font-size: .84rem; margin-top: 2px; }
+
+        .jauge { display: flex; gap: 6px; margin-bottom: 18px; }
+        .jauge i { flex: 1; height: 5px; border-radius: 3px; background: #dfe6e9; }
+        .jauge i.faite { background: #2980b9; }
+
+        .assistant-pied {
+            display: flex; justify-content: space-between; gap: 10px;
+            border-top: 1px solid #eee; padding-top: 14px; margin-top: 6px;
+        }
+        .assistant-pied button {
+            border: 0; border-radius: 5px; padding: 10px 18px; cursor: pointer;
+            font-family: inherit; font-size: .95rem; font-weight: bold; color: #fff;
+        }
+        #pas-precedent { background: #95a5a6; }
+        #pas-suivant { background: #2980b9; }
+        #pas-suivant:hover { background: #1f6797; }
+
+        .bilan-points {
+            text-align: center; background: #eafaf1; border: 2px solid #27ae60;
+            border-radius: 8px; padding: 18px; margin-bottom: 16px;
+        }
+        .bilan-points b { display: block; font-size: 2.4rem; color: #1e8449; line-height: 1; }
+        .bilan-points span { font-size: .9rem; color: #196f3d; }
+
+        /* ==================== LEXIQUE DANS LE GLOSSAIRE ==================== */
+        .glossaire-intro {
+            background: #f4f8fb; border-left: 4px solid #3498db; padding: 10px 12px;
+            border-radius: 4px; font-size: .9rem; color: #34495e; margin-bottom: 14px; line-height: 1.5;
+        }
 </style>
 </head>
 
@@ -580,6 +680,11 @@
             Réfère-toi toujours aux LDGA 2026. Vérifie ton barème sur I-Prof dès le 19 mai 2026 et n'oublie pas Colibris (avant le 21 avril) !</span>
             <span class="disclaimer-bref"><b>Simulation indicative</b> — le barème officiel est celui d'I-Prof.</span>
             <button class="disclaimer-bascule" onclick="basculerBandeau()" aria-label="Replier ou déplier l'avertissement" title="Replier ou déplier">−</button>
+        </div>
+
+        <div id="ruban-niveau">
+            <span>Mode simplifié : seuls les réglages utiles pour débuter sont affichés.</span>
+            <button onclick="passerEnModeComplet()">Afficher toutes les options</button>
         </div>
 
         <header>
@@ -614,12 +719,13 @@
 
                 <div class="sidebar-content">
                     <div id="tab-left-zones" class="tab-content active">
-                        <h3>Filtres Établissements</h3>
+                        <h3>Quels établissements afficher</h3>
                         <div class="type-filters">
                             <label class="type-chk type-col"><input type="checkbox" id="chk_type_col" checked onchange="applyGlobalFilters()"> Collège</label>
                             <label class="type-chk type-lyc"><input type="checkbox" id="chk_type_lyc" checked onchange="applyGlobalFilters()"> Lycée</label>
                             <label class="type-chk type-lp"><input type="checkbox" id="chk_type_lp" checked onchange="applyGlobalFilters()"> LP</label>
                         </div>
+                        <div class="avance">
                         <h3>Mode d'affichage</h3>
                         <div class="mode-selector">
                             <input type="radio" name="viewMode" id="mode_geo" checked onchange="switchMode('GEO')">
@@ -627,7 +733,7 @@
                             <input type="radio" name="viewMode" id="mode_com" onchange="switchMode('COM')">
                             <label for="mode_com">Communes</label>
                             <input type="radio" name="viewMode" id="mode_zr" onchange="switchMode('ZR')">
-                            <label for="mode_zr">Zones Remplacement</label>
+                            <label for="mode_zr">Zones de remplacement</label>
                         </div>
                         <div class="checkbox-label" style="background: #ecf0f1; padding: 5px; border-radius: 4px; margin-top: 5px;">
                             <input type="checkbox" id="chk_show_tags" onchange="toggleTags()" checked>
@@ -636,6 +742,7 @@
                         <div class="checkbox-label">
                             <input type="checkbox" id="chk_show_zones" onchange="toggleZonePolygons()" checked>
                             <label for="chk_show_zones" style="font-weight:bold; color:#e67e22;">Afficher les polygones</label>
+                        </div>
                         </div>
 
                         <div id="status-global" class="debug-status">
@@ -646,6 +753,7 @@
                         <div id="checkboxes-list" class="filter-container"></div>
 
                         <br>
+                        <div class="avance">
                         <h3>Transports</h3>
                         <div class="checkbox-label">
                             <input type="checkbox" id="chk_railways" onchange="toggleTransport('railways')">
@@ -655,12 +763,13 @@
                             <input type="checkbox" id="chk_stations" onchange="toggleTransport('stations')">
                             <label for="chk_stations">Gares</label>
                         </div>
+                        </div>
                         <br>
                     </div>
 
                     <div id="tab-left-radius" class="tab-content">
-                        <h3>Filtre par Rayon</h3>
-                        <p style="font-size:0.9em; color:#666; margin-bottom:15px;">Placez un repère pour afficher uniquement les établissements à proximité.</p>
+                        <h3>Autour de chez moi</h3>
+                        <p style="font-size:0.9em; color:#666; margin-bottom:15px;">Indiquez où vous habitez : la carte ne gardera que les établissements à moins de X kilomètres.</p>
                         <div class="radius-controls">
                             <button id="btn-geoloc" class="btn-action" style="margin-top:0; background:#3498db;" onclick="utiliserMaPosition()">📡 Utiliser ma position</button>
                             <button id="btn-pick-radius" class="btn-action" style="margin-top:8px; background:#e67e22;" onclick="toggleRadiusPicker()">📍 Ou placer un point sur la carte</button>
@@ -696,7 +805,9 @@
                                 </tr>
                             </table>
                         </div>
-                        <h3>Mon Barème</h3>
+                        <h3>Ma situation</h3>
+                        <button type="button" class="btn-action" style="margin-top:0; margin-bottom:14px; background:#2980b9;"
+                                onclick="ouvrirAssistant()">🧭 Me guider pas à pas</button>
                         <form id="calc-form">
                             <div class="form-section">
                                 <h4 style="margin-top:0;">1. Carrière</h4>
@@ -723,7 +834,7 @@
                                         <input type="number" id="echelon" value="4" min="1" max="11">
                                     </div>
                                     <div class="col">
-                                        <label>Anc. Poste (ans) <span class="info-icon" onclick="showOfficialRule('anc_poste')">ℹ️</span></label>
+                                        <label>Ans dans mon poste <span class="info-icon" onclick="showOfficialRule('anc_poste')">ℹ️</span></label>
                                         <input type="number" id="anc_poste" value="0" min="0">
                                     </div>
                                 </div>
@@ -832,6 +943,8 @@
     <div id="glossary-modal" class="modal">
         <div class="modal-content"><span class="close-modal" onclick="closeGlossary()">&times;</span>
             <h2 style="margin-top:0; border-bottom:2px solid #3498db; padding-bottom:10px;">Glossaire des Mutations</h2>
+            <p class="glossaire-intro">Le mouvement parle par sigles. En voici la traduction.
+            Ces mêmes sigles sont expliqués au clic partout dans l'application.</p>
             <div id="glossary-list"></div>
         </div>
     </div>
@@ -880,31 +993,213 @@
         </div>
     </div>
 
-    <div id="guide" class="modal">
+    <div id="accueil" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeGuide()">&times;</span>
-            <h2 style="margin-top:0; color:#d35400;">Bienvenue — 3 étapes, c'est tout</h2>
-            <div class="guide-step">
-                <div class="guide-num">1</div>
-                <p><b>Renseignez votre situation.</b> Bouton <b>🧮 Paramètres</b> en haut à droite : échelon,
-                   famille, bonifications. Votre barème s'affiche en haut de l'écran et se met à jour tout seul.</p>
+            <span class="close-modal" onclick="fermerAccueil()">&times;</span>
+            <h2 style="margin-top:0; color:#d35400;">Bienvenue</h2>
+
+            <div class="accueil-intro">
+                <p><b>Vous êtes professeur titulaire et vous voulez changer d'établissement ?</b>
+                   Chaque printemps, l'académie organise ce qu'on appelle le <b>mouvement intra-académique</b> :
+                   une grande redistribution des postes à l'intérieur de l'académie d'Amiens.</p>
+                <p>Le principe tient en une phrase : <b>vous demandez des postes, chaque demande vous rapporte
+                   des points, et les postes vont à ceux qui en ont le plus.</b> Ces points, c'est votre
+                   <b>barème</b>. Il dépend de votre carrière et de votre situation familiale, pas du hasard —
+                   donc on peut le calculer à l'avance. C'est ce que fait cet outil.</p>
             </div>
-            <div class="guide-step">
-                <div class="guide-num">2</div>
-                <p><b>Explorez la carte.</b> Cherchez un établissement dans la barre de recherche, ou placez votre
-                   domicile (<b>🗺️ Zones &amp; Filtres → 🎯 Rayon</b>) pour ne voir que ce qui est à moins de X km.
-                   Cliquez sur un point : vous voyez le barème calculé pour ce vœu précis.</p>
+
+            <p style="font-weight:bold; color:#2c3e50; margin-bottom:10px;">Comment ça se passe</p>
+            <ol class="accueil-etapes">
+                <li><b>Vous calculez votre barème</b> — ici, en répondant à quelques questions.</li>
+                <li><b>Vous choisissez et classez vos vœux</b> — un établissement précis, une commune, un
+                    groupe de communes, tout un département… du plus désiré au moins désiré.</li>
+                <li><b>Vous les saisissez sur SIAM</b> (via I-Prof) pendant la période d'ouverture, et vous
+                    déposez vos justificatifs sur <b>Colibris</b>.</li>
+                <li><b>Vous vérifiez votre barème</b> quand l'académie le publie, et vous contestez s'il est faux.</li>
+                <li><b>Les résultats tombent</b> : vous obtenez le vœu le mieux placé que vos points permettent.</li>
+            </ol>
+
+            <div class="accueil-choix">
+                <button class="principal" onclick="choisirNiveau('debutant')">
+                    <b>🧭 Je débute, guidez-moi</b>
+                    <span>Des questions simples, une à la fois, et seulement les réglages utiles.</span>
+                </button>
+                <button onclick="choisirNiveau('complet')">
+                    <b>⚙️ Je connais déjà</b>
+                    <span>Toutes les options : zones de remplacement, polygones, transports.</span>
+                </button>
             </div>
-            <div class="guide-step">
-                <div class="guide-num">3</div>
-                <p><b>Construisez votre liste.</b> Ajoutez vos vœux, réordonnez-les par glisser-déposer dans
-                   <b>📋 Bilan Vœux</b>, puis exportez en PDF ou CSV pour préparer votre saisie SIAM.</p>
-            </div>
-            <p style="background:#fdf2e9; border-left:4px solid #e67e22; padding:10px; border-radius:4px; font-size:.88em; margin-bottom:0;">
-                Simulation indicative. Le barème officiel est celui d'I-Prof — vérifiez-le, et pensez à Colibris pour vos justificatifs.
+
+            <p style="font-size:.82rem; color:#7f8c8d; margin:16px 0 0; line-height:1.5;">
+                Simulation indicative, faite par un collègue et non par l'administration. Le barème qui compte
+                est celui affiché sur I-Prof — vérifiez-le le moment venu. Un sigle vous échappe ?
+                Le bouton <b>📖 Glossaire</b> les explique tous.
             </p>
-            <div style="text-align:right; margin-top:15px;">
-                <button class="btn-action" style="background:#e67e22; width:auto;" onclick="closeGuide()">C'est parti</button>
+        </div>
+    </div>
+
+    <div id="assistant" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="fermerAssistant()">&times;</span>
+            <h2 style="margin-top:0; color:#1f6797;">Votre situation, pas à pas</h2>
+            <div class="jauge" id="jauge"></div>
+
+            <div class="pas" data-pas="0">
+                <h3>Quel est votre grade ?</h3>
+                <p class="sous">Autrement dit : dans quel corps avez-vous été recruté ?</p>
+                <div class="champ">
+                    <label for="a_corps">Je suis</label>
+                    <select id="a_corps">
+                        <option value="certifie">Certifié, PLP ou professeur d'EPS</option>
+                        <option value="agrege">Agrégé</option>
+                    </select>
+                    <span class="aide">Dans le doute, c'est « certifié » : c'est le cas de la grande majorité
+                    des professeurs de collège et de lycée. Les agrégés le savent — ils ont passé l'agrégation.</span>
+                </div>
+                <div class="champ">
+                    <label for="a_classe">Ma classe</label>
+                    <select id="a_classe">
+                        <option value="normale">Classe normale</option>
+                        <option value="hors_classe">Hors-classe</option>
+                        <option value="classe_exc">Classe exceptionnelle</option>
+                    </select>
+                    <span class="aide">La classe normale est le cas de départ. On passe hors-classe après une
+                    quinzaine d'années environ. C'est écrit sur I-Prof, onglet « Votre carrière ».</span>
+                </div>
+                <div class="champ">
+                    <label for="a_echelon">Mon échelon</label>
+                    <input type="number" id="a_echelon" min="1" max="11" value="4">
+                    <span class="aide">Un nombre entre 1 et 11 qui monte avec l'ancienneté. Il est indiqué sur
+                    I-Prof et sur votre bulletin de paie. Plus il est élevé, plus vous avez de points.</span>
+                </div>
+            </div>
+
+            <div class="pas" data-pas="1">
+                <h3>Votre poste actuel</h3>
+                <p class="sous">L'ancienneté sur le poste rapporte des points, et beaucoup.</p>
+                <div class="champ">
+                    <label for="a_anc_poste">Depuis combien d'années êtes-vous dans votre établissement actuel ?</label>
+                    <input type="number" id="a_anc_poste" min="0" value="0">
+                    <span class="aide">Comptez les années scolaires complètes. Si vous venez d'être nommé,
+                    mettez 0. Si vous êtes stagiaire, mettez 0 également.</span>
+                </div>
+                <div class="champ">
+                    <label for="a_anc_tzr">Êtes-vous TZR ?</label>
+                    <select id="a_anc_tzr">
+                        <option value="0">Non, j'ai un poste fixe dans un établissement</option>
+                        <option value="1">Oui, TZR depuis 1 à 2 ans</option>
+                        <option value="3">Oui, TZR depuis 3 à 5 ans</option>
+                        <option value="6">Oui, TZR depuis 6 ans ou plus</option>
+                    </select>
+                    <span class="aide">TZR veut dire « titulaire sur zone de remplacement » : vous n'êtes pas
+                    rattaché à un établissement précis, vous remplacez des collègues sur un secteur.
+                    L'ancienneté en TZR donne droit à des points pour se stabiliser.</span>
+                </div>
+            </div>
+
+            <div class="pas" data-pas="2">
+                <h3>Votre situation familiale</h3>
+                <p class="sous">C'est souvent ce qui pèse le plus lourd dans le barème.</p>
+                <div class="champ">
+                    <label>Demandez-vous à vous rapprocher de quelqu'un ?</label>
+                    <div class="oui-non">
+                        <label><input type="radio" name="a_fam" value="" checked>
+                            <span>Non, aucune priorité familiale
+                            <small>Vous mutez pour d'autres raisons.</small></span></label>
+                        <label><input type="radio" name="a_fam" value="RC">
+                            <span>Oui, de mon conjoint (rapprochement de conjoints)
+                            <small>Mariés, pacsés, ou avec un enfant reconnu en commun. Il faut que votre conjoint
+                            travaille — ou soit inscrit à France Travail — ailleurs que là où vous êtes.</small></span></label>
+                        <label><input type="radio" name="a_fam" value="APC">
+                            <span>Oui, de mon enfant (autorité parentale conjointe)
+                            <small>Vous êtes séparé de l'autre parent et vous voulez vous rapprocher du lieu où
+                            vit votre enfant, pour exercer la garde.</small></span></label>
+                        <label><input type="radio" name="a_fam" value="PI">
+                            <span>Je suis parent isolé
+                            <small>Vous élevez seul un enfant de moins de 18 ans et la mutation améliorerait
+                            ses conditions de vie.</small></span></label>
+                    </div>
+                </div>
+                <div class="champ" id="a_bloc_famille" hidden>
+                    <label for="a_separation">Depuis combien de temps êtes-vous séparés ?</label>
+                    <select id="a_separation">
+                        <option value="0">Moins d'un an</option>
+                        <option value="1">1 an</option>
+                        <option value="2">2 ans</option>
+                        <option value="3">3 ans</option>
+                        <option value="4">4 ans ou plus</option>
+                    </select>
+                    <span class="aide">On compte les années scolaires passées loin l'un de l'autre pour raisons
+                    professionnelles. Chaque année supplémentaire rapporte beaucoup de points.</span>
+                    <label for="a_enfants" style="margin-top:14px;">Combien d'enfants de moins de 18 ans à charge ?</label>
+                    <input type="number" id="a_enfants" min="0" value="0">
+                    <span class="aide">Les enfants nés ou à naître, à condition d'être déclarés dans les délais.</span>
+                </div>
+            </div>
+
+            <div class="pas" data-pas="3">
+                <h3>Cas particuliers</h3>
+                <p class="sous">Ne cochez que ce qui vous concerne vraiment. Dans le doute, laissez vide :
+                   ces situations demandent toutes un justificatif officiel.</p>
+                <div class="oui-non">
+                    <label><input type="checkbox" id="a_rqth">
+                        <span>J'ai une RQTH, ou un membre de ma famille est en situation de handicap
+                        <small>Reconnaissance de la qualité de travailleur handicapé, délivrée par la MDPH.
+                        Elle ouvre droit à une bonification, sur dossier médical.</small></span></label>
+                    <label><input type="checkbox" id="a_mcs">
+                        <span>Mon poste est supprimé (mesure de carte scolaire)
+                        <small>L'académie ferme ou déplace votre poste. Vous n'avez pas choisi de partir.
+                        C'est la priorité la plus forte du mouvement.</small></span></label>
+                    <label><input type="checkbox" id="a_rep">
+                        <span>Je quitte un établissement REP ou REP+ après y avoir passé au moins 5 ans
+                        <small>REP veut dire « réseau d'éducation prioritaire » : des établissements en
+                        difficulté sociale. Y rester longtemps donne des points pour en partir.</small></span></label>
+                </div>
+                <div class="champ" style="margin-top:18px;">
+                    <label for="a_stagiaire">Êtes-vous stagiaire cette année ?</label>
+                    <select id="a_stagiaire">
+                        <option value="">Non, je suis déjà titulaire</option>
+                        <option value="classique">Oui, stagiaire « classique »</option>
+                        <option value="ex_contractuel">Oui, et j'étais contractuel, AED ou AESH avant</option>
+                        <option value="ex_fonc">Oui, et j'étais déjà fonctionnaire avant</option>
+                    </select>
+                    <span class="aide">Les stagiaires participent au mouvement pour obtenir leur premier poste
+                    de titulaire, avec des bonifications propres.</span>
+                </div>
+                <div class="champ">
+                    <label for="a_voeu_pref">Avez-vous déjà demandé la même chose les années précédentes ?</label>
+                    <select id="a_voeu_pref">
+                        <option value="0">Non, ou c'est ma première demande</option>
+                        <option value="1">Oui, c'est la 2ᵉ année de suite</option>
+                        <option value="2">Oui, la 3ᵉ année de suite</option>
+                        <option value="3">Oui, la 4ᵉ année de suite</option>
+                        <option value="4">Oui, la 5ᵉ année de suite</option>
+                        <option value="5">Oui, la 6ᵉ année de suite ou plus</option>
+                    </select>
+                    <span class="aide">Redemander le même premier vœu année après année accumule des points.
+                    C'est ce qu'on appelle le « vœu préférentiel ».</span>
+                </div>
+            </div>
+
+            <div class="pas" data-pas="4">
+                <h3>Votre barème estimé</h3>
+                <p class="sous">Voilà ce que vos réponses donnent, avant les points liés au vœu lui-même.</p>
+                <div class="bilan-points">
+                    <b id="a_total">—</b>
+                    <span>points sur un vœu large (commune ou groupe de communes)</span>
+                </div>
+                <div id="a_commentaire" style="font-size:.92rem; line-height:1.5; color:#34495e; margin-bottom:16px;"></div>
+                <div id="a_papiers" style="font-size:.9rem; line-height:1.5;"></div>
+                <p style="background:#fdf2e9; border-left:4px solid #e67e22; padding:10px; border-radius:4px; font-size:.86rem; margin-bottom:0;">
+                    <b>Et maintenant ?</b> Fermez cet assistant et explorez la carte : chaque point cliqué vous
+                    montre le total pour ce vœu précis. Ajoutez ceux qui vous intéressent à votre liste, classez-les,
+                    puis exportez-la pour préparer votre saisie sur SIAM.
+                </p>
+            </div>
+
+            <div class="assistant-pied">
+                <button id="pas-precedent" onclick="allerAuPas(-1)">← Précédent</button>
+                <button id="pas-suivant" onclick="allerAuPas(1)">Suivant →</button>
             </div>
         </div>
     </div>
@@ -1294,13 +1589,14 @@
 
         /* Fermer une fenêtre en cliquant à côté, ou avec Échap. */
         window.addEventListener('click', e => {
-            ['glossary-modal', 'rule-modal', 'explication-modal', 'wishlist-modal', 'guide'].forEach(id => {
+            ['glossary-modal', 'rule-modal', 'explication-modal', 'wishlist-modal', 'accueil', 'assistant'].forEach(id => {
                 const m = document.getElementById(id);
                 if (m && e.target === m) m.style.display = "none";
             });
         });
         window.addEventListener('keydown', e => {
             if (e.key !== 'Escape') return;
+            if (document.getElementById('assistant').style.display === 'block') appliquerReponses();
             document.querySelectorAll('.modal').forEach(m => { m.style.display = "none"; });
             const sr = document.getElementById('search-results');
             if (sr) sr.classList.remove('open');
@@ -2422,6 +2718,165 @@
             });
         }
 
+        /* ==================== NIVEAU D'AFFICHAGE ====================
+           Quelqu'un qui découvre le mouvement n'a que faire des polygones et des
+           couches ferroviaires : le mode simplifié les met de côté. */
+        const NIVEAU_KEY = 'mutation:niveau:v1';
+
+        function appliquerNiveau(niveau) {
+            document.body.classList.toggle('mode-simple', niveau === 'debutant');
+            /* Les zones de remplacement sont un mode d'expert : on revient aux
+               groupements de communes, plus parlants, si l'on était dessus. */
+            if (niveau === 'debutant' && AppState.currentMode === 'ZR') {
+                const radio = document.getElementById('mode_geo');
+                if (radio) radio.checked = true;
+                if (AppState.data.geo) switchMode('GEO');
+            }
+            setTimeout(() => { if (AppState.map) AppState.map.invalidateSize(); }, 60);
+        }
+
+        function enregistrerNiveau(niveau) {
+            try { localStorage.setItem(NIVEAU_KEY, niveau); } catch (e) { /* ignore */ }
+        }
+
+        function niveauActuel() {
+            try { return localStorage.getItem(NIVEAU_KEY); } catch (e) { return null; }
+        }
+
+        function passerEnModeComplet() {
+            enregistrerNiveau('complet');
+            appliquerNiveau('complet');
+            showToast("Mode complet", "Toutes les options sont affichées.", "success");
+        }
+
+        /* ==================== ACCUEIL ==================== */
+        function ouvrirAccueil() { document.getElementById('accueil').style.display = 'block'; }
+        function fermerAccueil() {
+            document.getElementById('accueil').style.display = 'none';
+            try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) { /* ignore */ }
+        }
+
+        function choisirNiveau(niveau) {
+            enregistrerNiveau(niveau);
+            appliquerNiveau(niveau);
+            fermerAccueil();
+            if (niveau === 'debutant') ouvrirAssistant();
+        }
+
+        /* ==================== ASSISTANT PAS À PAS ====================
+           Les questions du formulaire sont posées une à une, en français ordinaire,
+           puis recopiées dans les champs que le reste de l'application utilise déjà. */
+        let pasCourant = 0;
+
+        const CHAMPS_ASSISTANT = [
+            ['a_corps', 'corps'], ['a_classe', 'classe'], ['a_echelon', 'echelon'],
+            ['a_anc_poste', 'anc_poste'], ['a_anc_tzr', 'anc_tzr'],
+            ['a_separation', 'separation'], ['a_enfants', 'enfants'],
+            ['a_stagiaire', 'type_stagiaire'], ['a_voeu_pref', 'voeu_pref']
+        ];
+        const CASES_ASSISTANT = [['a_rqth', 'est_rqth'], ['a_mcs', 'est_mcs'], ['a_rep', 'sortie_rep']];
+
+        function ouvrirAssistant() {
+            /* On repart des valeurs déjà saisies : rouvrir l'assistant ne doit rien effacer. */
+            CHAMPS_ASSISTANT.forEach(([source, cible]) => {
+                document.getElementById(source).value = document.getElementById(cible).value;
+            });
+            CASES_ASSISTANT.forEach(([source, cible]) => {
+                document.getElementById(source).checked = document.getElementById(cible).checked;
+            });
+            const famille = document.getElementById('situation_familiale').value;
+            const radio = document.querySelector(`input[name="a_fam"][value="${famille}"]`);
+            if (radio) radio.checked = true;
+            majBlocFamille();
+
+            pasCourant = 0;
+            afficherPas();
+            document.getElementById('assistant').style.display = 'block';
+        }
+
+        function fermerAssistant() {
+            appliquerReponses();
+            document.getElementById('assistant').style.display = 'none';
+        }
+
+        function majBlocFamille() {
+            const choisi = document.querySelector('input[name="a_fam"]:checked');
+            document.getElementById('a_bloc_famille').hidden = !choisi || choisi.value === '';
+        }
+
+        function appliquerReponses() {
+            CHAMPS_ASSISTANT.forEach(([source, cible]) => {
+                document.getElementById(cible).value = document.getElementById(source).value;
+            });
+            CASES_ASSISTANT.forEach(([source, cible]) => {
+                document.getElementById(cible).checked = document.getElementById(source).checked;
+            });
+            const choisi = document.querySelector('input[name="a_fam"]:checked');
+            document.getElementById('situation_familiale').value = choisi ? choisi.value : '';
+
+            updateUI(false);
+            updateHeaderScore();
+            updateChecklist();
+            saveBareme();
+        }
+
+        function afficherPas() {
+            const pas = document.querySelectorAll('#assistant .pas');
+            pas.forEach((el, i) => el.classList.toggle('actif', i === pasCourant));
+
+            const jauge = document.getElementById('jauge');
+            jauge.innerHTML = Array.from(pas, (_, i) => `<i class="${i <= pasCourant ? 'faite' : ''}"></i>`).join('');
+
+            document.getElementById('pas-precedent').style.visibility = pasCourant === 0 ? 'hidden' : 'visible';
+            document.getElementById('pas-suivant').textContent = (pasCourant === pas.length - 1) ? 'Voir la carte' : 'Suivant →';
+
+            const contenu = document.querySelector('#assistant .modal-content');
+            if (contenu) contenu.scrollTop = 0;
+        }
+
+        function allerAuPas(sens) {
+            const total = document.querySelectorAll('#assistant .pas').length;
+            appliquerReponses();
+
+            if (pasCourant === total - 1 && sens > 0) { fermerAssistant(); return; }
+            pasCourant = Math.min(Math.max(pasCourant + sens, 0), total - 1);
+            if (pasCourant === total - 1) remplirBilan();
+            afficherPas();
+        }
+
+        function remplirBilan() {
+            /* On calcule sur un vœu large : c'est le seul cas où les bonifications
+               familiales comptent, donc le chiffre le plus représentatif à montrer. */
+            const large = calculateBreakdown(null, 'GEO');
+            const precis = calculateBreakdown(null, 'ETB');
+            document.getElementById('a_total').textContent = large.total;
+
+            /* Dire d'où viennent les points est plus utile qu'un nombre seul. */
+            const lignes = (large.details || [])
+                .filter(d => d && d.pts > 0)
+                .sort((a, b) => b.pts - a.pts)
+                .slice(0, 3)
+                .map(d => `${d.label} (${d.pts} pts)`);
+
+            let texte = lignes.length
+                ? `Ce total vient surtout de : <b>${lignes.join('</b>, <b>')}</b>.`
+                : "";
+            if (precis.total !== large.total) {
+                texte += ` <br><br>Attention : sur un <b>établissement précis</b>, vous ne comptez que
+                    <b>${precis.total} points</b>. Les bonifications familiales ne s'appliquent que sur les
+                    vœux larges — une commune, un groupe de communes, un département. C'est pour cela qu'on
+                    conseille d'en mettre dans sa liste.`;
+            }
+            texte += ' Le détail complet est dans le panneau « Ma situation », à droite.';
+            document.getElementById('a_commentaire').innerHTML = texte;
+
+            updateChecklist();
+            const papiers = document.getElementById('checklist-list');
+            document.getElementById('a_papiers').innerHTML = (papiers && papiers.innerHTML.trim())
+                ? `<b style="color:#d35400;">Les papiers à préparer pour Colibris :</b><ul style="padding-left:20px; margin:6px 0 0;">${papiers.innerHTML}</ul>`
+                : "";
+        }
+
         /* ==================== BANDEAU D'AVERTISSEMENT ==================== */
         const BANDEAU_KEY = 'mutation:bandeau-replie:v1';
 
@@ -2751,7 +3206,7 @@
         }
 
         /* ==================== GUIDE ==================== */
-        function openGuide() { document.getElementById('guide').style.display = 'block'; }
+        function openGuide() { ouvrirAccueil(); }
         function closeGuide() {
             document.getElementById('guide').style.display = 'none';
             try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) { /* ignore */ }
@@ -2798,6 +3253,9 @@
                 try { localStorage.setItem(TAGS_KEY, tagsChk.checked ? '1' : '0'); } catch (e) { /* ignore */ }
             });
 
+            document.querySelectorAll('input[name="a_fam"]').forEach(el => el.addEventListener('change', majBlocFamille));
+            appliquerNiveau(niveauActuel() || 'debutant');
+
             const search = document.getElementById('etab-search');
             search.addEventListener('input', runSearch);
             search.addEventListener('focus', runSearch);
@@ -2818,7 +3276,7 @@
 
             let seen = null;
             try { seen = localStorage.getItem(GUIDE_KEY); } catch (e) { /* ignore */ }
-            if (!seen) openGuide();
+            if (!seen) ouvrirAccueil();
         }
 
         window.addEventListener('load', start);
