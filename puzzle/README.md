@@ -18,12 +18,27 @@ C'est le procédé fait jusqu'ici à la main dans LibreOffice Draw, mais automat
 L'élève calcule, cherche la pièce qui porte son résultat et la colle sur la case.
 Si tout est juste, l'image se reconstitue : elle sert d'autocorrection.
 
+## Le plan de travail
+
+En haut de la page, une feuille grandeur nature porte la grille et le dessin.
+C'est là qu'on place l'image, à la main :
+
+- **glisser** le dessin pour le déplacer ;
+- **molette** ou **pincement à deux doigts** pour changer sa taille ;
+- **poignée ronde** (ou le pincement) pour le **tourner** — sous n'importe quel angle ;
+- **double-clic**, ou le bouton *Replacer*, pour tout remettre au centre et d'aplomb ;
+- au clavier : flèches pour déplacer (avec Maj, cinq fois plus vite), `+` et `-`
+  pour la taille, `r` et `R` pour l'angle.
+
+Les curseurs *Zoom* et *Rotation du dessin* font la même chose au degré près.
+Cette feuille ne s'imprime pas : elle sert à voir ce que chaque case va attraper.
+
 ## Réglages
 
 | Réglage | Ce qu'il change |
 |---|---|
 | **Silhouette** | dix-sept dessins fournis, ou un fichier à toi (SVG de préférence, sinon PNG/JPEG) |
-| **Cadrage** | remplir la grille ou tout montrer ; zoom et décalages pour choisir ce qui tombe dans les pièces |
+| **Cadrage** | remplir la grille ou tout montrer — le calcul tient compte de l'angle du dessin |
 | **Découpe** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces |
 | **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
 | **Cases carrées** | décochée, les cases s'étirent pour remplir toute la page (imposée aux quarts de tour) |
