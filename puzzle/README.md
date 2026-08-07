@@ -18,10 +18,24 @@ C'est le procédé fait jusqu'ici à la main dans LibreOffice Draw, mais automat
 L'élève calcule, cherche la pièce qui porte son résultat et la colle sur la case.
 Si tout est juste, l'image se reconstitue : elle sert d'autocorrection.
 
+## Deux temps
+
+**1 · Mise en page.** Une feuille A4 grandeur nature est là, sous les yeux, avec
+la grille dessinée dessus. On choisit l'orientation et la répartition en cliquant
+sur des images de feuilles, on ajoute ou retire des colonnes et des lignes au
+bouton `+` / `−`, on règle les marges, on place le dessin — et la feuille suit à
+chaque fois.
+
+**2 · La fiche.** Le bouton **Créer le puzzle** — qui annonce le nombre de pièces
+— pose à côté de lui le choix de la **rotation des pièces** (aucune, demi-tour,
+quart de tour, montré sur un « 12 » qui bascule) et l'interrupteur **nombres
+toujours à l'endroit**. Les pages sortent alors en grand : plateau, pièces,
+corrigé, avec *Remélanger*, *Plein écran* et *Imprimer*. *← Mise en page* ramène
+au premier temps sans rien perdre.
+
 ## Le plan de travail
 
-En haut de la page, une feuille grandeur nature porte la grille et le dessin.
-C'est là qu'on place l'image, à la main :
+La feuille du premier temps se manipule directement :
 
 - **glisser** le dessin pour le déplacer ;
 - **molette** ou **pincement à deux doigts** pour changer sa taille ;
@@ -37,26 +51,21 @@ Cette feuille ne s'imprime pas : elle sert à voir ce que chaque case va attrape
 
 | Réglage | Ce qu'il change |
 |---|---|
-| **Silhouette** | dix-sept dessins fournis, ou un fichier à toi (SVG de préférence, sinon PNG/JPEG) |
-| **Cadrage** | remplir la grille ou tout montrer — le calcul tient compte de l'angle du dessin |
-| **Découpe** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces |
+| **La feuille** | portrait ou paysage, plateau et pièces sur une ou deux feuilles, marges de 0 à 25 mm |
+| **Les cases** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces ; carrées, ou étirées pour remplir la feuille |
+| **Le dessin** | dix-sept silhouettes fournies, ou un fichier à toi (SVG de préférence, sinon PNG/JPEG) ; remplir ou tout montrer, l'angle compris |
+| **Les calculs** | cinq générateurs, ou ta propre liste ; une graine de mélange (même graine = même fiche) |
 | **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
-| **Cases carrées** | décochée, les cases s'étirent pour remplir toute la page (imposée aux quarts de tour) |
-| **Mélange** | une graine : même graine = même fiche, « Remélanger » en tire une autre |
-| **Calculs** | cinq générateurs, ou ta propre liste tapée à la main |
-| **Page** | portrait ou paysage, marges de 0 à 25 mm, pièces sur une page à part, corrigé, consigne, titres |
-| **Nombres** | position sur la pièce, taille, halo blanc, fond gris |
+| **Finitions** | corrigé, consigne, titres de section, position et taille des nombres, halo blanc, fond gris |
 
 Il n'y a ni en-tête ni pied de page : la grille occupe toute la place disponible.
 Tout est enregistré dans le navigateur et retrouvé à la visite suivante.
 
-## Aperçu et impression
+## Impression
 
-**Aperçu** ouvre les pages en plein écran, telles qu'elles sortiront. De là ou
-depuis la barre du haut, **Imprimer** ouvre la boîte du navigateur : le format
-(A4 portrait ou paysage) est déjà posé, il reste à mettre les marges sur
-« aucune » et à cocher **Graphiques d'arrière-plan** si les fonds gris des pièces
-manquent.
+**Imprimer** ouvre la boîte du navigateur : le format (A4 portrait ou paysage)
+est déjà posé, il reste à mettre les marges sur « aucune » et à cocher
+**Graphiques d'arrière-plan** si les fonds gris des pièces manquent.
 
 ## Les calculs
 
