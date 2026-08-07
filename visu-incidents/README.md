@@ -25,26 +25,41 @@ L'annuaire ne bouge quasiment jamais, alors que l'export du registre change
 souvent — il est donc embarqué dans la page, et il ne reste qu'un fichier à
 déposer à l'usage.
 
-`build-annuaire.py` prépare cet annuaire : il ne garde que les onze colonnes
-réellement lues, écarte les établissements sans coordonnées, compresse en gzip
-et encode en base64 dans `annuaire.js`. Sur un fichier de 635 Ko à 37 colonnes,
-le résultat pèse 61 Ko, soit 10 % de l'original. La page le décompresse au
-démarrage avec `DecompressionStream`, natif au navigateur — aucune bibliothèque
-supplémentaire, et 0,2 à 0,7 s au chargement.
+L'annuaire est réduit aux onze colonnes réellement lues, débarrassé des
+établissements sans coordonnées, compressé en gzip et encodé en base64 dans
+`annuaire.js`. Sur un fichier de 635 Ko à 37 colonnes, le résultat pèse 61 Ko —
+10 % de l'original. La page le décompresse au démarrage avec
+`DecompressionStream`, natif au navigateur : aucune bibliothèque supplémentaire,
+et 0,2 à 0,7 s au chargement.
+
+### Depuis la page, sans rien installer
+
+Section **Annuaire des établissements**, dans le panneau de gauche : déposer le
+fichier de l'annuaire, puis
+
+- **Créer le fichier autonome** — produit `visu-incidents-autonome.html` avec
+  cet annuaire déjà dedans. C'est le fichier à déposer sur un Drive ou une clé.
+  Demande la page en ligne : sur un fichier ouvert en local, les navigateurs
+  interdisent de relire les fichiers voisins.
+- **Exporter l'annuaire compressé** — produit `annuaire.js`, à placer à côté de
+  `index.html` pour la version hébergée.
+
+### En ligne de commande
 
 ```sh
 python3 build-annuaire.py Etablissement.csv   # produit annuaire.js
 python3 build-standalone.py                   # répercute dans le fichier autonome
 ```
 
-Le dépôt de la section **Annuaire des établissements** permet d'en charger un
-autre ponctuellement, sans reconstruire quoi que ce soit ; un bouton ramène à
-l'annuaire intégré. Sans argument, `build-annuaire.py` vide `annuaire.js` et
-l'outil redemande les deux fichiers, comme avant.
+Les deux chemins produisent un `annuaire.js` au contenu strictement identique —
+c'est vérifié par les tests. Sans argument, `build-annuaire.py` vide
+`annuaire.js` et l'outil redemande les deux fichiers, comme avant.
 
-`DecompressionStream` demande Chrome 80+, Safari 16.4+ ou Firefox 113+. Sur un
-navigateur plus ancien, la page le dit et propose de déposer l'annuaire à la
-main.
+### Limites
+
+`DecompressionStream` et `CompressionStream` demandent Chrome 80+, Safari 16.4+
+ou Firefox 113+. Sur un navigateur plus ancien, la page le dit, désactive les
+boutons de fabrication et redemande l'annuaire à la main.
 
 ## Ce que fait l'outil
 

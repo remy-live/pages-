@@ -117,12 +117,15 @@ def main(argv) -> int:
         lat = (row.get(mapping["Latitude WGS84"]) or "").strip().replace(",", ".")
         lon = (row.get(mapping["Longitude WGS84"]) or "").strip().replace(",", ".")
         try:
-            float(lat), float(lon)
+            # Normalisées comme le fait le navigateur, pour que les deux
+            # chemins de génération produisent exactement le même fichier.
+            lat, lon = repr(float(lat)), repr(float(lon))
         except ValueError:
             skipped_coords += 1
             continue
+        values = {"Latitude WGS84": lat, "Longitude WGS84": lon}
         writer.writerow([
-            (row.get(mapping[name]) or "").strip() if mapping[name] else ""
+            values.get(name, (row.get(mapping[name]) or "").strip() if mapping[name] else "")
             for name, _ in COLUMNS
         ])
         kept += 1

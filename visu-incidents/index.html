@@ -400,6 +400,16 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
             <button class="btn sm wide" id="btnRestoreAnnuaire" style="margin-top:6px" hidden>
               Revenir à l'annuaire intégré
             </button>
+
+            <hr style="border:0;border-top:1px solid var(--hairline);margin:12px 0">
+            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:6px">
+              Pour n'avoir plus qu'un fichier à déposer, on intègre l'annuaire à la page.
+            </p>
+            <button class="btn sm wide" id="btnMakeStandalone" disabled>Créer le fichier autonome</button>
+            <button class="btn sm wide" id="btnMakeAnnuaire" style="margin-top:6px" disabled>
+              Exporter l'annuaire compressé (annuaire.js)
+            </button>
+            <p class="note" id="standaloneHint" style="font-size:11.5px;color:var(--ink-muted);margin-top:6px"></p>
           </div>
         </details>
 
@@ -682,6 +692,142 @@ async function loadBuiltinAnnuaire() {
   state.meta.etabs = { name: src.name || 'Annuaire intégré', builtin: true, count: src.count };
 }
 
+/* --------------- Fabrication de l'annuaire intégré, sans outillage --------------- */
+/* Mêmes colonnes et même format que build-annuaire.py, mais depuis le navigateur :
+   l'annuaire peut être remis à jour sans rien installer. */
+
+const ANNUAIRE_COLS = [
+  ["Numéro d'UAI", (e) => e.uai],
+  ['Appellation officielle', (e) => e.name],
+  ['Libellé de la commune', (e) => e.commune],
+  ['Libellé du département ou de la collectivité', (e) => e.dept],
+  ["Libellé de la nature de l'UAI", (e) => e.nature],
+  ['Secteur', (e) => e.secteur],
+  ['Adresse : désignation de la voie', (e) => e.voie],
+  ['Adresse : code postal', (e) => e.cp],
+  ["Localité d'acheminement", (e) => e.localite],
+  ['Latitude WGS84', (e) => e.lat],
+  ['Longitude WGS84', (e) => e.lon],
+];
+
+const address = (e) => [e.voie, e.cp, e.localite].filter(Boolean).join(', ');
+
+const csvCell = (v) => {
+  const s = String(v ?? '');
+  return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+/** Réécrit l'annuaire courant, réduit aux colonnes réellement lues. */
+function serializeAnnuaire() {
+  const lines = [ANNUAIRE_COLS.map(([h]) => csvCell(h)).join(';')];
+  for (const e of state.etabs.values()) {
+    lines.push(ANNUAIRE_COLS.map(([, get]) => csvCell(get(e))).join(';'));
+  }
+  return lines.join('\n') + '\n';      // saut de ligne final, comme build-annuaire.py
+}
+
+async function gzipBase64(text) {
+  if (typeof CompressionStream === 'undefined') {
+    throw new Error('Ce navigateur ne sait pas compresser (CompressionStream absent).');
+  }
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {          // par tranches : évite
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));  // le dépassement de pile
+  }
+  return btoa(binary);
+}
+
+async function buildAnnuaireModule() {
+  const payload = await gzipBase64(serializeAnnuaire());
+  const meta = {
+    name: state.meta.etabs.builtin ? (window.VI_ANNUAIRE.name || 'annuaire') : state.meta.etabs.name,
+    count: state.etabs.size,
+    built: new Date().toISOString().slice(0, 10),
+  };
+  return {
+    payload,
+    js: '/* Généré depuis le navigateur — ne pas modifier à la main. */\n'
+      + 'window.VI_ANNUAIRE = {\n'
+      + Object.entries(meta).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`).join(',\n')
+      + `,\n  gzip: ${JSON.stringify(payload)}\n};\n`,
+  };
+}
+
+/**
+ * Assemble un fichier autonome : source de la page, bibliothèques et annuaire
+ * réunis en un seul document. Demande une page servie en http(s) — sur file://
+ * les navigateurs interdisent de relire les fichiers voisins.
+ */
+async function buildStandaloneInBrowser() {
+  const btn = $('#btnMakeStandalone');
+  const say = (msg) => { btn.textContent = msg; };
+  const original = 'Créer le fichier autonome';
+  try {
+    say('Préparation…');
+    const { js } = await buildAnnuaireModule();
+
+    const grab = async (url) => {
+      const res = await fetch(new URL(url, location.href));
+      if (!res.ok) throw new Error(`${url} : ${res.status}`);
+      return res.text();
+    };
+
+    let html = await grab(location.pathname.endsWith('/') ? 'index.html' : location.pathname);
+
+    // Feuilles de style, avec les images qu'elles référencent.
+    for (const [tag, href] of [...html.matchAll(/<link rel="stylesheet" href="(vendor\/[^"]+)"\s*\/?>/g)]) {
+      let css = await grab(href);
+      const base = href.slice(0, href.lastIndexOf('/') + 1);
+      for (const [ref, raw] of [...css.matchAll(/url\(([^)]+)\)/g)]) {
+        const path = raw.trim().replace(/^["']|["']$/g, '');
+        if (/^(data:|https?:|\/\/)/.test(path)) continue;
+        const blob = await fetch(new URL(base + path, location.href)).then((r) => r.ok ? r.blob() : null);
+        if (!blob) continue;
+        const dataUrl = await new Promise((res) => {
+          const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob);
+        });
+        css = css.replace(ref, () => `url(${dataUrl})`);
+      }
+      // Remplacements par fonction : sinon les séquences `$&`, `$'` ou `` $` ``
+      // présentes dans le code minifié seraient interprétées par String.replace
+      // et réinséreraient la balise au lieu de la remplacer.
+      html = html.replace(tag, () => `<style>\n${css}\n</style>`);
+      say('Bibliothèques…');
+    }
+
+    // Scripts : bibliothèques puis annuaire, qui remplace celui de la page.
+    // La séquence de fermeture est composée : écrite telle quelle, elle
+    // couperait le script en ligne où se trouve ce code.
+    const CLOSE = '<' + '/script';
+    const OPEN = '<' + 'script>';
+    for (const [tag, src] of [...html.matchAll(new RegExp('<script src="([^"]+)">' + CLOSE + '>', 'g'))]) {
+      const code = src === 'annuaire.js' ? js : await grab(src);
+      const safe = OPEN + '\n' + code.split(CLOSE).join('<\\' + '/script') + '\n' + CLOSE + '>';
+      html = html.replace(tag, () => safe);
+    }
+
+    say('Enregistrement…');
+    download(new Blob([html], { type: 'text/html;charset=utf-8' }), 'visu-incidents-autonome.html');
+    say('Fichier créé');
+  } catch (err) {
+    console.error(err);
+    alert("La création du fichier autonome a échoué : " + err.message);
+  } finally {
+    setTimeout(() => say(original), 2500);
+  }
+}
+
+async function downloadAnnuaireModule() {
+  try {
+    const { js } = await buildAnnuaireModule();
+    download(new Blob([js], { type: 'text/javascript;charset=utf-8' }), 'annuaire.js');
+  } catch (err) {
+    alert("La compression de l'annuaire a échoué : " + err.message);
+  }
+}
+
 /* ------------------------- Stockage local (IndexedDB) ------------------------- */
 /* Les CSV pèsent trop pour localStorage ; IndexedDB les garde entre deux visites. */
 
@@ -845,9 +991,11 @@ async function buildModel() {
                        'Code INSEE du département ou de la collectivité') || 'Non précisé',
       nature: readE(row, "Libellé de la nature de l'UAI", "Nature de l'UAI") || 'Non précisé',
       secteur: readE(row, 'Secteur'),
-      address: [readE(row, 'Adresse : désignation de la voie'),
-                readE(row, 'Adresse : code postal'),
-                readE(row, "Localité d'acheminement")].filter(Boolean).join(', '),
+      // Conservées séparément : elles doivent pouvoir être réécrites telles
+      // quelles lors de la génération de l'annuaire intégré.
+      voie: readE(row, 'Adresse : désignation de la voie'),
+      cp: readE(row, 'Adresse : code postal'),
+      localite: readE(row, "Localité d'acheminement"),
       incidents: [],
     });
   }
@@ -1390,7 +1538,7 @@ function renderEtab() {
     <p style="color:var(--ink-muted);font-size:11.5px;margin-top:2px">
       ${esc(etab.nature)}${etab.secteur ? ' · ' + esc(etab.secteur) : ''} · UAI ${esc(etab.uai)}
     </p>
-    ${etab.address ? `<p style="color:var(--ink-muted);font-size:11.5px">${esc(etab.address)}</p>` : ''}
+    ${address(etab) ? `<p style="color:var(--ink-muted);font-size:11.5px">${esc(address(etab))}</p>` : ''}
 
     <div class="kpis" style="margin-top:12px">
       <div class="kpi"><div class="v">${fmtInt(shown.length)}</div><div class="l">Signalements</div>
@@ -1731,6 +1879,7 @@ async function reload() {
   setFileState('incidents', `${state.meta.incidents.name || 'Signalements'} — ${fmtInt(state.incidents.length)} rattachés`, 'ok');
   $('#etabsBadge').textContent = builtin ? 'intégré' : 'remplacé';
   $('#btnRestoreAnnuaire').hidden = builtin || !hasBuiltinAnnuaire();
+  syncBuildButtons();
 
   renderFacets();
   renderTimeline();
@@ -1748,6 +1897,24 @@ function refreshEtabList() {
   $('#etabList').innerHTML = names
     .map((e) => `<option value="${esc(e.name + ' — ' + e.commune)}" data-uai="${esc(e.uai)}"></option>`)
     .join('');
+}
+
+/** Les deux boutons de fabrication ne valent que dans certaines conditions. */
+function syncBuildButtons() {
+  const loaded = state.etabs.size > 0;
+  const canZip = typeof CompressionStream !== 'undefined';
+  const served = location.protocol === 'http:' || location.protocol === 'https:';
+
+  $('#btnMakeAnnuaire').disabled = !loaded || !canZip;
+  $('#btnMakeStandalone').disabled = !loaded || !canZip || !served;
+
+  let hint = '';
+  if (!canZip) hint = "Ce navigateur ne sait pas compresser ; utilisez build-annuaire.py.";
+  else if (!loaded) hint = "Chargez d'abord un annuaire.";
+  else if (!served) hint = "Le fichier autonome ne peut être créé que depuis la page en ligne, "
+                         + "pas depuis un fichier ouvert en local.";
+  else hint = `${fmtInt(state.etabs.size)} établissements seront intégrés au fichier produit.`;
+  $('#standaloneHint').textContent = hint;
 }
 
 function renderNotices(error) {
@@ -1840,6 +2007,9 @@ function wireEvents() {
     await Store.del('etabs');
     location.reload();
   });
+
+  $('#btnMakeStandalone').addEventListener('click', buildStandaloneInBrowser);
+  $('#btnMakeAnnuaire').addEventListener('click', downloadAnnuaireModule);
 
   $('#btnDemo').addEventListener('click', loadDemo);
 
@@ -2018,6 +2188,7 @@ function loadDemo() {
   initMap();
   wireEvents();
   syncMobileBar();
+  syncBuildButtons();
   renderNotices();
 
   // Reprise des fichiers de la session précédente.
