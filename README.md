@@ -13,6 +13,9 @@ la section « Outils en ligne » de la page.
 - [`mutation/`](mutation/) — **Aide Mutation**, carte et simulateur de barème pour
   le mouvement intra 2026 de l'académie d'Amiens :
   https://remy-live.github.io/pages-/mutation/
+- [`visu-incidents/`](visu-incidents/) — **Visu-Incidents**, carte et tableau de
+  bord des signalements portés aux registres santé et sécurité au travail :
+  https://remy-live.github.io/pages-/visu-incidents/
 
 ## Notes sur la page d'accueil
 
