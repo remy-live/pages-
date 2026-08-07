@@ -138,6 +138,20 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
 .msg ul{margin:5px 0 0;padding-left:17px}
 
 /* ─────────────────────────── aperçu ─────────────────────────── */
+#planwrap{display:flex;flex-direction:column;align-items:center;gap:7px;margin-bottom:24px}
+.planlbl{margin:0;align-self:center;font-family:"Barlow Condensed",sans-serif;font-size:15px;
+  font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.planlbl span{letter-spacing:.02em;text-transform:none;font-weight:400;font-size:13px;color:#78848D}
+#planholder{outline:2px solid rgba(255,179,71,.35);outline-offset:3px;border-radius:3px}
+.plan .planzone{position:relative;margin:auto;touch-action:none;cursor:grab}
+.plan .planzone:active{cursor:grabbing}
+.plan .planzone:focus-visible{outline:2px solid var(--acc);outline-offset:4px}
+.plan .piece{border-color:#B9C0C8}
+.tige{position:absolute;width:.5mm;background:#FFB347;transform-origin:50% 100%;pointer-events:none}
+.poignee{position:absolute;width:7mm;height:7mm;margin:-3.5mm 0 0 -3.5mm;border-radius:50%;
+  border:.6mm solid #C98A2E;background:#FFB347;cursor:grab;padding:0;touch-action:none}
+.poignee:active{cursor:grabbing}
+
 .stage{display:flex;flex-direction:column;align-items:center;gap:20px}
 .holder{width:calc(var(--pw) * var(--s,1));height:calc(var(--ph) * var(--s,1));overflow:hidden;
   border-radius:3px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
@@ -177,7 +191,7 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
 /* ─────────────────────────── impression ─────────────────────────── */
 @media print{
   html,body{background:#fff}
-  .top,.side,.mbar{display:none !important}
+  .top,.side,.mbar,#planwrap{display:none !important}
   .app{display:block}
   .stagewrap{padding:0}
   .modal{position:static;display:block;background:none}
@@ -225,11 +239,12 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
         </div>
       </div>
       <div class="f"><label for="fZoom">Zoom <span class="val" id="vZoom"></span></label>
-        <input type="range" id="fZoom" min="50" max="300" step="1"></div>
-      <div class="row">
-        <div class="f"><label for="fPanX">Décalage ↔</label><input type="range" id="fPanX" min="0" max="100"></div>
-        <div class="f"><label for="fPanY">Décalage ↕</label><input type="range" id="fPanY" min="0" max="100"></div>
-      </div>
+        <input type="range" id="fZoom" min="20" max="500" step="1"></div>
+      <div class="f"><label for="fAngle">Rotation du dessin <span class="val" id="vAngle"></span></label>
+        <input type="range" id="fAngle" min="-180" max="180" step="1"></div>
+      <button class="b" type="button" id="bReplacer">Replacer au centre, d'aplomb</button>
+      <p class="hint">Sur le plan de travail : glisse le dessin, molette ou pincement pour
+        zoomer, poignée ronde pour tourner. Double-clic pour tout remettre en place.</p>
     </div>
   </details>
 
@@ -317,7 +332,22 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
     « Graphiques d'arrière-plan » coché si les fonds gris manquent.</p>
 </aside>
 
-<main class="stagewrap"><div class="stage" id="stage"></div></main>
+<main class="stagewrap">
+  <div id="planwrap">
+    <p class="planlbl">Plan de travail <span>— glisse, zoome, tourne · ne s'imprime pas</span></p>
+    <div class="holder" id="planholder">
+      <section class="sheet plan" id="plan">
+        <div class="planzone" id="planzone" tabindex="0"
+             aria-label="Plan de travail : flèches pour déplacer le dessin, + et - pour zoomer, R pour tourner">
+          <div class="grid" id="planGrid"></div>
+          <div class="tige" id="tige"></div>
+          <button class="poignee" type="button" id="poignee" aria-label="Tourner le dessin"></button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
 </div>
 
 <div class="modal" id="modal" hidden>
@@ -616,7 +646,7 @@ coeur: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220"><g fill="#
 
 /* ───────────────────────── état ───────────────────────── */
 const DEFAUTS = {
-  cols:6, rows:4, fit:'cover', zoom:100, panX:50, panY:50,
+  cols:6, rows:4, fit:'cover', zoom:100, dx:0, dy:0, angle:0,
   rot:'none', droit:false, carres:true, seed:'1', gen:'p10', lines:'',
   orient:'portrait', marge:8, sep:false, sol:true,
   cons:true, consigne:"Calcule, découpe les pièces et colle chacune sur la case dont le résultat correspond.",
@@ -627,13 +657,13 @@ let S = { ...DEFAUTS };
 
 /* champ → clé d'état */
 const CHAMPS = {
-  cols:'#fCols', rows:'#fRows', zoom:'#fZoom', panX:'#fPanX', panY:'#fPanY',
+  cols:'#fCols', rows:'#fRows', zoom:'#fZoom', angle:'#fAngle',
   droit:'#fDroit', carres:'#fCarres', seed:'#fSeed', gen:'#fGen', lines:'#fLines',
   marge:'#fMarge', sep:'#fSep', sol:'#fSol', cons:'#fCons', consigne:'#fConsigne',
   titres:'#fTitres', labSize:'#fLabSize', halo:'#fHalo', grey:'#fGrey',
 };
 const SEGMENTS = { fit:'#segFit', rot:'#segRot', orient:'#segOrient', labPos:'#segLab' };
-const NOMBRES = new Set(['cols','rows','zoom','panX','panY','marge','labSize']);
+const NOMBRES = new Set(['cols','rows','zoom','angle','marge','labSize']);
 
 function versFormulaire(){
   for (const [k, sel] of Object.entries(CHAMPS)){
@@ -657,7 +687,7 @@ function depuisFormulaire(){
   if (S.rot === 'quarter') S.carres = true;   // sinon une pièce tournée ne rentre plus
 }
 
-const STORE = 'puzzle:v2';
+const STORE = 'puzzle:v3';
 function sauver(){
   try { localStorage.setItem(STORE, JSON.stringify(S)); }
   catch { try { localStorage.setItem(STORE, JSON.stringify({ ...S, src:'', art:'' })); } catch {} }
@@ -699,10 +729,22 @@ function geometrie(grilles){
   if (S.carres) cw = ch = Math.min(cw, ch);
 
   const bw = cw * S.cols, bh = ch * S.rows;
-  const base = S.fit === 'cover' ? Math.max(bw / S.iw, bh / S.ih) : Math.min(bw / S.iw, bh / S.ih);
+  // « remplir » et « tout montrer » se jugent sur l'encombrement du dessin tourné
+  const a = S.angle * Math.PI / 180;
+  const encW = Math.abs(S.iw * Math.cos(a)) + Math.abs(S.ih * Math.sin(a));
+  const encH = Math.abs(S.iw * Math.sin(a)) + Math.abs(S.ih * Math.cos(a));
+  const base = S.fit === 'cover' ? Math.max(bw / encW, bh / encH) : Math.min(bw / encW, bh / encH);
   const k = base * S.zoom / 100;
-  const dw = S.iw * k, dh = S.ih * k;
-  return { cw, ch, bw, bh, dw, dh, ox:(bw - dw) * S.panX / 100, oy:(bh - dh) * S.panY / 100 };
+  return { cw, ch, bw, bh, dw:S.iw * k, dh:S.ih * k, cx:bw / 2 + S.dx, cy:bh / 2 + S.dy };
+}
+
+/** Pose l'image dans la case (c, r) : le centre du dessin tombe toujours en (cx, cy). */
+function placerImage(img, g, c, r){
+  img.style.width = g.dw + 'mm';
+  img.style.height = g.dh + 'mm';
+  img.style.left = (g.cx - c * g.cw - g.dw / 2) + 'mm';
+  img.style.top = (g.cy - r * g.ch - g.dh / 2) + 'mm';
+  img.style.transform = S.angle ? `rotate(${S.angle}deg)` : '';
 }
 
 /* ───────────────────────── construction des feuilles ───────────────────────── */
@@ -741,6 +783,8 @@ function grille(g){
 }
 
 /** La fenêtre (colonne, ligne) découpée dans l'image. */
+let vignettes = [];   // toutes les images posées, pour les bouger sans tout reconstruire
+
 function piece(idx, g, rot, corrige){
   const c = idx % S.cols, r = Math.floor(idx / S.cols);
   const p = el('div', 'piece' + (S.grey && !corrige ? ' grey' : ''));
@@ -749,11 +793,9 @@ function piece(idx, g, rot, corrige){
     const img = new Image();
     img.src = S.src;
     img.alt = '';
-    img.style.width = g.dw + 'mm';
-    img.style.height = g.dh + 'mm';
-    img.style.left = (g.ox - c * g.cw) + 'mm';
-    img.style.top = (g.oy - r * g.ch) + 'mm';
+    placerImage(img, g, c, r);
     p.appendChild(img);
+    vignettes.push({ img, c, r });
   }
   return p;
 }
@@ -783,6 +825,21 @@ function rendre(){
 
   const g = geometrie(S.sep ? 1 : 2);
   $('#stage').textContent = '';
+  vignettes = [];
+
+  /* ---- plan de travail : la feuille sur laquelle on place le dessin ---- */
+  const pl = $('#plan');
+  pl.style.setProperty('--pw', page().w + 'mm');
+  pl.style.setProperty('--ph', page().h + 'mm');
+  pl.style.setProperty('--marge', S.marge + 'mm');
+  $('#planholder').style.setProperty('--pw', page().w + 'mm');
+  $('#planholder').style.setProperty('--ph', page().h + 'mm');
+  const pg = grille(g);
+  for (let i = 0; i < n; i++) pg.appendChild(piece(i, g, 0, true));
+  $('#planGrid').replaceWith(Object.assign(pg, { id:'planGrid' }));
+  $('#planzone').style.width = g.bw + 'mm';
+  $('#planzone').style.height = g.bh + 'mm';
+  majPoignee(g);
 
   /* ---- plateau (+ pièces si elles tiennent sur la même page) ---- */
   const p1 = feuille();
@@ -822,19 +879,18 @@ function rendre(){
     poser(p1);
   }
 
-  /* ---- corrigé ---- */
+  /* ---- corrigé : mêmes cases que les pièces, sinon l'image ne colle plus ---- */
   if (S.sol){
-    const gs = geometrie(1);
     const ps = feuille();
     if (S.cons) ps.appendChild(consigne('Corrigé — image reconstituée'
       + (S.rot !== 'none' ? ', les pièces de la banque sont à remettre d\'aplomb.' : '.')));
     if (S.titres) ps.appendChild(titre('Corrigé'));
-    const sol = grille(gs);
+    const sol = grille(g);
     sol.classList.add('sol');
     for (let i = 0; i < n; i++){
-      const p = piece(i, gs, 0, true);
+      const p = piece(i, g, 0, true);
       const t = el('div', 'tag');
-      t.style.fontSize = Math.min(3, Math.min(gs.cw, gs.ch) * 0.11) + 'mm';
+      t.style.fontSize = Math.min(3, Math.min(g.cw, g.ch) * 0.11) + 'mm';
       t.textContent = items[i] ? items[i].q + ' = ' + items[i].a : '';
       p.appendChild(t);
       sol.appendChild(p);
@@ -845,6 +901,158 @@ function rendre(){
 
   messages(items, total, n, g);
   ajuster();
+}
+
+/* ───────────────── placer le dessin à la main sur le plan ───────────────── */
+const borne = (v, min, max) => Math.min(max, Math.max(min, v));
+
+/** La poignée se tient au-dessus du dessin et tourne avec lui. */
+function majPoignee(g){
+  const a = S.angle * Math.PI / 180;
+  const L = borne(g.dh / 2 + 7, 12, Math.min(g.bw, g.bh) / 2 - 4);
+  $('#poignee').style.left = (g.cx + Math.sin(a) * L) + 'mm';
+  $('#poignee').style.top = (g.cy - Math.cos(a) * L) + 'mm';
+  const t = $('#tige');
+  t.style.left = g.cx + 'mm';
+  t.style.top = (g.cy - L) + 'mm';
+  t.style.height = L + 'mm';
+  t.style.transform = `translateX(-50%) rotate(${S.angle}deg)`;
+}
+
+/** Rejoue le placement partout, sans reconstruire le DOM : c'est fluide au doigt. */
+function appliquer(){
+  const g = geometrie(S.sep ? 1 : 2);
+  for (const v of vignettes) placerImage(v.img, g, v.c, v.r);
+  majPoignee(g);
+  $('#fZoom').value = Math.round(S.zoom);
+  $('#fAngle').value = Math.round(S.angle);
+  majAffichages();
+}
+
+function replacer(){
+  S.dx = 0; S.dy = 0; S.angle = 0; S.zoom = 100;
+  appliquer(); sauver();
+}
+
+function gestes(){
+  const zone = $('#planzone'), poignee = $('#poignee');
+  const doigts = new Map();
+  let debut = null;
+
+  const mmParPx = () => {
+    const r = $('#planGrid').getBoundingClientRect();
+    const g = geometrie(S.sep ? 1 : 2);
+    return r.width > 0 ? g.bw / r.width : 1;
+  };
+  const centre = () => {
+    const r = $('#planGrid').getBoundingClientRect();
+    const g = geometrie(S.sep ? 1 : 2);
+    const k = r.width / g.bw;
+    return { x: r.left + g.cx * k, y: r.top + g.cy * k };
+  };
+  const barycentre = () => {
+    const p = [...doigts.values()];
+    return { x: p.reduce((s, q) => s + q.x, 0) / p.length, y: p.reduce((s, q) => s + q.y, 0) / p.length };
+  };
+  const ecart = () => {
+    const [a, b] = [...doigts.values()];
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  };
+  const cap = () => {
+    const [a, b] = [...doigts.values()];
+    return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+  };
+
+  const figer = () => {
+    debut = { dx:S.dx, dy:S.dy, zoom:S.zoom, angle:S.angle, k:mmParPx(),
+              bary:barycentre(), ecart: doigts.size > 1 ? ecart() : 0,
+              cap: doigts.size > 1 ? cap() : 0 };
+  };
+
+  const bouger = e => {
+    if (!doigts.has(e.pointerId) || !debut) return;
+    doigts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    const b = barycentre();
+    S.dx = debut.dx + (b.x - debut.bary.x) * debut.k;
+    S.dy = debut.dy + (b.y - debut.bary.y) * debut.k;
+    if (doigts.size > 1 && debut.ecart > 8){
+      S.zoom = borne(debut.zoom * ecart() / debut.ecart, 20, 500);
+      S.angle = borne(debut.angle + (cap() - debut.cap), -180, 180);
+    }
+    appliquer();
+  };
+  const lacher = e => {
+    if (!doigts.delete(e.pointerId)) return;
+    if (doigts.size) figer(); else { debut = null; sauver(); }
+  };
+
+  zone.addEventListener('pointerdown', e => {
+    if (e.target === poignee) return;
+    doigts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    figer();
+    e.preventDefault();
+  });
+
+  zone.addEventListener('wheel', e => {
+    e.preventDefault();
+    S.zoom = borne(S.zoom * Math.exp(-e.deltaY * 0.0015), 20, 500);
+    appliquer(); sauver();
+  }, { passive:false });
+
+  zone.addEventListener('dblclick', replacer);
+
+  /* poignée : tourner, et changer la taille en s'éloignant du centre */
+  let pivot = null;
+  poignee.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    const c = centre();
+    pivot = { c, zoom:S.zoom, angle:S.angle, id:e.pointerId,
+              cap: Math.atan2(e.clientY - c.y, e.clientX - c.x) * 180 / Math.PI,
+              d: Math.hypot(e.clientX - c.x, e.clientY - c.y) };
+  });
+  const tourner = e => {
+    if (!pivot || e.pointerId !== pivot.id) return;
+    const vise = Math.atan2(e.clientY - pivot.c.y, e.clientX - pivot.c.x) * 180 / Math.PI;
+    let a = pivot.angle + (vise - pivot.cap);
+    while (a > 180) a -= 360;
+    while (a < -180) a += 360;
+    S.angle = a;
+    const d = Math.hypot(e.clientX - pivot.c.x, e.clientY - pivot.c.y);
+    if (pivot.d > 12) S.zoom = borne(pivot.zoom * d / pivot.d, 20, 500);
+    appliquer();
+  };
+
+  /* les gestes se suivent sur la fenêtre : la poignée bouge sous le doigt,
+     et un glissé qui sort de la feuille ne doit pas s'interrompre */
+  addEventListener('pointermove', e => { tourner(e); bouger(e); });
+  addEventListener('pointerup', e => {
+    if (pivot && e.pointerId === pivot.id){ pivot = null; sauver(); }
+    lacher(e);
+  });
+  addEventListener('pointercancel', e => {
+    if (pivot && e.pointerId === pivot.id){ pivot = null; sauver(); }
+    lacher(e);
+  });
+
+  /* au clavier, pour qui n'a pas de souris sous la main */
+  zone.addEventListener('keydown', e => {
+    const pas = e.shiftKey ? 5 : 1;
+    const gestesClavier = {
+      ArrowLeft:  () => S.dx -= pas,   ArrowRight: () => S.dx += pas,
+      ArrowUp:    () => S.dy -= pas,   ArrowDown:  () => S.dy += pas,
+      '+':        () => S.zoom = borne(S.zoom + pas, 20, 500),
+      '=':        () => S.zoom = borne(S.zoom + pas, 20, 500),
+      '-':        () => S.zoom = borne(S.zoom - pas, 20, 500),
+      r:          () => S.angle = borne(S.angle + pas, -180, 180),
+      R:          () => S.angle = borne(S.angle - pas, -180, 180),
+    };
+    const f = gestesClavier[e.key];
+    if (!f) return;
+    e.preventDefault();
+    f();
+    appliquer(); sauver();
+  });
 }
 
 /* ───────────────────────── messages ───────────────────────── */
@@ -894,6 +1102,12 @@ function ajuster(){
   let s = dispoW / (p.w * mmPx);
   if (dansModale) s = Math.min(s, (innerHeight - 130) / (p.h * mmPx));
   $('#stage').style.setProperty('--s', Math.max(0.08, Math.min(s, dansModale ? 2 : 1)));
+
+  // le plan reste dans la page, à la taille qui tient dans la fenêtre
+  const large = $('.stagewrap').clientWidth - 44;
+  const haut = innerHeight - 170;
+  $('#planwrap').style.setProperty('--s',
+    Math.max(0.08, Math.min(1.6, large / (p.w * mmPx), haut / (p.h * mmPx))));
 }
 
 /* ───────────────────────── image ───────────────────────── */
@@ -976,7 +1190,8 @@ function generer(){
 }
 
 function majAffichages(){
-  $('#vZoom').textContent = S.zoom + ' %';
+  $('#vZoom').textContent = Math.round(S.zoom) + ' %';
+  $('#vAngle').textContent = Math.round(S.angle) + '°';
   $('#vMarge').textContent = S.marge + ' mm';
   $('#vLab').textContent = String(S.labSize).replace('.', ',') + ' mm';
   $('#fCarres').disabled = S.rot === 'quarter';
@@ -1039,6 +1254,8 @@ function init(){
     $('#fSeed').value = String(Math.floor(Math.random() * 100000));
     actualiser();
   });
+  $('#bReplacer').addEventListener('click', replacer);
+  gestes();
   $('#bPreview').addEventListener('click', ouvrirApercu);
   $('#bClose').addEventListener('click', fermerApercu);
   $('#bPrint').addEventListener('click', imprimer);
