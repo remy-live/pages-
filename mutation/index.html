@@ -1,0 +1,2473 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aide Mutation — Intra 2026, académie d'Amiens</title>
+    <meta name="description" content="Carte, simulateur de barème et liste de vœux pour le mouvement intra-académique 2026 de l'académie d'Amiens.">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232c3e50'/%3E%3Ccircle cx='16' cy='13' r='5' fill='%23e67e22'/%3E%3Cpath d='M16 18 L16 27' stroke='%23e67e22' stroke-width='3'/%3E%3C/svg%3E">
+
+    <link rel="stylesheet" href="./vendor/leaflet.css">
+    <script src="./vendor/papaparse.min.js"></script>
+    <script src="./vendor/leaflet.js"></script>
+    <style>
+        /* --- CSS GLOBAL --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #f4f6f7;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+        }
+
+        .header-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-controls button {
+            background: #34495e;
+            color: white;
+            border: 1px solid #7f8c8d;
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .header-controls button:hover {
+            background: #455a64;
+        }
+
+        /* --- LAYOUT --- */
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 380px;
+            background: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            border-left: 1px solid #e0e0e0;
+            transition: margin 0.3s ease;
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-content {
+            padding: 15px;
+        }
+
+        .sidebar-left.collapsed { margin-left: -380px; }
+        .sidebar-right.collapsed { margin-right: -380px; }
+
+        h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        #map {
+            flex-grow: 1;
+            background: #e5e5e5;
+            z-index: 1;
+        }
+
+        .map-picking { cursor: crosshair !important; }
+
+        /* --- Z-INDEX FIX MAP --- */
+        .leaflet-pane.leaflet-tooltip-pane { z-index: 2000 !important; }
+        .leaflet-pane.leaflet-popup-pane { z-index: 3000 !important; }
+        .leaflet-tooltip { pointer-events: none; }
+
+        /* --- TABS SYSTEM --- */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+            background: #f1f2f6;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: bold;
+            color: #7f8c8d;
+            transition: 0.2s;
+        }
+
+        .tab-btn:hover { background: #e2e6ea; }
+        .tab-btn.active {
+            border-bottom: 3px solid #3498db;
+            color: #2c3e50;
+            background: white;
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+
+        /* --- UI ELEMENTS --- */
+        .mode-selector label {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #7f8c8d;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .mode-selector input { display: none; }
+        .mode-selector input:checked+label {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        #mode_zr:checked+label { background: #9b59b6; }
+
+        .type-filters { display: flex; gap: 5px; margin-bottom: 15px; }
+
+        .type-chk {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .type-chk input { margin-right: 5px; }
+        .type-chk:hover { background: #f9f9f9; }
+        .type-col { border-left: 4px solid #2ecc71; }
+        .type-lyc { border-left: 4px solid #e74c3c; }
+        .type-lp { border-left: 4px solid #8e44ad; }
+
+        .filter-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .dept-group { border-bottom: 1px solid #eee; }
+        .dept-header {
+            background: #f8f9fa;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dept-header input { margin-right: 10px; transform: scale(1.2); }
+        .zone-list { padding: 5px 0; background: white; }
+        .zone-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px 6px 25px;
+            font-size: 0.9em;
+            color: #555;
+            transition: 0.1s;
+        }
+        .zone-item:hover { background: #fdfdfd; color: #000; }
+        .zone-item input { margin-right: 8px; }
+        .zone-item label { cursor: pointer; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-action:hover { background: #2980b9; }
+
+        .radius-controls {
+            background: #fff;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .radius-val { font-size: 1.5em; font-weight: bold; color: #e67e22; margin: 10px 0; }
+        input[type=range] { width: 100%; margin: 10px 0; }
+
+        /* --- INFO ICONS (FICHES OFFICIELLES) --- */
+        .info-icon {
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 1.1em;
+            color: #3498db;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .info-icon:hover { transform: scale(1.2); color: #2980b9; }
+
+        /* --- TOOLTIPS ACRONYMES --- */
+        .acronym-word {
+            border-bottom: 2px dotted #e67e22;
+            color: #d35400;
+            font-weight: bold;
+            cursor: help;
+            transition: color 0.2s;
+            position: relative;
+            display: inline-block;
+        }
+        .acronym-word:hover { color: #e67e22; background-color: #fff3e0; border-radius: 2px; }
+
+        /* La bulle flottante des acronymes */
+        #global-tooltip {
+            position: fixed; display: none; z-index: 10000; background: #2c3e50; color: #ecf0f1;
+            padding: 12px; border-radius: 6px; width: 260px; font-size: 0.9rem; line-height: 1.4;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); pointer-events: none; border-top: 4px solid #e67e22;
+            transform: translateY(5px); animation: tipFadeIn 0.2s forwards;
+        }
+
+        @keyframes tipFadeIn { to { opacity: 1; transform: translateY(0); } }
+
+        .score-tag {
+            border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 11px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); text-align: center; white-space: nowrap;
+            cursor: pointer !important; pointer-events: auto !important;
+        }
+        .score-normal { background: rgba(255, 255, 255, 0.9); color: #555; border: 1px solid #bbb; }
+        .score-bonus { background: #c0392b; color: white; border: 2px solid #fff; font-size: 12px; z-index: 9000; }
+
+        /* --- RIGHT SIDE --- */
+        #detail-panel {
+            background: #fff; border-left: 4px solid #1abc9c; border-radius: 4px;
+            padding: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); margin-bottom: 15px; display: none;
+        }
+
+        #detail-panel.active { display: block; }
+        .detail-title { font-size: 1.1em; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .detail-meta { font-size: 0.9em; color: #7f8c8d; margin-bottom: 10px; }
+        .detail-groups { background: #e8f6f3; padding: 8px; border-radius: 4px; font-size: 0.85em; color: #16a085; margin-bottom: 10px; }
+        .detail-table { width: 100%; font-size: 0.9em; border-collapse: collapse; }
+        .detail-table td { padding: 6px 0; border-bottom: 1px solid #eee; }
+        .detail-total-row td { border-top: 2px solid #1abc9c; font-weight: bold; font-size: 1.2em; color: #2c3e50; padding-top: 10px; }
+
+        .form-section {
+            background: white; padding: 15px; border: 1px solid #eee;
+            border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .col { flex: 1; }
+
+        select, input[type="number"] {
+            width: 100%; padding: 8px; border: 1px solid #ddd;
+            border-radius: 4px; box-sizing: border-box;
+        }
+
+        .checkbox-label { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.9em; cursor: pointer; }
+        .checklist-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 5px; padding: 15px; font-size: 0.9em; }
+
+        /* Modal */
+        .modal {
+            display: none; position: fixed; z-index: 3000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background-color: #fefefe; margin: 10% auto; padding: 20px;
+            border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); max-height: 70vh; overflow-y: auto;
+        }
+
+        .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .glossary-item { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .glossary-term { font-weight: bold; color: #2c3e50; width: 60px; display: inline-block; }
+
+        /* --- WISHLIST --- */
+        .wishlist-container { padding: 10px; background: #f9f9f9; border-radius: 5px; min-height: 200px; }
+        .wish-item {
+            background: white; border: 1px solid #ddd; border-left: 5px solid #3498db;
+            padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; display: flex;
+            justify-content: space-between; align-items: center; cursor: grab; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .wish-item:active { cursor: grabbing; }
+        .wish-item.dragging { opacity: 0.5; border: 2px dashed #3498db; }
+
+        .wish-rank {
+            font-weight: bold; font-size: 1.2em; color: #fff; background: #3498db;
+            width: 25px; height: 25px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; margin-right: 10px;
+        }
+        .wish-info { flex: 1; }
+        .wish-name { font-weight: bold; color: #2c3e50; }
+        .wish-desc { font-size: 0.85em; color: #7f8c8d; }
+        .wish-points {
+            font-weight: bold; color: #e67e22; background: #fff3e0;
+            padding: 3px 8px; border-radius: 10px; margin: 0 10px; font-size: 0.9em;
+        }
+        .wish-remove { color: #e74c3c; cursor: pointer; font-weight: bold; padding: 5px; font-size: 1.1em; }
+        .wish-remove:hover { color: #c0392b; background: #fee; border-radius: 3px; }
+
+        .btn-add-wish {
+            background: #27ae60; color: white; border: none; width: 100%;
+            padding: 5px; margin-top: 5px; border-radius: 3px; cursor: pointer; font-size: 0.9em;
+        }
+        .btn-add-wish:hover { background: #219150; }
+
+        .wish-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .wish-badge { font-size: 0.75em; font-weight: bold; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-etb { background: #34495e; } 
+        .badge-com { background: #e67e22; } 
+        .badge-geo { background: #2980b9; } 
+        .badge-zr { background: #8e44ad; } 
+        .wish-code { font-family: 'Consolas', 'Monaco', monospace; background: #eee; color: #555; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; border: 1px solid #ddd; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .no-tags .leaflet-tooltip { display: none !important; }
+
+        /* --- SYSTÈME DE NOTIFICATIONS (TOASTS) --- */
+        #toast-container { position: fixed; top: 80px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast {
+            background: white; min-width: 300px; max-width: 450px; padding: 15px; border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); display: flex; align-items: flex-start; gap: 15px;
+            border-left: 5px solid #ccc; font-size: 0.9em; line-height: 1.4; cursor: pointer; pointer-events: auto;
+            opacity: 0; transform: translateX(100%); animation: slideInRight 0.4s forwards; transition: 0.3s;
+        }
+        .toast:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); transform: scale(1.02); }
+        .toast-icon { font-size: 1.5em; line-height: 1; }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: bold; display: block; margin-bottom: 3px; font-size: 1em; color: #2c3e50; }
+        .toast-message { color: #555; font-size: 0.9em; }
+
+        .toast-info { border-left-color: #3498db; } .toast-info .toast-icon { color: #3498db; }
+        .toast-warning { border-left-color: #e67e22; } .toast-warning .toast-icon { color: #e67e22; }
+        .toast-error { border-left-color: #e74c3c; } .toast-error .toast-icon { color: #e74c3c; }
+        .toast-success { border-left-color: #27ae60; } .toast-success .toast-icon { color: #27ae60; }
+        .toast.hiding { animation: fadeOutRight 0.4s forwards; }
+
+        /* --- SCORE BADGE --- */
+        .score-badge {
+            background: rgba(255, 255, 255, 0.2); padding: 5px 15px; border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.4); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; margin-right: 20px; min-width: 120px; transition: all 0.3s ease;
+        }
+        .score-badge:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); cursor: help; }
+        .score-label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        .score-value { font-size: 1em; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+
+        /* DEBUG STATUS */
+        .debug-status { font-size:0.85em; color:#2c3e50; font-weight:bold; margin-bottom:5px; background: #e8f8f5; padding: 5px; border-radius: 4px; border-left: 4px solid #1abc9c; }
+        .debug-error { background: #fdedec; border-left-color: #e74c3c; color: #c0392b; }
+        /* ==================== ÉCRAN DE CHARGEMENT ==================== */
+        #splash {
+            position: fixed; inset: 0; z-index: 9998; background: #2c3e50; color: #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 14px; text-align: center; padding: 24px; transition: opacity .35s ease;
+        }
+        #splash.hidden { opacity: 0; pointer-events: none; }
+        #splash h1 { font-size: 1.4rem; margin: 0; }
+        #splash p { margin: 0; opacity: .85; font-size: .95rem; }
+        .spinner {
+            width: 38px; height: 38px; border: 4px solid rgba(255,255,255,.25);
+            border-top-color: #e67e22; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+        /* ==================== RECHERCHE ==================== */
+        .search-bar { position: relative; flex: 1 1 260px; max-width: 420px; margin: 0 16px; }
+        #etab-search {
+            width: 100%; padding: 7px 12px; border-radius: 20px; border: 1px solid #7f8c8d;
+            background: #22303d; color: #fff; font-size: 16px;
+        }
+        #etab-search::placeholder { color: #95a5a6; }
+        #search-results {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+            background: #fff; color: #2c3e50; border-radius: 6px; overflow: hidden auto;
+            max-height: 60vh; box-shadow: 0 8px 24px rgba(0,0,0,.3); z-index: 2500;
+        }
+        #search-results.open { display: block; }
+        .sr-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #ecf0f1; font-size: .9rem; }
+        .sr-item:last-child { border-bottom: 0; }
+        .sr-item:hover, .sr-item.active { background: #eaf3fb; }
+        .sr-item b { display: block; font-size: .95rem; }
+        .sr-item span { color: #7f8c8d; font-size: .82rem; }
+        .sr-empty { padding: 12px; color: #7f8c8d; font-size: .88rem; }
+
+        /* ==================== GUIDE PREMIER LANCEMENT ==================== */
+        #guide .modal-content { max-width: 560px; border-top: 5px solid #e67e22; }
+        .guide-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+        .guide-num {
+            flex: 0 0 30px; height: 30px; border-radius: 50%; background: #e67e22; color: #fff;
+            display: grid; place-items: center; font-weight: bold;
+        }
+        .guide-step p { margin: 0; font-size: .93rem; line-height: 1.45; }
+        .guide-step p b { color: #2c3e50; }
+
+        /* ==================== VOILE DES PANNEAUX (MOBILE) ==================== */
+        #sidebar-backdrop {
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,.4); z-index: 999;
+        }
+        #sidebar-backdrop.on { display: block; }
+        .sidebar-close { display: none; }
+
+        /* ==================== TÉLÉPHONE ET TABLETTE ==================== */
+        @media (max-width: 900px) {
+            header {
+                height: auto; flex-wrap: wrap; padding: 8px 10px; gap: 8px;
+                justify-content: flex-start;
+            }
+            .header-title { font-size: 1rem; order: 1; flex: 1 1 auto; }
+            .score-badge {
+                order: 2; margin-right: 0; min-width: 0; padding: 3px 12px;
+                flex-direction: row; gap: 6px; align-items: baseline;
+            }
+            .search-bar { order: 4; flex: 1 1 100%; margin: 0; max-width: none; }
+            .header-controls { order: 3; gap: 6px; }
+            .header-controls button { padding: 6px 10px; font-size: .82rem; }
+
+            .sidebar {
+                position: absolute; top: 0; bottom: 0; width: min(90vw, 380px);
+                box-shadow: 0 0 30px rgba(0,0,0,.35); transition: transform .3s ease;
+            }
+            .sidebar-left { left: 0; }
+            .sidebar-right { right: 0; }
+            .sidebar-left.collapsed { margin-left: 0; transform: translateX(-102%); }
+            .sidebar-right.collapsed { margin-right: 0; transform: translateX(102%); }
+            .sidebar-close {
+                display: block; width: 100%; padding: 10px; border: 0; background: #ecf0f1;
+                color: #2c3e50; font-weight: bold; cursor: pointer; border-bottom: 1px solid #dfe6e9;
+            }
+            .modal-content { width: 94%; margin: 6% auto; max-height: 84vh; }
+            #det-name, .detail-title { font-size: 1rem; }
+
+            /* Le bandeau d'avertissement occupait un quart de l'écran du téléphone. */
+            .disclaimer { padding: 6px 10px !important; font-size: .72rem !important; line-height: 1.3; }
+            .disclaimer > span { display: none; }
+        }
+
+        @media (max-width: 520px) {
+            .header-title { font-size: .92rem; }
+            .header-controls { flex-wrap: wrap; }
+            .header-controls button { padding: 5px 8px; font-size: .75rem; }
+            .score-badge { padding: 2px 10px; }
+            #etab-search { padding: 6px 12px; }
+            /* Cinq boutons libellés tenaient sur deux rangées : on ne garde que l'icône. */
+            .header-controls .lbl { display: none; }
+            .header-controls button { font-size: 1.05rem; padding: 6px 10px; }
+        }
+
+        /* Cibles tactiles un peu plus généreuses */
+        @media (pointer: coarse) {
+            .checkbox-label input[type="checkbox"], .type-chk input[type="checkbox"] {
+                width: 18px; height: 18px;
+            }
+            .close-modal { font-size: 34px; line-height: 1; }
+        }
+</style>
+</head>
+
+<body>
+    <div id="splash">
+        <div class="spinner"></div>
+        <h1>Aide Mutation — Intra 2026</h1>
+        <p id="splash-msg">Chargement des données…</p>
+    </div>
+    <div id="toast-container"></div>
+    <div class="app-container">
+        
+        <div class="disclaimer" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; text-align: center; padding: 12px 20px; font-size: 0.9em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 9999; position: relative; border-bottom: 2px solid #d35400;">
+            <span style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;">⚠️</span>
+            <b>Outil d'aide pédagogique (Simulation indicative).</b> 
+            Réfère-toi toujours aux LDGA 2026. Vérifie ton barème sur I-Prof dès le 19 mai 2026 et n'oublie pas Colibris (avant le 21 avril) !
+        </div>
+
+        <header>
+            <div class="header-controls"><button onclick="toggleSidebar('left')" title="Zones et filtres" aria-label="Zones et filtres">🗺️<span class="lbl"> Zones &amp; Filtres</span></button></div>
+            <div class="header-title">Mouvement Intra 2026</div>
+
+            <div id="header-score" class="score-badge">
+                <span class="score-label">Barème :</span>
+                <span class="score-value" id="score-display">-- pts</span>
+            </div>
+
+            <div class="search-bar">
+                <input type="search" id="etab-search" placeholder="Chercher un établissement ou une commune…"
+                       autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Chercher un établissement ou une commune">
+                <div id="search-results" role="listbox"></div>
+            </div>
+            <div class="header-controls">
+                <button onclick="openWishlistModal()" style="background:#e67e22; border-color:#d35400;" title="Bilan des vœux" aria-label="Bilan des vœux">📋<span class="lbl"> Bilan Vœux</span> (<span id="wish-counter">0</span>)</button> 
+                <button onclick="openGuide()" title="Comment ça marche ?" aria-label="Aide">❓<span class="lbl"> Aide</span></button>
+                <button onclick="openGlossary()" title="Glossaire" aria-label="Glossaire">📖<span class="lbl"> Glossaire</span></button>
+                <button onclick="toggleSidebar('right')" title="Mon barème" aria-label="Mon barème">🧮<span class="lbl"> Paramètres</span></button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside id="sidebar-left" class="sidebar sidebar-left">
+                <button class="sidebar-close" onclick="toggleSidebar('left')">✕ Fermer</button>
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="openLeftTab('tab-left-zones', this)">🗺️ Zones</button>
+                    <button class="tab-btn" onclick="openLeftTab('tab-left-radius', this)">🎯 Rayon</button>
+                </div>
+
+                <div class="sidebar-content">
+                    <div id="tab-left-zones" class="tab-content active">
+                        <h3>Filtres Établissements</h3>
+                        <div class="type-filters">
+                            <label class="type-chk type-col"><input type="checkbox" id="chk_type_col" checked onchange="applyGlobalFilters()"> Collège</label>
+                            <label class="type-chk type-lyc"><input type="checkbox" id="chk_type_lyc" checked onchange="applyGlobalFilters()"> Lycée</label>
+                            <label class="type-chk type-lp"><input type="checkbox" id="chk_type_lp" checked onchange="applyGlobalFilters()"> LP</label>
+                        </div>
+                        <h3>Mode d'affichage</h3>
+                        <div class="mode-selector">
+                            <input type="radio" name="viewMode" id="mode_geo" checked onchange="switchMode('GEO')">
+                            <label for="mode_geo">Groupements</label>
+                            <input type="radio" name="viewMode" id="mode_com" onchange="switchMode('COM')">
+                            <label for="mode_com">Communes</label>
+                            <input type="radio" name="viewMode" id="mode_zr" onchange="switchMode('ZR')">
+                            <label for="mode_zr">Zones Remplacement</label>
+                        </div>
+                        <div class="checkbox-label" style="background: #ecf0f1; padding: 5px; border-radius: 4px; margin-top: 5px;">
+                            <input type="checkbox" id="chk_show_tags" onchange="toggleTags()" checked>
+                            <label for="chk_show_tags" style="font-weight:bold; color:#2c3e50; cursor:pointer;">Afficher les scores sur la carte</label>
+                        </div>
+                        <div class="checkbox-label">
+                            <input type="checkbox" id="chk_show_zones" onchange="toggleZonePolygons()" checked> 
+                            <label for="chk_show_zones" style="font-weight:bold; color:#e67e22;">Afficher les polygones</label>
+                        </div>
+
+                        <div id="status-global" class="debug-status">
+                            ⏳ Initialisation...
+                        </div>
+                        
+                        <div id="checkboxes-list" class="filter-container"></div>
+
+                        <br>
+                        <h3>Transports</h3>
+                        <div class="checkbox-label">
+                            <input type="checkbox" id="chk_railways" onchange="toggleTransport('railways')"> 
+                            <label for="chk_railways">Chemins de fer</label>
+                        </div>
+                        <div class="checkbox-label">
+                            <input type="checkbox" id="chk_stations" onchange="toggleTransport('stations')"> 
+                            <label for="chk_stations">Gares</label>
+                        </div>
+                        <br>
+                    </div>
+
+                    <div id="tab-left-radius" class="tab-content">
+                        <h3>Filtre par Rayon</h3>
+                        <p style="font-size:0.9em; color:#666; margin-bottom:15px;">Placez un repère pour afficher uniquement les établissements à proximité.</p>
+                        <div class="radius-controls">
+                            <button id="btn-pick-radius" class="btn-action" style="margin-top:0; background:#e67e22;" onclick="toggleRadiusPicker()">📍 Placer mon domicile</button>
+                            <div style="margin-top:15px; font-weight:bold; color:#555;">Rayon de recherche :</div>
+                            <div class="radius-val" id="radius-display">10 km</div>
+                            <input type="range" id="radius-slider" min="1" max="50" value="10" oninput="updateRadiusCircle()">
+                            <div class="checkbox-label" style="justify-content:center; margin-top:10px;">
+                                <input type="checkbox" id="chk-mask-outside" onchange="applyGlobalFilters()">
+                                <label for="chk-mask-outside" style="font-weight:bold; color:#e74c3c;">Masquer hors zone</label>
+                            </div>
+                            <button class="btn-action" style="background:#95a5a6; margin-top:15px;" onclick="clearRadius()">Supprimer le repère</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div id="map"></div>
+            <div id="sidebar-backdrop" onclick="closeSidebars()"></div>
+
+            <aside id="sidebar-right" class="sidebar sidebar-right">
+                <button class="sidebar-close" onclick="toggleSidebar('right')">✕ Fermer</button>
+                <div class="sidebar-content" style="padding-top: 5px;">
+                    <div id="tab-calc" class="tab-content active">
+                        <div id="detail-panel">
+                            <div class="detail-title" id="det-name">Nom</div>
+                            <div style="font-size:0.9em; color:#7f8c8d;" id="det-meta">Ville</div>
+                            <div class="detail-groups" id="det-groups"></div>
+                            <table class="detail-table">
+                                <tbody id="det-tbody"></tbody>
+                                <tr class="detail-total-row">
+                                    <td style="text-align:right;">TOTAL :</td>
+                                    <td id="det-total" style="text-align:right;">0</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <h3>Mon Barème</h3>
+                        <form id="calc-form">
+                            <div class="form-section">
+                                <h4 style="margin-top:0;">1. Carrière</h4>
+                                <div class="row">
+                                    <div class="col">
+                                        <label>Corps <span class="info-icon" onclick="showOfficialRule('corps')">ℹ️</span></label>
+                                        <select id="corps">
+                                            <option value="certifie">Certifié / PLP / PEPS</option>
+                                            <option value="agrege">Agrégé</option>
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <label>Classe <span class="info-icon" onclick="showOfficialRule('carriere')">ℹ️</span></label>
+                                        <select id="classe">
+                                            <option value="normale">Classe Normale</option>
+                                            <option value="hors_classe">Hors-Classe</option>
+                                            <option value="classe_exc">Classe Exceptionnelle</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <label>Échelon <span class="info-icon" onclick="showOfficialRule('carriere')">ℹ️</span></label>
+                                        <input type="number" id="echelon" value="4" min="1" max="11">
+                                    </div>
+                                    <div class="col">
+                                        <label>Anc. Poste (ans) <span class="info-icon" onclick="showOfficialRule('anc_poste')">ℹ️</span></label>
+                                        <input type="number" id="anc_poste" value="0" min="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 style="margin-top:0;">2. Situation Familiale</h4>
+                                <label>Priorité <span class="info-icon" onclick="showOfficialRule('famille')">ℹ️</span></label>
+                                <select id="situation_familiale" style="margin-bottom:10px;">
+                                    <option value="">Aucune priorité familiale</option>
+                                    <option value="RC">Rapprochement Conjoint (RC)</option>
+                                    <option value="APC">Autorité Parentale Conjointe (APC)</option>
+                                    <option value="PI">Parent Isolé (PI)</option>
+                                </select>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label>Enfants à charge <span class="info-icon" onclick="showOfficialRule('enfants')">ℹ️</span></label>
+                                        <input type="number" id="enfants" value="0" min="0">
+                                    </div>
+                                    <div class="col">
+                                        <label>Séparation (ans) <span class="info-icon" onclick="showOfficialRule('separation')">ℹ️</span></label>
+                                        <select id="separation">
+                                            <option value="0">Moins d'1 an</option>
+                                            <option value="1">1 an (50 pts)</option>
+                                            <option value="2">2 ans (280 pts)</option>
+                                            <option value="3">3 ans (400 pts)</option>
+                                            <option value="4">4 ans et + (600 pts)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 style="margin-top:0;">3. Bonus Spécifiques</h4>
+                                
+                                <div style="background: #fdf2e9; border-left: 4px solid #e67e22; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                                    <label style="font-weight: bold; font-size: 0.9em; margin-bottom:5px; color: #d35400; display:block;">⭐ Vœu préférentiel <span class="info-icon" onclick="showOfficialRule('voeu_pref')">ℹ️</span> :</label>
+                                    <select id="voeu_pref" style="width:100%; padding:5px;">
+                                        <option value="0">Non / 1ère année</option>
+                                        <option value="1">2ème année consécutive (+15 pts)</option>
+                                        <option value="2">3ème année consécutive (+30 pts)</option>
+                                        <option value="3">4ème année consécutive (+45 pts)</option>
+                                        <option value="4">5ème année consécutive (+60 pts)</option>
+                                        <option value="5">6ème année ou + (+75 pts max)</option>
+                                    </select>
+                                </div>
+
+                                <label style="font-weight: bold; font-size: 0.9em; display:block; margin-bottom:5px;">Situation Stagiaire <span class="info-icon" onclick="showOfficialRule('stagiaire')">ℹ️</span> :</label>
+                                <select id="type_stagiaire" style="margin-bottom:10px;">
+                                    <option value="">Non concerné</option>
+                                    <option value="classique">Stagiaire "Classique" (19 pts)</option>
+                                    <option value="ex_contractuel">Ex-Contractuel (Enseignant/CPE/AED/AESH)</option>
+                                    <option value="ex_fonc">Ex-Fonctionnaire (Reconversion)</option>
+                                </select>
+
+                                <label style="font-weight: bold; font-size: 0.9em; display:block; margin-bottom:5px;">Stabilisation TZR <span class="info-icon" onclick="showOfficialRule('tzr')">ℹ️</span> :</label>
+                                <select id="anc_tzr" style="margin-bottom:10px;">
+                                    <option value="0">Non TZR ou < 1 an</option>
+                                    <option value="1">1 à 2 ans</option>
+                                    <option value="3">3 à 5 ans</option>
+                                    <option value="6">6 ans et plus</option>
+                                </select>
+
+                                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                                    <label class="checkbox-label" title="Victime de Carte Scolaire">
+                                        <input type="checkbox" id="est_mcs"> MCS (Carte Scolaire) <span class="info-icon" onclick="showOfficialRule('mcs'); event.preventDefault();">ℹ️</span>
+                                    </label>
+                                    <label class="checkbox-label" title="Reconnaissance Qualité Travailleur Handicapé">
+                                        <input type="checkbox" id="est_rqth"> RQTH (+100) <span class="info-icon" onclick="showOfficialRule('rqth'); event.preventDefault();">ℹ️</span>
+                                    </label>
+                                    <label class="checkbox-label" title="Sortie d'éducation prioritaire après 5 ans">
+                                        <input type="checkbox" id="sortie_rep"> Sortie REP/REP+ (5 ans) <span class="info-icon" onclick="showOfficialRule('rep'); event.preventDefault();">ℹ️</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                        <button type="button" class="btn-action" style="background:#95a5a6; margin-top:10px;"
+                                onclick="resetBareme()">↺ Réinitialiser mon barème</button>
+                        <p style="font-size:.8em; color:#7f8c8d; margin:8px 0 0;">
+                            Vos réponses et vos vœux sont enregistrés sur cet appareil : vous pouvez fermer la page et revenir plus tard.
+                        </p>
+                        
+                        <div id="memo-container" style="margin-top:20px; display:none; animation: fadeIn 0.5s;">
+                            <h3 style="border-bottom: 2px solid #2c3e50; padding-bottom: 5px; color:#2c3e50;">📂 Votre Dossier Administratif</h3>
+                            <div style="background:#f8f9fa; border-left:4px solid #3498db; padding:15px; border-radius:4px; font-size:0.9em;">
+                                <p style="margin-top:0;"><strong>💡 Conseil :</strong><br>
+                                    Pour valider votre barème, vous devrez impérativement téléverser ces documents sur Colibris.</p>
+                                <ul id="memo-list" style="padding-left:20px; margin-bottom:0;"></ul>
+                            </div>
+                        </div>
+
+                        <div class="checklist-box" id="checklist-container" style="display:none; margin-top: 15px;">
+                            <strong style="color:#d35400;">📄 Justificatifs à fournir :</strong>
+                            <ul id="checklist-list" style="margin-bottom: 0;"></ul>
+                        </div>
+                        
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="global-tooltip"></div>
+
+    <div id="glossary-modal" class="modal">
+        <div class="modal-content"><span class="close-modal" onclick="closeGlossary()">&times;</span>
+            <h2 style="margin-top:0; border-bottom:2px solid #3498db; padding-bottom:10px;">Glossaire des Mutations</h2>
+            <div id="glossary-list"></div>
+        </div>
+    </div>
+
+    <div id="wishlist-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-modal" onclick="closeWishlistModal()">&times;</span>
+            <h2 style="color:#2c3e50; border-bottom:2px solid #e67e22; padding-bottom:10px;">📋 Ma liste de vœux (Simulation)</h2>
+            <p style="font-size:0.9em; color:#666;">Glissez-déposez les éléments pour changer l'ordre. Les points sont recalculés en fonction de vos paramètres actuels.</p>
+
+            <div id="wishlist-container" class="wishlist-container"></div>
+
+            <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 15px; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-action" style="width:auto; background:#7f8c8d;" onclick="AppState.wishlist=[]; renderWishlist(); updateWishCounter();">🗑️ Tout effacer</button>
+                <button class="btn-action" style="width:auto; background:#e74c3c;" onclick="exportWishlistToPDF()">📄 PDF</button>
+                <button class="btn-action" style="width:auto; background:#27ae60;" onclick="exportWishlistCSV()">📥 Exporter CSV</button>
+                <button class="btn-action" style="width:auto; background:#2c3e50;" onclick="closeWishlistModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="explication-modal" class="modal" style="z-index: 4000;">
+        <div class="modal-content" style="max-width: 600px; border-top: 5px solid #3498db;">
+            <span class="close-modal" onclick="document.getElementById('explication-modal').style.display='none'">&times;</span>
+            <h2 style="margin-top:0; color:#2c3e50;">💡 Analyse de votre Barème</h2>
+            <div style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 15px;">Voici le détail réglementaire calculé pour ce vœu spécifique.</div>
+            
+            <div id="journal-container" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; line-height: 1.6; max-height: 400px; overflow-y: auto;">
+            </div>
+            
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="btn-action" style="background:#2c3e50; width:auto;" onclick="document.getElementById('explication-modal').style.display='none'">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-modal" class="modal" style="z-index: 5000;">
+        <div class="modal-content" style="max-width: 600px; border-top: 5px solid #e67e22;">
+            <span class="close-modal" onclick="document.getElementById('rule-modal').style.display='none'">&times;</span>
+            <h2 style="margin-top:0; color:#d35400;" id="rule-title">Titre</h2>
+            <div id="rule-content" style="font-size: 0.95em; color: #333; line-height: 1.5;"></div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="btn-action" style="background:#2c3e50; width:auto;" onclick="document.getElementById('rule-modal').style.display='none'">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="guide" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeGuide()">&times;</span>
+            <h2 style="margin-top:0; color:#d35400;">Bienvenue — 3 étapes, c'est tout</h2>
+            <div class="guide-step">
+                <div class="guide-num">1</div>
+                <p><b>Renseignez votre situation.</b> Bouton <b>🧮 Paramètres</b> en haut à droite : échelon,
+                   famille, bonifications. Votre barème s'affiche en haut de l'écran et se met à jour tout seul.</p>
+            </div>
+            <div class="guide-step">
+                <div class="guide-num">2</div>
+                <p><b>Explorez la carte.</b> Cherchez un établissement dans la barre de recherche, ou placez votre
+                   domicile (<b>🗺️ Zones &amp; Filtres → 🎯 Rayon</b>) pour ne voir que ce qui est à moins de X km.
+                   Cliquez sur un point : vous voyez le barème calculé pour ce vœu précis.</p>
+            </div>
+            <div class="guide-step">
+                <div class="guide-num">3</div>
+                <p><b>Construisez votre liste.</b> Ajoutez vos vœux, réordonnez-les par glisser-déposer dans
+                   <b>📋 Bilan Vœux</b>, puis exportez en PDF ou CSV pour préparer votre saisie SIAM.</p>
+            </div>
+            <p style="background:#fdf2e9; border-left:4px solid #e67e22; padding:10px; border-radius:4px; font-size:.88em; margin-bottom:0;">
+                Simulation indicative. Le barème officiel est celui d'I-Prof — vérifiez-le, et pensez à Colibris pour vos justificatifs.
+            </p>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="btn-action" style="background:#e67e22; width:auto;" onclick="closeGuide()">C'est parti</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-template" style="display:none;">
+        <div style="padding: 20px; font-family: Arial, sans-serif; color: #333;">
+            <div style="border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; display:flex; justify-content:space-between;">
+                <div>
+                    <h1 style="margin:0; font-size: 24px; color: #2c3e50;">Mouvement Intra 2026</h1>
+                    <span style="color:#7f8c8d;">Académie d'Amiens</span>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:bold; font-size:1.2em;" id="pdf-total-points">-- pts</div>
+                    <div style="font-size:0.8em; color:#7f8c8d;" id="pdf-date"></div>
+                </div>
+            </div>
+            <div style="background:#ecf0f1; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#2980b9; font-size:16px;">1. Ma Situation Retenue</h3>
+                <ul id="pdf-situation" style="list-style:none; padding:0; margin:0; font-size:14px;"></ul>
+            </div>
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#2980b9; font-size:16px;">2. Ma Stratégie de Vœux</h3>
+                <p style="font-size:12px; font-style:italic; margin-bottom:5px;">Liste indicative générée par le simulateur.</p>
+                <table style="width:100%; border-collapse: collapse; font-size:12px;">
+                    <thead>
+                        <tr style="background:#2c3e50; color:white;">
+                            <th style="padding:8px; text-align:center; width:10%;">Rang</th>
+                            <th style="padding:8px; text-align:left; width:20%;">Code</th>
+                            <th style="padding:8px; text-align:left; width:55%;">Libellé du Vœu</th>
+                            <th style="padding:8px; text-align:right; width:15%;">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdf-voeux-list"></tbody>
+                </table>
+            </div>
+            <div style="border: 2px solid #e67e22; padding:15px; border-radius:5px;">
+                <h3 style="margin-top:0; color:#d35400; font-size:16px;">3. Penser aux Justificatifs !</h3>
+                <ul id="pdf-checklist" style="padding-left:20px; font-size:12px;"></ul>
+            </div>
+            <div style="margin-top:40px; font-size:10px; text-align:center; color:#95a5a6; border-top:1px solid #eee; padding-top:10px;">
+                Document généré à titre indicatif. Ne remplace pas la confirmation officielle SIAM.
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* ==================== 1. DONNÉES INTÉGRÉES ==================== */
+
+    /* Les données ne sont plus collées dans la page : elles sont servies depuis ./data/.
+       La page passe ainsi de 13 Mo à ~120 Ko, et les couches transport (les plus lourdes)
+       ne sont téléchargées que si on coche la case correspondante. */
+    const DATA_DIR = './data/';
+    const DATA_FILES = {
+        groups:   'regroupements.json',
+        zr:       'zones_remplacement.json',
+        etabs:    'etablissements.csv',
+        railways: 'chemins_de_fer.json',
+        stations: 'gares.geojson'
+    };
+
+    async function fetchData(file, asText = false) {
+        const res = await fetch(DATA_DIR + file, { cache: 'no-cache' });
+        if (!res.ok) throw new Error(file + ' (HTTP ' + res.status + ')');
+        return asText ? res.text() : res.json();
+    }
+
+    let dataGroups = null, dataZr = null, dataCsvEtabs = null;
+
+
+
+        /* ==================== FONCTION DE DÉBOGAGE UI ==================== */
+        function updateStatus(message, isError = false) {
+            const sg = document.getElementById('status-global');
+            if (sg) {
+                if (isError) {
+                    sg.innerHTML = `❌ ${message}`;
+                    sg.className = "debug-status debug-error";
+                    console.error("[DEBUG ERREUR]", message);
+                } else {
+                    sg.innerHTML = `⏳ ${message}`;
+                    sg.className = "debug-status";
+                    console.log("[DEBUG]", message);
+                }
+            }
+        }
+
+        /* ==================== MOTEUR DE GLOSSAIRE ==================== */
+        const GLOSSAIRE = {
+            "REP+": { titre: "Réseau d'Éducation Prioritaire Renforcé", desc: "Quartiers connaissant les plus grandes difficultés sociales. Donne droit à une prime et des bonifications fortes (ex: 600 pts)." },
+            "REP": { titre: "Réseau d'Éducation Prioritaire", desc: "Secteurs rencontrant des difficultés sociales. Donne droit à des bonifications spécifiques (ex: 75 pts)." },
+            "SEGPA": { titre: "Section d'Enseignement Général et Professionnel Adapté", desc: "Classes pour collégiens en difficulté scolaire grave et durable." },
+            "TZR": { titre: "Titulaire sur Zone de Remplacement", desc: "Enseignant affecté sur une zone géographique pour remplacer des collègues absents." },
+            "MCS": { titre: "Mesure de Carte Scolaire", desc: "Fermeture ou blocage de votre poste actuel. Vous donne une priorité absolue (1500 pts) pour retrouver un poste équivalent." },
+            "RC": { titre: "Rapprochement de Conjoint", desc: "Bonification pour rejoindre le département ou la commune d'exercice professionnel de son conjoint." },
+            "APC": { titre: "Autorité Parentale Conjointe", desc: "Alternance de résidence de l'enfant ou droits de visite. Assimilé au Rapprochement de conjoint pour les points." },
+            "PI": { titre: "Parent Isolé", desc: "Parent exerçant seul l'autorité parentale (veuvage, non reconnaissance). Donne 30 pts sur les vœux larges." },
+            "QPV": { titre: "Quartier Prioritaire de la Ville", desc: "Territoire urbain en difficulté. Enseigner en QPV peut donner des points après plusieurs années." },
+            "ULIS": { titre: "Unité Localisée pour l'Inclusion Scolaire", desc: "Dispositif d'accueil pour élèves en situation de handicap." },
+            "DPT": { titre: "Vœu Département", desc: "Vœu très large couvrant tous les postes d'un département entier." },
+            "ACA": { titre: "Vœu Académie", desc: "Vœu ultime couvrant tous les établissements d'une académie." },
+            "ZRE": { titre: "Zone de Remplacement Infra", desc: "Petite zone de remplacement (un sous-secteur du département)." },
+            "ZRD": { titre: "Zone de Remplacement Départementale", desc: "Zone de remplacement couvrant l'ensemble d'un département." },
+            "ZRA": { titre: "Zone de Remplacement Académique", desc: "Zone de remplacement couvrant toute l'académie." },
+            "GEO": { titre: "Groupement de Communes", desc: "Vœu large couvrant plusieurs communes limitrophes." },
+            "COM": { titre: "Vœu Commune", desc: "Vœu large couvrant tous les établissements d'une même ville." },
+            "ETB": { titre: "Vœu Établissement", desc: "Vœu ultra-précis ciblant un collège ou un lycée en particulier." },
+            "RQTH": { titre: "Travailleur Handicapé", desc: "Reconnaissance de la Qualité de Travailleur Handicapé. Donne 100 points sur les vœux larges." }
+        };
+
+        function formaterTexte(texte) {
+            if (!texte) return "";
+            let nouveauTexte = texte;
+            const keys = Object.keys(GLOSSAIRE).sort((a, b) => b.length - a.length);
+
+            keys.forEach(acronyme => {
+                const safeKey = acronyme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(^|[^a-zA-Z0-9_])(${safeKey})(?![a-zA-Z0-9_])(?![^<]*>)`, 'g');
+                nouveauTexte = nouveauTexte.replace(regex, `$1<span class="acronym-word" onmouseenter="showAcrTooltip(this, '$2')" onmouseleave="hideAcrTooltip()">$2</span>`);
+            });
+            return nouveauTexte;
+        }
+
+        function showAcrTooltip(element, acronyme) {
+            const data = GLOSSAIRE[acronyme];
+            if (!data) return;
+            const tip = document.getElementById('global-tooltip');
+            tip.innerHTML = `<div style="color:#f39c12; font-size:1.1em; font-weight:bold; margin-bottom:4px; border-bottom:1px solid #555; padding-bottom:4px;">${data.titre}</div><div style="font-size:0.95em; color:#ddd; line-height:1.4;">${data.desc}</div>`;
+            tip.style.display = 'block';
+
+            const rect = element.getBoundingClientRect();
+            let t = rect.top - tip.offsetHeight - 10;
+            let l = rect.left + (rect.width / 2) - (tip.offsetWidth / 2);
+
+            if (l < 10) l = 10;
+            if (l + tip.offsetWidth > window.innerWidth - 10) l = window.innerWidth - tip.offsetWidth - 10;
+            if (t < 10) t = rect.bottom + 10;
+
+            tip.style.top = t + 'px';
+            tip.style.left = l + 'px';
+        }
+
+        function hideAcrTooltip() {
+            document.getElementById('global-tooltip').style.display = 'none';
+        }
+
+        /* ==================== FICHES RÉGLEMENTAIRES ==================== */
+        const REGLES_OFFICIELLES = {
+            "corps": { titre: "🎓 Corps des Agrégés", bareme: "+120 pts (Lycée uniquement)", regle: "Le statut d'agrégé ne donne pas de points forfaitaires globaux. Il octroie une bonification de 120 points uniquement si le vœu formulé cible précisément un établissement (ETB) de type Lycée.", source: "LDGA 2026 - Annexe 3" },
+            "carriere": { titre: "📈 Échelon et Classe", bareme: "De 14 à 98 pts", regle: "Les points sont calculés selon votre échelon au 31/08.<br>• <b>Classe Normale :</b> 14 pts (éch 1) + 7 pts par échelon supplémentaire (Plafond à 98 pts).<br>• <b>Hors-Classe :</b> forfait 56 pts + 7 pts / échelon.<br>• <b>Classe Exceptionnelle :</b> forfait 77 pts + 7 pts / échelon.", source: "LDGA 2026 - Éléments communs" },
+            "anc_poste": { titre: "⏳ Ancienneté dans le poste", bareme: "20 pts / an + Bonus", regle: "L'ancienneté sur votre poste actuel rapporte <b>20 points par an</b>.<br>Un bonus de fidélisation de <b>+50 points</b> est accordé par tranche de 4 ans passées sur le même poste.", source: "LDGA 2026 - Stabilité sur poste" },
+            "famille": { titre: "💍 Situation Familiale (RC / APC / PI)", bareme: "Jusqu'à +150,2 pts", regle: "<b>Rapprochement de conjoint (RC) / Autorité Parentale Conjointe (APC) :</b><br>Pour déclencher ces points, votre <b>tout premier vœu</b> infra-départemental doit obligatoirement correspondre à la commune d'exercice (ou résidence) du conjoint (ou un vœu l'englobant, type GEO).<br>• Vœu large (DPT / ZRD) : +150,2 pts.<br>• Vœu local (COM / GEO / ZRE) : +90,2 pts.<br><br><b>Parent Isolé (PI) :</b><br>• +30 pts sur les vœux larges (COM, GEO, DPT) pour améliorer les conditions de vie de l'enfant. Il faut détenir l'autorité parentale exclusive.<br><br>⚠️ <i>Un vœu Établissement précis (ETB) ne donne AUCUN point familial.</i>", source: "LDGA 2026 - Annexe 1" },
+            "enfants": { titre: "👶 Enfants à charge", bareme: "+100 pts / enfant", regle: "Une bonification de <b>100 points par enfant</b> de moins de 18 ans au 31/08/2026 est accordée. Cette bonification ne s'active que si la demande de rapprochement de conjoint (RC/APC) est validée.", source: "LDGA 2026 - Annexe 1" },
+            "separation": { titre: "🚆 Éloignement du conjoint", bareme: "De 50 à 600 pts", regle: "La bonification pour éloignement du conjoint est non linéaire et s'ajoute aux points de RC :<br>• 1 an = <b>+50 pts</b><br>• 2 ans = <b>+280 pts</b><br>• 3 ans = <b>+400 pts</b><br>• 4 ans et plus = <b>+600 pts</b>.", source: "LDGA 2026 - Annexe 1" },
+            "voeu_pref": { titre: "⭐ Vœu Préférentiel", bareme: "+15 pts / an (Max 75 pts)", regle: "Si vous exprimez chaque année, en premier vœu, le même vœu large (Commune, Groupement, ou Département) sans aucune exclusion de type d'établissement, vous cumulez 15 points par année consécutive.<br>⚠️ <i>Ne s'applique pas sur un vœu Établissement.</i>", source: "LDGA 2026 - Annexe 4" },
+            "stagiaire": { titre: "🎓 Bonification Stagiaires", bareme: "De 19 à 1000 pts", regle: "• <b>Stagiaire classique :</b> +19 pts sur le 1er vœu large.<br>• <b>Ex-contractuel (Enseignant/AED/AESH) :</b> +50 à +65 pts selon votre échelon de classement (sur les vœux COM, GEO, DPT).<br>• <b>Ex-fonctionnaire :</b> +1000 pts uniquement pour retourner sur l'ancienne affectation.", source: "LDGA 2026 - Annexe 5" },
+            "tzr": { titre: "⚓ Stabilisation des TZR", bareme: "De 40 à 150 pts", regle: "Pour encourager la titularisation sur poste fixe des TZR :<br>• <b>1 à 2 ans :</b> +40 pts (sur ETB, COM, GEO) / +150 pts (sur DPT).<br>• <b>3 à 5 ans :</b> +70 pts (sur ETB, COM, GEO) / +150 pts (sur DPT).<br>• <b>6 ans et plus :</b> +90 pts (sur ETB, COM, GEO) / +150 pts (sur DPT) auxquels s'ajoutent 10 pts par année supplémentaire.", source: "LDGA 2026 - Mesures spécifiques" },
+            "mcs": { titre: "🚨 Mesure de Carte Scolaire", bareme: "+1500 pts absolus", regle: "Si votre poste a été supprimé, vous bénéficiez d'une priorité absolue de <b>1500 points</b> pour retrouver un poste équivalent. Vous devez formuler vos vœux dans un ordre concentrique strict (Établissement perdu, puis Commune, puis GEO, puis DPT) pour conserver ce bénéfice.", source: "LDGA 2026 - Règles de réaffectation" },
+            "rqth": { titre: "♿ RQTH / Handicap", bareme: "+100 pts automatiques", regle: "La Reconnaissance de Qualité de Travailleur Handicapé donne droit à une bonification automatique de <b>100 points</b> sur tous les vœux larges (Commune, Groupement, Département).<br>⚠️ <i>Pour obtenir cette bonification sur un vœu d'Établissement précis, il faut obligatoirement une dérogation accordée par le Médecin Conseiller du Recteur.</i>", source: "LDGA 2026 - Annexe 2" },
+            "rep": { titre: "🏫 Éducation Prioritaire (REP/REP+)", bareme: "Entrée ou Sortie", regle: "• <b>Entrée en REP+ :</b> +600 pts si vous ciblez précisément l'établissement concerné (Vœu ETB).<br>• <b>Entrée en REP :</b> +75 pts si vous ciblez l'établissement concerné.<br>• <b>Sortie (après 5 ans) :</b> +100 pts accordés sur les vœux larges pour faciliter la mutation des enseignants exerçant déjà en REP/REP+.", source: "LDGA 2026 - Annexe 3" }
+        };
+
+        function showOfficialRule(key) {
+            const rule = REGLES_OFFICIELLES[key];
+            if (!rule) return;
+            const titleElem = document.getElementById('rule-title');
+            const contentElem = document.getElementById('rule-content');
+            const modalElem = document.getElementById('rule-modal');
+            if (titleElem && contentElem && modalElem) {
+                titleElem.innerHTML = rule.titre;
+                contentElem.innerHTML = `
+                    <div style="background:#f1f8ff; padding:12px; border-left:4px solid #3498db; margin-bottom:15px; border-radius:3px;">
+                        <span style="font-size:1.1em;"><strong>🎯 Barème appliqué :</strong> <span style="color:#2980b9;">${rule.bareme}</span></span>
+                    </div>
+                    <p style="margin-bottom:15px; text-align:justify;"><strong>📖 Règle de calcul :</strong><br>${formaterTexte(rule.regle)}</p>
+                    <div style="font-size:0.85em; color:#7f8c8d; font-style:italic; border-top:1px solid #eee; padding-top:10px;">
+                        📌 Source : ${rule.source}
+                    </div>
+                `;
+                modalElem.style.display = 'block';
+            }
+        }
+
+        /* ==================== CONFIG ==================== */
+        const AppState = {
+            map: null,
+            layers: { railways: null, stations: null, etablissements: L.layerGroup(), zones: L.layerGroup(), radius: L.layerGroup() },
+            etablissementObjects: [],
+            data: { geo: null, zr: null },
+            currentMode: 'GEO',
+            selectedEtab: null,
+            radiusCenter: null,
+            isPicking: false
+        };
+
+        /* ==================== 2. CHARGEMENT DES DONNÉES EN MÉMOIRE ==================== */
+        async function loadDataChain() {
+            splash("Chargement des données…");
+            try {
+                const [groups, zr, csv] = await Promise.all([
+                    fetchData(DATA_FILES.groups),
+                    fetchData(DATA_FILES.zr),
+                    fetchData(DATA_FILES.etabs, true)
+                ]);
+                dataGroups = groups; dataZr = zr; dataCsvEtabs = csv;
+                AppState.data.geo = groups;
+                AppState.data.zr = zr;
+            } catch (err) {
+                splash(null);
+                updateStatus("Données introuvables : " + err.message + ". La page doit être ouverte depuis un serveur web (ou son adresse en ligne), pas par double-clic sur le fichier.", true);
+                showToast("Chargement impossible", "Les fichiers du dossier data/ n'ont pas pu être lus.", "error", 12000);
+                return;
+            }
+            splash("Placement des établissements…");
+            updateStatus("Extraction des établissements...");
+            loadCSVAndLinkGroups();
+        }
+
+        function loadCSVAndLinkGroups() { 
+            if (typeof dataCsvEtabs === 'undefined') {
+                updateStatus("Erreur : La constante dataCsvEtabs est introuvable. Avez-vous collé les données ?", true);
+                return;
+            }
+
+            Papa.parse(dataCsvEtabs, { 
+                header: true, 
+                delimiter: ";", 
+                skipEmptyLines: true, 
+                error: function(err) {
+                    updateStatus(`Erreur de lecture CSV: ${err.message}`, true);
+                },
+                complete: function (res) { 
+                    try {
+                        AppState.layers.etablissements.clearLayers(); 
+                        AppState.etablissementObjects = []; 
+
+                        res.data.forEach(row => { 
+                            const e = new Etablissement(row); 
+                            if (e.isValid()) { 
+                                linkDataToEtab(e, AppState.data.geo, 'GEO', 'departments'); 
+                                linkDataToEtab(e, AppState.data.zr, 'ZR', 'zones_remplacement'); 
+                                e.createMarker().addTo(AppState.layers.etablissements); 
+                                AppState.etablissementObjects.push(e);
+                            } 
+                        }); 
+                        
+                        const sg = document.getElementById('status-global');
+                        if (sg) {
+                            sg.innerHTML = `✅ ${AppState.etablissementObjects.length} établissements chargés.`;
+                            sg.className = "debug-status";
+                            sg.style.color = "#27ae60";
+                            sg.style.borderLeftColor = "#27ae60";
+                            sg.style.background = "#e8f8f5";
+                        }
+                        switchMode('GEO');
+                        updateUI(false);
+                        splash(null);
+                    } catch (parseError) {
+                        updateStatus(`Erreur fatale de données : ${parseError.message}`, true);
+                    }
+                } 
+            }); 
+        }
+
+        /* ==================== LOGIQUE RAYON ET FILTRES ==================== */
+        function toggleRadiusPicker() {
+            AppState.isPicking = !AppState.isPicking;
+            const btn = document.getElementById('btn-pick-radius');
+            const mapDiv = document.getElementById('map');
+            if (btn && mapDiv) {
+                if (AppState.isPicking) { btn.textContent = "Cliquez sur la carte..."; btn.style.background = "#27ae60"; mapDiv.classList.add('map-picking'); }
+                else { btn.textContent = "📍 Placer mon domicile"; btn.style.background = "#e67e22"; mapDiv.classList.remove('map-picking'); }
+            }
+        }
+        function onMapClick(e) {
+            if (!AppState.isPicking) return;
+            AppState.radiusCenter = e.latlng;
+            toggleRadiusPicker();
+            updateRadiusCircle();
+        }
+        function updateRadiusCircle() {
+            if (!AppState.radiusCenter) return;
+            const slider = document.getElementById('radius-slider');
+            const radiusKm = slider ? parseFloat(slider.value) : 10;
+            const display = document.getElementById('radius-display');
+            if (display) display.textContent = radiusKm + " km";
+            
+            AppState.layers.radius.clearLayers();
+            L.marker(AppState.radiusCenter, { draggable: true, zIndexOffset: 1000 }).addTo(AppState.layers.radius)
+                .bindPopup("Votre domicile").openPopup()
+                .on('dragend', function (event) { AppState.radiusCenter = event.target.getLatLng(); updateRadiusCircle(); });
+            L.circle(AppState.radiusCenter, { radius: radiusKm * 1000, color: '#e74c3c', fillColor: '#e74c3c', fillOpacity: 0.1, weight: 2, dashArray: '5,5' }).addTo(AppState.layers.radius);
+            AppState.layers.radius.addTo(AppState.map);
+            
+            const chkMask = document.getElementById('chk-mask-outside');
+            if (chkMask && chkMask.checked) applyGlobalFilters();
+        }
+        function clearRadius() {
+            AppState.layers.radius.clearLayers(); AppState.radiusCenter = null; 
+            const chkMask = document.getElementById('chk-mask-outside');
+            if (chkMask) chkMask.checked = false; 
+            applyGlobalFilters();
+        }
+
+        function applyGlobalFilters() {
+            const checkedZones = Array.from(document.querySelectorAll('.chk-zone:checked')).map(c => c.value);
+            const showOthers = checkedZones.includes("OTHERS");
+            const mode = AppState.currentMode;
+            const colElem = document.getElementById('chk_type_col');
+            const showCol = colElem ? colElem.checked : true;
+            const lycElem = document.getElementById('chk_type_lyc');
+            const showLyc = lycElem ? lycElem.checked : true;
+            const lpElem = document.getElementById('chk_type_lp');
+            const showLP = lpElem ? lpElem.checked : true;
+            const maskElem = document.getElementById('chk-mask-outside');
+            const maskOutside = maskElem ? maskElem.checked : false;
+            const sliderElem = document.getElementById('radius-slider');
+            const radiusKm = sliderElem ? parseFloat(sliderElem.value) : 10;
+
+            AppState.etablissementObjects.forEach(etab => {
+                if (!etab.marker) return;
+                let visibleZone = false;
+                if (etab.groupes[mode].length > 0) { if (etab.groupes[mode].some(g => checkedZones.includes(g.code))) visibleZone = true; } else if (showOthers) visibleZone = true;
+                let visibleType = false;
+                if (etab.category === 'COL' && showCol) visibleType = true;
+                if (etab.category === 'LYC' && showLyc) visibleType = true;
+                if (etab.category === 'LP' && showLP) visibleType = true;
+                if (etab.category === 'AUTRE' && (showCol || showLyc || showLP)) visibleType = true;
+
+                let visibleRadius = true;
+                if (maskOutside && AppState.radiusCenter) {
+                    const dist = AppState.map.distance([etab.lat, etab.lon], AppState.radiusCenter);
+                    if (dist > radiusKm * 1000) visibleRadius = false;
+                }
+
+                if (visibleZone && visibleType && visibleRadius) { if (!AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.addLayer(etab.marker); }
+                else { if (AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.removeLayer(etab.marker); }
+            });
+        }
+
+        function openLeftTab(tabId, btn) { document.querySelectorAll('#sidebar-left .tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('#sidebar-left .tab-btn').forEach(b => b.classList.remove('active')); const t = document.getElementById(tabId); if (t) t.classList.add('active'); if (btn) btn.classList.add('active'); }
+        /* Ces quatre fonctions étaient appelées par la page mais avaient disparu du script :
+           le bouton Glossaire et les messages d'alerte étaient donc sans effet. */
+        function openGlossary() {
+            const gl = document.getElementById('glossary-list');
+            const gm = document.getElementById('glossary-modal');
+            if (!gl || !gm) return;
+            gl.innerHTML = Object.entries(GLOSSAIRE)
+                .sort((a, b) => a[0].localeCompare(b[0], 'fr'))
+                .map(([sigle, v]) => `<div class="glossary-item"><span class="glossary-term">${sigle}</span> <b>${v.titre}</b><br><span style="color:#555;">${v.desc}</span></div>`)
+                .join('');
+            gm.style.display = "block";
+        }
+        function closeGlossary() { const gm = document.getElementById('glossary-modal'); if (gm) gm.style.display = "none"; }
+
+        function showToast(title, message, type = 'info', duration = 5000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `toast toast-${type}`;
+            const icon = { success: "✅", warning: "⚠️", error: "⛔" }[type] || "ℹ️";
+            el.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-content"><span class="toast-title">${title}</span><span class="toast-message">${message}</span></div>`;
+            container.appendChild(el);
+            const timer = setTimeout(() => closeToast(el), duration);
+            el.onclick = () => { clearTimeout(timer); closeToast(el); };
+        }
+        function closeToast(el) {
+            el.classList.add('hiding');
+            el.addEventListener('animationend', () => { if (el.parentElement) el.remove(); });
+        }
+
+        /* Fermer une fenêtre en cliquant à côté, ou avec Échap. */
+        window.addEventListener('click', e => {
+            ['glossary-modal', 'rule-modal', 'explication-modal', 'wishlist-modal', 'guide'].forEach(id => {
+                const m = document.getElementById(id);
+                if (m && e.target === m) m.style.display = "none";
+            });
+        });
+        window.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            document.querySelectorAll('.modal').forEach(m => { m.style.display = "none"; });
+            const sr = document.getElementById('search-results');
+            if (sr) sr.classList.remove('open');
+        });
+
+        function openTab(tabId, btn) { document.querySelectorAll('#sidebar-right .tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('#sidebar-right .tab-btn').forEach(b => b.classList.remove('active')); const t = document.getElementById(tabId); if (t) t.classList.add('active'); if (btn) btn.classList.add('active'); }
+
+        function linkDataToEtab(e, j, t, k) { 
+            if (!j || !j[k]) return; 
+            const vn = normalizeCityName(e.ville); 
+            j[k].forEach(d => { 
+                d.zones.forEach(z => { 
+                    const cs = z.cities; 
+                    let m = false, dst = null; 
+                    cs.forEach(c => { 
+                        const cn = (typeof c === 'string') ? c : c.name; 
+                        if (normalizeCityName(cn) === vn) { 
+                            m = true; 
+                            if (typeof c !== 'string') dst = c.distance 
+                        } 
+                    }); 
+                    if (m) e.groupes[t].push({ code: z.code, nom: z.zone_name, dist: dst, type: t }) 
+                }) 
+            }) 
+        }
+
+        function getConvexHull(p) { 
+            if (p.length < 3) return p; 
+            p.sort((a, b) => a[1] === b[1] ? a[0] - b[0] : a[1] - b[1]); 
+            const c = (o, a, b) => (a[1] - o[1]) * (b[0] - o[0]) - (a[0] - o[0]) * (b[1] - o[1]); 
+            const l = []; 
+            for (let x of p) { while (l.length >= 2 && c(l[l.length - 2], l[l.length - 1], x) <= 0) l.pop(); l.push(x) } 
+            const u = []; 
+            for (let i = p.length - 1; i >= 0; i--) { const x = p[i]; while (u.length >= 2 && c(u[u.length - 2], u[u.length - 1], x) <= 0) u.pop(); u.push(x) } 
+            l.pop(); u.pop(); return l.concat(u) 
+        }
+
+        function addMarginToShape(coords, factor) {
+            if (coords.length === 0) return coords;
+            let cLat = 0, cLon = 0;
+            coords.forEach(p => { cLat += p[0]; cLon += p[1]; });
+            cLat /= coords.length; cLon /= coords.length;
+            return coords.map(p => {
+                const vecLat = p[0] - cLat; const vecLon = p[1] - cLon;
+                return [ cLat + vecLat * factor, cLon + vecLon * factor ];
+            });
+        }
+
+        function generateCleanPolygon(points) {
+            if (points.length === 1) { const lat = points[0][0]; const lon = points[0][1]; const r = 0.006; return [ [lat + r, lon], [lat, lon + r * 1.5], [lat - r, lon], [lat, lon - r * 1.5] ]; }
+            if (points.length === 2) { const p1 = points[0]; const p2 = points[1]; const r = 0.004; return [ [p1[0] + r, p1[1] + r], [p2[0] + r, p2[1] + r], [p2[0] - r, p2[1] - r], [p1[0] - r, p1[1] - r] ]; }
+            const hull = getConvexHull(points);
+            return addMarginToShape(hull, 1.08);
+        }
+
+        function normalizeCityName(n) { if (!n) return ""; let x = n.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); return x.replace(/\//g, " SUR ").replace(/-/g, " ").replace(/'/g, " ").replace(/\bST\b/g, "SAINT").replace(/\bSTE\b/g, "SAINTE").replace(/\s+/g, " ").trim() }
+        
+        function switchMode(m) {
+            AppState.currentMode = m;
+            if (m === 'COM') { generateCommuneCheckboxes(); } 
+            else {
+                const d = (m === 'GEO') ? AppState.data.geo : AppState.data.zr;
+                const k = (m === 'GEO') ? 'departments' : 'zones_remplacement';
+                generateCheckboxes(d, k);
+            }
+            rebuildPolygonsForMode();
+            applyGlobalFilters();
+        }
+
+        const transportPending = {};
+        async function toggleTransport(t) {
+            const chk = document.getElementById(`chk_${t}`);
+            if (!chk) return;
+
+            if (!chk.checked) {
+                if (AppState.layers[t]) AppState.map.removeLayer(AppState.layers[t]);
+                return;
+            }
+            if (!AppState.layers[t]) {
+                if (transportPending[t]) return;
+                transportPending[t] = true;
+                chk.disabled = true;
+                try {
+                    const fc = await fetchData(DATA_FILES[t]);
+                    AppState.layers[t] = (t === 'railways')
+                        ? L.geoJSON(fc, { style: { color: "#7f8c8d", dashArray: '4,4', weight: 1 }, pane: 'railwayPane' })
+                        : L.geoJSON(fc, {
+                            pointToLayer: (f, l) => L.circleMarker(l, { radius: 4, color: "#000", fillColor: "#2c3e50", fillOpacity: 1, pane: 'stationPane' }),
+                            onEachFeature: (f, l) => { if (f.properties && f.properties.libelle) l.bindPopup("🚉 Gare : " + f.properties.libelle); }
+                        });
+                } catch (err) {
+                    showToast("Couche indisponible", err.message, "error");
+                    chk.checked = false;
+                    return;
+                } finally {
+                    chk.disabled = false;
+                    transportPending[t] = false;
+                }
+            }
+            if (chk.checked) AppState.layers[t].addTo(AppState.map);
+        }
+        
+        function rebuildPolygonsForMode() {
+            AppState.layers.zones.clearLayers();
+            const pts = {};
+            const m = AppState.currentMode;
+
+            AppState.etablissementObjects.forEach(e => {
+                if (e.groupes[m]) {
+                    e.groupes[m].forEach(g => {
+                        if (!pts[g.code]) pts[g.code] = { name: g.nom, points: [] };
+                        if(!isNaN(e.lat) && !isNaN(e.lon)) {
+                            pts[g.code].points.push([e.lat, e.lon]);
+                        }
+                    });
+                }
+            });
+
+            const cols = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'];
+            let i = 0;
+
+            for (const [code, d] of Object.entries(pts)) {
+                if (d.points.length >= 1) {
+                    const polyShape = generateCleanPolygon([...d.points]);
+                    const safeName = d.name.replace(/'/g, "\\'");
+                    let typeLabel = "Zone";
+                    let typeCode = "ZONE";
+                    if (m === 'COM') { typeLabel = "Commune"; typeCode = "COM"; }
+                    else if (m === 'GEO') { typeLabel = "Groupement"; typeCode = "GEO"; }
+                    else if (m === 'ZR') { typeLabel = "Zone Rempl."; typeCode = "ZR"; }
+
+                    const centerLat = d.points[0][0];
+                    const centerLon = d.points[0][1];
+
+                    const zonePolygon = L.polygon(polyShape, {
+                        color: cols[i++ % cols.length],
+                        weight: 2,         
+                        opacity: 1,        
+                        dashArray: '5, 5', 
+                        fillOpacity: 0.15, 
+                        pane: 'zonesPane',
+                        lineJoin: 'round'  
+                    });
+
+                    zonePolygon.on('click', function(e) {
+                        if (AppState.isPicking) {
+                            onMapClick(e);
+                            AppState.map.closePopup();
+                        }
+                    });
+
+                    zonePolygon.bindPopup(formaterTexte(`
+                        <b>${d.name}</b><br>
+                        <span style="color:#666; font-size:0.9em;">Type: ${typeLabel}</span><br>
+                        <span style="font-family:monospace; font-weight:bold;">Code: ${code}</span><br>
+                        <button class="btn-add-wish" onclick="addToWishlist('${typeCode}', '${code}', '${safeName}', '${typeLabel}', ${centerLat}, ${centerLon})">➕ Ajouter ce vœu</button>
+                    `)).addTo(AppState.layers.zones);
+                }
+            }
+            toggleZonePolygons();
+        }
+
+        function toggleZonePolygons() { 
+            const chk = document.getElementById('chk_show_zones');
+            if (chk && chk.checked) AppState.layers.zones.addTo(AppState.map); 
+            else AppState.map.removeLayer(AppState.layers.zones); 
+        }
+
+        function toggleTags() {
+            const mapDiv = document.getElementById('map');
+            const checkbox = document.getElementById('chk_show_tags');
+            if(mapDiv && checkbox) {
+                if (checkbox.checked) { mapDiv.classList.remove('no-tags'); } 
+                else { mapDiv.classList.add('no-tags'); }
+            }
+        }
+
+        function generateCheckboxes(d, k) { 
+            const c = document.getElementById('checkboxes-list'); 
+            if (!c) return;
+            c.innerHTML = ""; 
+            if (!d || !d[k]) return; 
+            
+            d[k].forEach((dept, i) => { 
+                const id = `d_${i}`; 
+                const g = document.createElement('div'); 
+                g.className = 'dept-group'; 
+                g.innerHTML = `<div class="dept-header" onclick="if(event.target.tagName === 'INPUT') return; const cb=document.getElementById('${id}');cb.checked=!cb.checked;toggleDepartment('${id}')"><input type="checkbox" id="${id}" checked onchange="toggleDepartment('${id}')"><label>${dept.department_name}</label></div>`; 
+                const l = document.createElement('div'); 
+                l.className = 'zone-list'; 
+                dept.zones.forEach(z => { 
+                    l.innerHTML += `<div class="zone-item" onclick="if(event.target.tagName === 'INPUT') return; const cb=this.querySelector('input');cb.checked=!cb.checked;applyGlobalFilters()"><input type="checkbox" class="chk-zone" data-parent="${id}" value="${z.code}" checked onchange="applyGlobalFilters()"><label>${z.zone_name}</label></div>` 
+                }); 
+                g.appendChild(l); 
+                c.appendChild(g) 
+            }); 
+            c.innerHTML += `<div class="dept-group"><div class="dept-header"><input type="checkbox" id="d_oth" checked onchange="toggleDepartment('d_oth')"><label>Hors Zone</label></div><div class="zone-list"><div class="zone-item"><input type="checkbox" class="chk-zone" data-parent="d_oth" value="OTHERS" checked onchange="applyGlobalFilters()"><label>Non classé</label></div></div></div>` 
+        }
+
+        function toggleDepartment(pid) { 
+            const parentCb = document.getElementById(pid);
+            if(!parentCb) return;
+            const s = parentCb.checked; 
+            document.querySelectorAll(`.chk-zone[data-parent="${pid}"]`).forEach(c => c.checked = s); 
+            applyGlobalFilters() 
+        }
+        
+        class Etablissement {
+            constructor(r) {
+                const getVal = (key) => r[key] || r[Object.keys(r).find(k => k && k.includes(key))] || "";
+
+                this.nom = getVal('Nom_etablissement');
+                this.type = getVal('Type_etablissement');
+                this.nature = getVal('libelle_nature');
+                this.ville = getVal('Nom_commune');
+                this.educationPrioritaire = getVal('Appartenance_Education_Prioritaire');
+                this.lat = parseFloat(r['latitude'] || r['Latitude'] || "0");
+                this.lon = parseFloat(r['longitude'] || r['Longitude'] || "0");
+                this.Identifiant_de_l_etablissement = getVal('Identifiant_de_l_etablissement') || getVal('code_uai');
+                this.Telephone = getVal('Telephone') || getVal('telephone');
+                this.Mail = getVal('Mail') || getVal('mail');
+                this.Web = getVal('Web') || getVal('web');
+                this.segpa = r['Segpa'] || r['segpa'] || "";
+                
+                this.groupes = { GEO: [], ZR: [], COM: [] };
+                this.marker = null;
+
+                let rawCode = r['Code_commune'] || r['code_commune'] || "";
+                if (rawCode) {
+                    const fmtCode = String(rawCode).trim().padStart(6, '0');
+                    this.groupes.COM.push({ code: fmtCode, nom: this.ville, type: 'COM' });
+                }
+
+                const n = this.nature.toUpperCase();
+                if (n.includes("PROFESSIONNEL") || n.includes("EREA") || n.includes("SEP")) this.category = "LP";
+                else if (n.includes("LYCEE")) this.category = "LYC";
+                else if (n.includes("COLLEGE")) this.category = "COL";
+                else {
+                    const t = this.type.toUpperCase();
+                    if (t.includes("LYCÉE")) this.category = "LYC";
+                    else if (t.includes("COLLÈGE")) this.category = "COL";
+                    else this.category = "AUTRE"
+                }
+            }
+
+            isValid() { return !isNaN(this.lat) && !isNaN(this.lon) && this.lat !== 0 && this.lon !== 0; }
+
+            createMarker() {
+                if (!this.isValid()) return null;
+
+                let c = '#3498db';
+                if (this.category === 'LYC') c = '#e74c3c';
+                if (this.category === 'LP') c = '#8e44ad';
+                if (this.category === 'COL') c = '#2ecc71';
+
+                const m = L.circleMarker([this.lat, this.lon], {
+                    radius: 6, fillColor: c, color: "#fff", weight: 1, opacity: 1, fillOpacity: 0.9, pane: 'etabsPane'
+                });
+
+                m.on('click', () => { AppState.selectedEtab = this; updateUI(true) });
+
+                const jsSafeName = (this.nom || "Inconnu").replace(/'/g, "\\'");
+                const jsSafeVille = (this.ville || "Inconnu").replace(/'/g, "\\'");
+
+                let badgesHtml = "";
+                if (this.educationPrioritaire && this.educationPrioritaire.includes("REP+")) {
+                    badgesHtml += `<span class="badge-etab badge-rep-plus">REP+</span>`;
+                } else if (this.educationPrioritaire && this.educationPrioritaire.includes("REP")) {
+                    badgesHtml += `<span class="badge-etab badge-rep">REP</span>`;
+                }
+                if (this.segpa === true || this.segpa === "Oui" || this.segpa === "1") {
+                    badgesHtml += `<span class="badge-etab badge-segpa">SEGPA</span>`;
+                }
+
+                const codeEtab = this.Identifiant_de_l_etablissement || "N/C";
+                const phone = this.Telephone;
+                const emailAddr = this.Mail;
+                const webSite = this.Web;
+
+                let contactHtml = `<div style="margin-top:8px; padding-top:5px; border-top:1px solid #eee; font-size:0.85em; color:#444; line-height:1.5;">`;
+                contactHtml += `<div>🆔 <b>${codeEtab}</b></div>`;
+                if (phone) contactHtml += `<div>📞 ${phone}</div>`;
+                if (emailAddr) contactHtml += `<div>📧 <a href="mailto:${emailAddr}" style="color:#2980b9; text-decoration:none;">${emailAddr}</a></div>`;
+                if (webSite) {
+                    let safeUrl = webSite.startsWith('http') ? webSite : 'http://' + webSite;
+                    contactHtml += `<div>🌐 <a href="${safeUrl}" target="_blank" style="color:#2980b9; text-decoration:none; font-weight:bold;">Site web</a></div>`;
+                }
+                contactHtml += `</div>`;
+
+                let description = `<b>${this.nom}</b><br>${this.ville}<br><span style="font-size:0.8em;color:#666">${this.nature || this.type}</span>`;
+                description = formaterTexte(description);
+                badgesHtml = formaterTexte(badgesHtml);
+
+                const popupContent = `
+            ${description}
+            <div style="margin:5px 0;">${badgesHtml}</div>
+            ${contactHtml}
+            <div style="margin-top:8px; text-align:center;">
+                <button class="btn-add-wish" onclick="addToWishlist('ETB', '${codeEtab}', '${jsSafeName}', '${jsSafeVille}', ${this.lat}, ${this.lon})">
+                    ➕ Ajouter aux vœux
+                </button>
+            </div>`;
+
+                m.bindPopup(popupContent);
+                m.bindTooltip("...", {
+                    permanent: true, direction: 'top', interactive: false,
+                    className: 'score-tag score-normal', offset: [0, -5], pane: 'tooltipPane'
+                });
+
+                this.marker = m;
+                return m;
+            }
+
+            updateTag(b) {
+                if (!this.marker) return;
+                const r = calculateBreakdown(this, 'ETB');
+                const ib = (r.total > b.total);
+                this.marker.setTooltipContent(r.total.toFixed(0));
+                if (this.marker.getTooltip()) {
+                    const el = this.marker.getTooltip().getElement();
+                    if (el) el.className = `leaflet-tooltip leaflet-zoom-animated leaflet-tooltip-top ${ib ? 'score-tag score-bonus' : 'score-tag score-normal'}`
+                }
+            }
+        }
+
+        /* ==================== MOTEUR DE CALCUL EXPERT ==================== */
+        function calculateBreakdown(e, typeVoeu = 'ETB') {
+            let d = [], t = 0;
+            let journal = []; 
+
+            const ecElem = document.getElementById('echelon');
+            const ec = parseInt(ecElem ? ecElem.value : 4) || 1;
+            
+            const classeElem = document.getElementById('classe');
+            const classe = classeElem ? classeElem.value : 'normale';
+            
+            let ptsEchelon = 0;
+            if (classe === 'normale') ptsEchelon = 14 + 7 * (ec - 1);
+            else if (classe === 'hors_classe') ptsEchelon = 56 + 7 * (ec - 1);
+            else if (classe === 'classe_exc') ptsEchelon = 77 + 7 * (ec - 1);
+            if (classe === 'normale' && ptsEchelon > 98) ptsEchelon = 98;
+
+            t += ptsEchelon;
+            d.push({ label: `Échelon ${ec} (${classe})`, pts: ptsEchelon });
+            journal.push(`✅ Échelon ${ec} : +${ptsEchelon} pts.`);
+
+            const apElem = document.getElementById('anc_poste');
+            const ap = parseInt(apElem ? apElem.value : 0) || 0;
+            if (ap > 0) {
+                let ptsAnc = 20 * ap;
+                const tranches = Math.floor(ap / 4);
+                if (tranches > 0) ptsAnc += tranches * 50;
+                t += ptsAnc;
+                d.push({ label: `Anc. Poste (${ap} ans)`, pts: ptsAnc });
+                journal.push(`✅ Ancienneté de poste (${ap} ans) : +${ptsAnc} pts.`);
+            }
+
+            const famElem = document.getElementById('situation_familiale');
+            const fam = famElem ? famElem.value : '';
+            
+            const enfElem = document.getElementById('enfants');
+            const enfants = parseInt(enfElem ? enfElem.value : 0) || 0;
+            
+            const sepElem = document.getElementById('separation');
+            const separation = parseInt(sepElem ? sepElem.value : 0) || 0;
+
+            if (["RC", "APC"].includes(fam)) {
+                if (typeVoeu === 'ETB') {
+                    journal.push(`<span style="color:#c0392b;">❌ RC/APC refusé : 0 pt. (La circulaire interdit la bonification familiale sur un vœu précis de type ETB).</span>`);
+                } else {
+                    let ptsBaseFam = (['DPT', 'ZRD', 'ACA'].includes(typeVoeu)) ? 150.2 : 90.2;
+                    t += ptsBaseFam;
+                    d.push({ label: `RC/APC (${typeVoeu})`, pts: ptsBaseFam });
+                    journal.push(`<span style="color:#27ae60;">✅ Rapprochement conjoint/APC activé : +${ptsBaseFam} pts (Car vœu large de type ${typeVoeu}).</span>`);
+
+                    if (enfants > 0) {
+                        t += 100 * enfants;
+                        d.push({ label: `${enfants} enfant(s)`, pts: 100 * enfants });
+                        journal.push(`✅ Enfants à charge (${enfants}) : +${100 * enfants} pts.`);
+                    }
+
+                    let ptsSep = 0;
+                    if (separation === 1) ptsSep = 50;
+                    else if (separation === 2) ptsSep = 280;
+                    else if (separation === 3) ptsSep = 400;
+                    else if (separation >= 4) ptsSep = 600;
+                    if (ptsSep > 0) {
+                        t += ptsSep;
+                        d.push({ label: `Séparation (${separation} ans)`, pts: ptsSep });
+                        journal.push(`✅ Années de séparation (${separation} an(s)) : +${ptsSep} pts.`);
+                    }
+                }
+            } else if (fam === "PI") {
+                if (typeVoeu === 'ETB') {
+                    journal.push(`<span style="color:#c0392b;">❌ Parent Isolé refusé : 0 pt. (La bonification Parent Isolé de 30 pts ne s'applique que sur les vœux larges : COM, GEO, DPT).</span>`);
+                } else {
+                    t += 30;
+                    d.push({ label: "Parent Isolé", pts: 30 });
+                    journal.push(`<span style="color:#27ae60;">✅ Parent Isolé activé : +30 pts (Car vœu large de type ${typeVoeu}).</span>`);
+                }
+            }
+
+            const vpElem = document.getElementById('voeu_pref');
+            const vp = vpElem ? (parseInt(vpElem.value) || 0) : 0;
+            if (vp > 0) {
+                if (typeVoeu === 'ETB') {
+                    journal.push(`<span style="color:#c0392b;">❌ Vœu préférentiel ignoré : Ne s'applique pas sur un vœu ETB.</span>`);
+                } else {
+                    const ptsVp = vp * 15;
+                    t += ptsVp;
+                    d.push({ label: `Vœu préférentiel (${vp+1}e an)`, pts: ptsVp });
+                    journal.push(`✅ Vœu préférentiel : +${ptsVp} pts.`);
+                }
+            }
+
+            const rqthElem = document.getElementById('est_rqth');
+            if (rqthElem && rqthElem.checked) {
+                if (typeVoeu === 'ETB') {
+                    journal.push(`<span style="color:#c0392b;">❌ RQTH (100 pts) ignorée : Automatique uniquement sur vœux larges (COM, GEO, DPT). Demande une dérogation médicale pour un ETB.</span>`);
+                } else {
+                    t += 100;
+                    d.push({ label: "RQTH (Auto)", pts: 100 });
+                    journal.push(`✅ RQTH : +100 pts appliqués (Vœu large valide).`);
+                }
+            }
+
+            const stagElem = document.getElementById('type_stagiaire');
+            const typeStagiaire = stagElem ? stagElem.value : '';
+            if (typeStagiaire === 'classique') {
+                t += 19; d.push({ label: "Stagiaire", pts: 19 }); journal.push(`✅ Stagiaire : +19 pts.`);
+            } else if (typeStagiaire === 'ex_contractuel') {
+                let ptsContract = 50; if (ec === 4) ptsContract = 60; if (ec >= 5) ptsContract = 65;
+                t += ptsContract; d.push({ label: "Ex-Contractuel", pts: ptsContract }); journal.push(`✅ Ex-contractuel : +${ptsContract} pts.`);
+            }
+
+            const tzrElem = document.getElementById('anc_tzr');
+            const ancTzr = parseInt(tzrElem ? tzrElem.value : 0) || 0;
+            if (ancTzr > 0) {
+                let ptsTzr = 0;
+                if (ancTzr >= 1 && ancTzr < 3) ptsTzr = 40;
+                if (ancTzr >= 3 && ancTzr < 6) ptsTzr = 70;
+                if (ancTzr >= 6) ptsTzr = 90;
+                t += ptsTzr; d.push({ label: "Stabilisation TZR", pts: ptsTzr }); journal.push(`✅ TZR : +${ptsTzr} pts.`);
+            }
+
+            const mcsElem = document.getElementById('est_mcs');
+            if (mcsElem && mcsElem.checked) {
+                t += 1500; d.push({ label: "Carte Scolaire (MCS)", pts: 1500 });
+                journal.push(`🚨 Mesure de Carte Scolaire : +1500 pts.`);
+            }
+            
+            const sortieRepElem = document.getElementById('sortie_rep');
+            if (sortieRepElem && sortieRepElem.checked) {
+                t += 100; 
+                d.push({ label: "Sortie Educ. Prio", pts: 100 });
+                journal.push(`✅ Sortie Education Prioritaire : +100 pts.`);
+            }
+
+            if (e) {
+                if (e.educationPrioritaire && e.educationPrioritaire.includes("REP+")) {
+                    if (typeVoeu === 'ETB') {
+                        t += 600; d.push({ label: "Entrée REP+", pts: 600 });
+                        journal.push(`🎓 Entrée REP+ : +600 pts car vous ciblez cet établissement précisément.`);
+                    } else {
+                        journal.push(`ℹ️ Information : Ce vœu large inclut un REP+, mais le bonus de 600 pts nécessite un vœu ETB.`);
+                    }
+                } else if (e.educationPrioritaire && e.educationPrioritaire.includes("REP")) {
+                    if (typeVoeu === 'ETB') {
+                        t += 75; d.push({ label: "Entrée REP", pts: 75 });
+                        journal.push(`🎓 Entrée REP : +75 pts car vous ciblez cet établissement précisément.`);
+                    }
+                }
+
+                const corpsElem = document.getElementById('corps');
+                const corps = corpsElem ? corpsElem.value : '';
+                if (corps === 'agrege' && e.category === 'LYC') {
+                    if (typeVoeu === 'ETB') {
+                        t += 120; d.push({ label: "Agrégé en Lycée", pts: 120 });
+                        journal.push(`👨‍🏫 Agrégé en Lycée : +120 pts (sur vœu ETB).`);
+                    }
+                }
+            }
+
+            return { total: parseFloat(t.toFixed(1)), details: d, explications: journal };
+        }
+
+        /* ==================== UPDATE UI ==================== */
+        function updateUI(os) { 
+            const b = calculateBreakdown(null, 'ETB'); 
+            AppState.etablissementObjects.forEach(x => x.updateTag(b)); 
+            
+            const cl = []; 
+            const fElem = document.getElementById('situation_familiale');
+            const f = fElem ? fElem.value : ''; 
+            if (["RC", "APC"].includes(f)) { cl.push("Livret de famille"); cl.push("Attestation employeur") } 
+            
+            const rqthElem = document.getElementById('est_rqth');
+            if (rqthElem && rqthElem.checked) cl.push("RQTH"); 
+            
+            const ul = document.getElementById('checklist-list'); 
+            if (ul) {
+                ul.innerHTML = ""; 
+                cl.forEach(x => { 
+                    const li = document.createElement('li'); 
+                    li.innerHTML = formaterTexte(x); 
+                    ul.appendChild(li) 
+                }); 
+            }
+            
+            const container = document.getElementById('checklist-container');
+            if (container) container.style.display = cl.length ? 'block' : 'none'; 
+            
+            if (AppState.selectedEtab) { 
+                const e = AppState.selectedEtab; 
+                const r = calculateBreakdown(e, 'ETB'); 
+                
+                const detName = document.getElementById('det-name');
+                if (detName) detName.textContent = e.nom; 
+                
+                const detMeta = document.getElementById('det-meta');
+                if (detMeta) detMeta.textContent = `${e.ville} - ${e.category}`; 
+                
+                const detTotal = document.getElementById('det-total');
+                if (detTotal) detTotal.textContent = r.total; 
+                
+                const g = e.groupes[AppState.currentMode]; 
+                const detGroups = document.getElementById('det-groups');
+                if (detGroups) detGroups.innerHTML = g.length ? g.map(k => `📍 ${k.nom}`).join('<br>') : "Hors Zone"; 
+                
+                const tb = document.getElementById('det-tbody'); 
+                if (tb) {
+                    tb.innerHTML = ""; 
+                    r.details.forEach(k => { 
+                        const tr = document.createElement('tr'); 
+                        tr.innerHTML = `<td>${k.label}</td><td style="text-align:right">+${k.pts}</td>`; 
+                        tb.appendChild(tr) 
+                    }); 
+                }
+
+                const detailPanel = document.getElementById('detail-panel');
+                if (detailPanel) {
+                    let btnBox = document.getElementById('btn-explication-box');
+                    if (!btnBox) {
+                        btnBox = document.createElement('div');
+                        btnBox.id = 'btn-explication-box';
+                        btnBox.style.marginTop = "15px";
+                        btnBox.style.textAlign = "center";
+                        detailPanel.appendChild(btnBox);
+                    }
+                    
+                    btnBox.innerHTML = `<button id="btn-show-journal" class="btn-action" style="background:#8e44ad; font-size:0.85em; width:100%;">🧐 Comprendre ce calcul</button>`;
+                    
+                    const btnShow = document.getElementById('btn-show-journal');
+                    if (btnShow) {
+                        btnShow.onclick = function() {
+                            const jc = document.getElementById('journal-container');
+                            const mod = document.getElementById('explication-modal');
+                            if (jc && mod) {
+                                jc.innerHTML = formaterTexte(r.explications.join('<br><br>'));
+                                mod.style.display = 'block';
+                            } else {
+                                alert("📊 DÉTAIL DU CALCUL :\n\n" + r.explications.join('\n\n').replace(/<[^>]*>?/gm, ''));
+                            }
+                        };
+                    }
+                }
+
+                const rightSidebar = document.getElementById('sidebar-right');
+                if (os && rightSidebar) rightSidebar.classList.remove('collapsed') 
+            } 
+        }   
+
+        function updateHeaderScore() {
+            const result = calculateBreakdown(AppState.selectedEtab, 'ETB');
+            const display = document.getElementById('score-display');
+            const badge = document.getElementById('header-score');
+            
+            if(display) display.textContent = result.total + " pts";
+
+            if(badge) {
+                if (result.total >= 1000) badge.style.background = "linear-gradient(135deg, #e67e22, #d35400)";
+                else if (result.total > 200) badge.style.background = "rgba(39, 174, 96, 0.4)"; 
+                else badge.style.background = "rgba(255, 255, 255, 0.2)"; 
+            }
+        }
+
+        function updateChecklist() {
+            const list = document.getElementById('checklist-list');
+            const container = document.getElementById('checklist-container');
+            if(list) list.innerHTML = "";
+            let items = [];
+            
+            const famElem = document.getElementById('situation_familiale');
+            const fam = famElem ? famElem.value : '';
+
+            if (fam === 'RC') {
+                items.push("<div style='background:#ffdddd; color:#c0392b; padding:10px; border-radius:4px; margin-bottom:10px; border-left: 4px solid #c0392b;'>🚨 <b>ATTENTION RC :</b> Pour valider vos points familiaux, votre <b>TOUT PREMIER VŒU</b> infra-départemental (COM, GEO ou ZRE) doit OBLIGATOIREMENT être la commune de résidence/travail de votre conjoint(e) ! Sinon, le rectorat annulera vos points.</div>");
+                items.push("📚 <b>Livret de famille</b> (ou extrait d'acte de naissance) + Acte de PACS de moins de 3 mois.");
+                items.push("💼 <b>Attestation professionnelle du conjoint</b> (Contrat + 3 derniers bulletins de salaire) OU Attestation France Travail.");
+                items.push("🏠 <b>Justificatif de domicile commun</b> (EDF, Loyer...).");
+                items.push("📄 <b>Avis d'imposition commune</b> (Si PACS conclu en 2024) ou document fiscal de changement de situation (Si PACS en 2025).");
+            } else if (fam === 'APC') {
+                items.push("📚 <b>Livret de famille</b>.");
+                items.push("⚖️ <b>Décision de justice</b> (Garde alternée ou droit de visite).");
+                items.push("🏫 <b>Certificat de scolarité</b> ou justificatif de domicile de l'enfant.");
+            } else if (fam === 'PI') {
+                items.push("📚 <b>Livret de famille</b>.");
+                items.push("⚖️ <b>Justificatif Autorité Parentale Exclusive</b> (Jugement, acte de décès, non-reconnaissance...).");
+                items.push("📝 <b>Lettre motivée</b> expliquant l'amélioration des conditions de vie de l'enfant.");
+            }
+
+            const rqthElem = document.getElementById('est_rqth');
+            if (rqthElem && rqthElem.checked) {
+                items.push("♿ <b>Notification RQTH</b> (MDPH) en cours de validité.");
+                items.push("🩺 <b>Dossier médical complet</b> sous pli confidentiel (au Médecin Conseiller du Recteur).");
+                items.push("📝 <b>Lettre explicative</b> sur l'amélioration des conditions de vie.");
+            }
+
+            const typeStagElem = document.getElementById('type_stagiaire');
+            const typeStagiaire = typeStagElem ? typeStagElem.value : '';
+            if (typeStagiaire === 'ex_contractuel') {
+                items.push("📄 <b>État des services</b> (I-Prof).");
+                items.push("📜 <b>Premier Contrat de travail</b> (pour prouver l'ancienneté).");
+            } else if (typeStagiaire === 'ex_fonc') {
+                items.push("🏛️ <b>Arrêté de titularisation</b> de l'ancien corps.");
+            }
+
+            const mcsElem = document.getElementById('est_mcs');
+            if (mcsElem && mcsElem.checked) {
+                items.push("🚨 <b>Copie de la décision de Carte Scolaire</b> (Courrier Rectorat).");
+            }
+
+            const ancTzrElem = document.getElementById('anc_tzr');
+            const ancTzr = ancTzrElem ? parseInt(ancTzrElem.value) : 0;
+            if (ancTzr > 0) {
+                items.push("🏫 <b>Arrêté d'affectation sur zone (ZR)</b> (Justifiant l'ancienneté continue).");
+            }
+
+            if (items.length > 0) {
+                items.forEach(txt => {
+                    if(list) {
+                        const li = document.createElement('li');
+                        li.innerHTML = formaterTexte(txt); 
+                        list.appendChild(li);
+                    }
+                });
+                if(container) container.style.display = "block"; 
+            } else {
+                if(container) container.style.display = "none"; 
+            }
+        }
+
+        function attachChecklistListeners() {
+            const inputs = document.querySelectorAll('#calc-form input, #calc-form select');
+            inputs.forEach(input => {
+                input.addEventListener('change', updateChecklist);
+            });
+        }
+        
+        const inps = document.querySelectorAll('#calc-form input,#calc-form select'); 
+        inps.forEach(i => { 
+            i.oninput = () => { updateUI(false); updateHeaderScore(); }; 
+            i.onchange = () => { updateUI(false); updateHeaderScore(); updateChecklist(); } 
+        });
+
+        /* ==================== INITIALISATION CARTE ==================== */
+        function initMap() {
+            const mapDiv = document.getElementById('map');
+            if(!mapDiv) return;
+            AppState.map = L.map('map').setView([49.6, 2.8], 9);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM & CartoDB' }).addTo(AppState.map);
+            AppState.map.createPane('zonesPane').style.zIndex = 350; AppState.map.createPane('railwayPane').style.zIndex = 360;
+            AppState.map.createPane('etabsPane').style.zIndex = 600; AppState.map.createPane('stationPane').style.zIndex = 620;
+            AppState.map.getPane('tooltipPane').style.zIndex = 2000; AppState.map.getPane('popupPane').style.zIndex = 3000;
+            AppState.layers.zones.addTo(AppState.map); AppState.layers.etablissements.addTo(AppState.map);
+            AppState.map.on('click', onMapClick);
+
+            AppState.map.on('popupopen', () => { setTimeout(updateHeaderScore, 50); });
+            AppState.map.on('popupclose', () => { AppState.selectedEtab = null; updateHeaderScore(); });
+        }
+        
+        const isNarrow = () => window.matchMedia('(max-width: 900px)').matches;
+
+        function toggleSidebar(s) {
+            const sb = document.getElementById(`sidebar-${s}`);
+            if (!sb) return;
+            const opening = sb.classList.contains('collapsed');
+            sb.classList.toggle('collapsed');
+            /* Sur petit écran les panneaux passent par-dessus la carte : un seul à la fois. */
+            if (opening && isNarrow()) {
+                const other = document.getElementById(s === 'left' ? 'sidebar-right' : 'sidebar-left');
+                if (other) other.classList.add('collapsed');
+            }
+            syncBackdrop();
+            setTimeout(() => { if (AppState.map) AppState.map.invalidateSize(); }, 300);
+        }
+
+        function closeSidebars() {
+            document.querySelectorAll('.sidebar').forEach(sb => sb.classList.add('collapsed'));
+            syncBackdrop();
+            setTimeout(() => { if (AppState.map) AppState.map.invalidateSize(); }, 300);
+        }
+
+        function syncBackdrop() {
+            const bd = document.getElementById('sidebar-backdrop');
+            if (!bd) return;
+            const anyOpen = Array.from(document.querySelectorAll('.sidebar')).some(sb => !sb.classList.contains('collapsed'));
+            bd.classList.toggle('on', anyOpen && isNarrow());
+        }
+        window.addEventListener('resize', syncBackdrop);
+
+        /* ==================== GESTION WISHLIST ==================== */
+        AppState.wishlist = [];
+
+        function addToWishlist(type, id, nom, desc, lat, lon) {
+            const exists = AppState.wishlist.find(w => w.id === id && w.type === type);
+            if (exists) {
+                showToast("Attention", "Ce vœu est déjà dans votre liste !", "warning");
+                return;
+            }
+
+            let etabObj = null;
+            if (type === 'ETB') {
+                etabObj = AppState.etablissementObjects.find(e => e.nom === nom);
+            }
+
+            const breakdown = calculateBreakdown(etabObj, type);
+
+            AppState.wishlist.push({
+                type: type,      
+                id: id,          
+                nom: nom,        
+                desc: desc,      
+                points: breakdown.total, 
+                lat: lat,        
+                lon: lon         
+            });
+
+            updateWishCounter();
+            saveWishlistToLocal(); 
+
+            const btn = document.activeElement;
+            if (btn && btn.tagName === 'BUTTON') {
+                const originalText = btn.innerHTML;
+                btn.textContent = "✅ Ajouté !";
+                setTimeout(() => { if (btn) btn.innerHTML = originalText; }, 2000);
+            }
+        }  
+
+        function updateWishCounter() {
+            const counter = document.getElementById('wish-counter');
+            if (counter) counter.textContent = AppState.wishlist.length;
+        }
+
+        function openWishlistModal() {
+            renderWishlist();
+            const modal = document.getElementById('wishlist-modal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closeWishlistModal() {
+            const modal = document.getElementById('wishlist-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function removeWish(index) {
+            AppState.wishlist.splice(index, 1);
+            renderWishlist();
+            updateWishCounter();
+            saveWishlistToLocal();
+        }
+
+        function renderWishlist() {
+            const container = document.getElementById('wishlist-container');
+            if (!container) return; 
+            
+            container.innerHTML = "";
+
+            if (!AppState.wishlist || AppState.wishlist.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa; font-style:italic;">Votre liste est vide.<br>Ajoutez des vœux depuis la carte.</div>';
+                return;
+            }
+
+            AppState.wishlist.forEach((wish, index) => {
+                let realData = wish.data;
+                if (wish.type === 'ETB' && (!realData || !realData.Identifiant_de_l_etablissement)) {
+                    const found = AppState.etablissementObjects.find(e => e.nom === wish.nom);
+                    if (found) realData = found;
+                }
+
+                const result = calculateBreakdown(realData, wish.type);
+                const points = result.total;
+
+                let badgeClass = "badge-etb";
+                let badgeLabel = "ETABLISSEMENT";
+                if (wish.type === 'COM') { badgeClass = "badge-com"; badgeLabel = "COMMUNE"; }
+                else if (wish.type === 'GEO') { badgeClass = "badge-geo"; badgeLabel = "GROUPEMENT"; }
+                else if (wish.type === 'ZR') { badgeClass = "badge-zr"; badgeLabel = "ZONE REMPL."; }
+                else if (wish.type === 'DPT') { badgeClass = "badge-dpt"; badgeLabel = "DEPARTEMENT"; }
+
+                const codeDisplay = realData?.Identifiant_de_l_etablissement || realData?.code || wish.id || "";
+
+                const el = document.createElement('div');
+                el.className = 'wish-item';
+                el.draggable = true;
+                el.dataset.index = index;
+
+                el.innerHTML = `
+                    <div style="display:flex; align-items:center; width:100%;">
+                        <div class="wish-rank">${index + 1}</div>
+                        <div class="wish-info">
+                            <div class="wish-header">
+                                <span class="wish-badge ${badgeClass}">${badgeLabel}</span>
+                                ${codeDisplay ? `<span class="wish-code" style="font-family:monospace; color:#c0392b; background:#eee; padding:1px 4px; border-radius:3px; margin-left:5px;">${codeDisplay}</span>` : ''}
+                            </div>
+                            <div class="wish-name">${wish.nom}</div>
+                            <div class="wish-desc" style="font-style:italic;">
+                                ${wish.type === 'ETB' ? formaterTexte(realData?.ville || wish.desc || '') : ''}
+                            </div>
+                        </div>
+                        
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="cursor:pointer; font-size:1.2em; transition: transform 0.2s;" title="Comprendre ce calcul" onclick="showWishExplication(${index})" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">💡</span>
+                            <div class="wish-points" title="Total estimé">${points} pts</div>
+                        </div>
+
+                        <div class="wish-remove" onclick="removeWish(${index})" title="Supprimer ce vœu">&times;</div>
+                    </div>
+                `;
+
+                addDragEvents(el);
+                container.appendChild(el);
+            });
+        }      
+
+        function showWishExplication(index) {
+            const wish = AppState.wishlist[index];
+            
+            let realData = wish.data;
+            if (wish.type === 'ETB' && (!realData || !realData.Identifiant_de_l_etablissement)) {
+                const found = AppState.etablissementObjects.find(e => e.nom === wish.nom);
+                if (found) realData = found;
+            }
+
+            const result = calculateBreakdown(realData, wish.type);
+            
+            const jc = document.getElementById('journal-container');
+            const mod = document.getElementById('explication-modal');
+            
+            if (jc && mod) {
+                jc.innerHTML = formaterTexte(result.explications.join('<br><br>'));
+                mod.style.display = 'block';
+            } else {
+                 alert("📊 DÉTAIL DU CALCUL :\n\n" + result.explications.join('\n\n').replace(/<[^>]*>?/gm, ''));
+            }
+        }
+
+        let dragSrcEl = null;
+
+        function addDragEvents(item) {
+            item.addEventListener('dragstart', function (e) {
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML); 
+                this.classList.add('dragging');
+            });
+            item.addEventListener('dragover', function (e) {
+                if (e.preventDefault) e.preventDefault(); 
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+            item.addEventListener('dragenter', function (e) {
+                this.style.borderLeft = "5px solid #e67e22"; 
+            });
+            item.addEventListener('dragleave', function (e) {
+                this.style.borderLeft = "5px solid #3498db"; 
+            });
+            item.addEventListener('dragend', function (e) {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.wish-item').forEach(col => col.style.borderLeft = "5px solid #3498db");
+            });
+            item.addEventListener('drop', function (e) {
+                if (e.stopPropagation) e.stopPropagation();
+                if (dragSrcEl !== this) {
+                    const oldIndex = parseInt(dragSrcEl.dataset.index);
+                    const newIndex = parseInt(this.dataset.index);
+                    const movedItem = AppState.wishlist.splice(oldIndex, 1)[0];
+                    AppState.wishlist.splice(newIndex, 0, movedItem);
+                    saveWishlistToLocal();
+                    renderWishlist();
+                }
+                return false;
+            });
+        }
+
+        function generateCommuneCheckboxes() {
+            const container = document.getElementById('checkboxes-list');
+            if(!container) return;
+            container.innerHTML = "";
+
+            const communesMap = new Map();
+            AppState.etablissementObjects.forEach(etab => {
+                if (etab.groupes.COM && etab.groupes.COM.length > 0) {
+                    const com = etab.groupes.COM[0]; 
+                    if (!communesMap.has(com.code)) {
+                        communesMap.set(com.code, com.nom);
+                    }
+                }
+            });
+
+            const parDept = {};
+            communesMap.forEach((nom, code) => {
+                const deptCode = code.substring(0, 2); 
+                if (!parDept[deptCode]) parDept[deptCode] = [];
+                parDept[deptCode].push({ code: code, nom: nom });
+            });
+
+            Object.keys(parDept).sort().forEach(dept => {
+                parDept[dept].sort((a, b) => a.nom.localeCompare(b.nom));
+
+                const groupId = `dept_com_${dept}`;
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'dept-group';
+
+                groupDiv.innerHTML = `
+                    <div class="dept-header" onclick="if(event.target.tagName === 'INPUT') return; const cb=document.getElementById('${groupId}'); cb.checked=!cb.checked; toggleDepartment('${groupId}')">
+                        <input type="checkbox" id="${groupId}" checked onchange="toggleDepartment('${groupId}')">
+                        <label>Département ${dept}</label>
+                    </div>
+                `;
+
+                const listDiv = document.createElement('div');
+                listDiv.className = 'zone-list';
+
+                parDept[dept].forEach(ville => {
+                    listDiv.innerHTML += `
+                        <div class="zone-item" onclick="if(event.target.tagName === 'INPUT') return; const cb=this.querySelector('input'); cb.checked=!cb.checked; applyGlobalFilters()">
+                            <input type="checkbox" class="chk-zone" data-parent="${groupId}" value="${ville.code}" checked onchange="applyGlobalFilters()">
+                            <label>${ville.nom} (${ville.code})</label>
+                        </div>
+                    `;
+                });
+
+                groupDiv.appendChild(listDiv);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function saveWishlistToLocal() {
+            localStorage.setItem('ma_wishlist_v29', JSON.stringify(AppState.wishlist));
+        }
+
+        function loadWishlistFromLocal() {
+            const saved = localStorage.getItem('ma_wishlist_v29');
+            if (saved) {
+                AppState.wishlist = JSON.parse(saved);
+                updateWishCounter();
+            }
+        }
+
+        function exportWishlistCSV() {
+            if (AppState.wishlist.length === 0) return alert("Liste vide !");
+            let csvContent = "data:text/csv;charset=utf-8,Rang;Type;Code;Nom;Description;Points\r\n";
+            AppState.wishlist.forEach((w, index) => {
+                const row = [index + 1, w.type, w.id, w.nom, w.desc, w.points].join(";"); 
+                csvContent += row + "\r\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "mes_voeux_mutation.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        /* La bibliothèque PDF pèse 900 Ko pour un bouton utilisé une fois :
+           elle n'est téléchargée qu'au moment de l'export. */
+        let html2pdfPret = null;
+        function chargerHtml2pdf() {
+            if (window.html2pdf) return Promise.resolve();
+            if (!html2pdfPret) {
+                html2pdfPret = new Promise((resoudre, rejeter) => {
+                    const balise = document.createElement('script');
+                    balise.src = './vendor/html2pdf.bundle.min.js';
+                    balise.onload = resoudre;
+                    balise.onerror = () => { html2pdfPret = null; rejeter(new Error("html2pdf.bundle.min.js")); };
+                    document.head.appendChild(balise);
+                });
+            }
+            return html2pdfPret;
+        }
+
+        async function exportWishlistToPDF() {
+            if (!AppState.wishlist || AppState.wishlist.length === 0) {
+                alert("Votre liste est vide !");
+                return;
+            }
+            try {
+                showToast("Préparation du PDF", "Un instant…", "info", 3000);
+                await chargerHtml2pdf();
+            } catch (err) {
+                showToast("Export impossible", "La bibliothèque PDF n'a pas pu être chargée.", "error");
+                return;
+            }
+
+            const date = new Date().toLocaleDateString("fr-FR");
+            const scoreDisplay = document.getElementById('score-display');
+            const scoreBase = scoreDisplay ? scoreDisplay.textContent : "--";
+
+            let totalPts = 0;
+            let rowsHtml = "";
+
+            AppState.wishlist.forEach((item, index) => {
+                let realData = item.data;
+                if (item.type === 'ETB') {
+                    const found = AppState.etablissementObjects.find(e => e.nom === item.nom);
+                    if (found) realData = found;
+                }
+
+                const safeData = realData || {}; 
+                const result = calculateBreakdown(safeData, item.type); 
+                const pts = result.total;
+                totalPts += pts;
+
+                let code = "?";
+                if (item.type === 'ETB') code = safeData.Identifiant_de_l_etablissement || safeData.code || "N/C";
+                else if (item.type === 'COM') code = safeData.code_commune || safeData.code || item.id || "COM";
+                else code = safeData.code || item.id || item.type;
+
+                let desc = "";
+                if (item.type === 'ETB') desc = safeData.ville || item.nom || "";
+                else desc = "Vœu large / Zone";
+
+                rowsHtml += `
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px; text-align:center;">${index + 1}</td>
+                        <td style="padding:8px; font-family:monospace; font-weight:bold; color:#c0392b;">${code}</td>
+                        <td style="padding:8px;">
+                            <b>${item.nom}</b>
+                            <div style="font-size:0.8em; color:#666; margin-top:2px;">${desc}</div>
+                        </td>
+                        <td style="padding:8px; text-align:right;">${pts} pts</td>
+                    </tr>
+                `;
+            });
+
+            const pDate = document.getElementById('pdf-date');
+            if(pDate) pDate.textContent = "Le " + date;
+            
+            const pTot = document.getElementById('pdf-total-points');
+            if(pTot) pTot.textContent = "Total estimé liste : " + parseFloat(totalPts.toFixed(1)) + " pts";
+
+            const elEchelon = document.getElementById('echelon');
+            const elEnfants = document.getElementById('enfants');
+            const elSep = document.getElementById('separation');
+
+            const pSit = document.getElementById('pdf-situation');
+            if(pSit) {
+                pSit.innerHTML = `
+                    <li><strong>Échelon :</strong> ${elEchelon ? elEchelon.value : "?"}</li>
+                    <li><strong>Enfants :</strong> ${elEnfants ? elEnfants.value : "0"}</li>
+                    <li><strong>Séparation :</strong> ${elSep ? elSep.value : "0"} ans</li>
+                `;
+            }
+
+            const pVoeux = document.getElementById('pdf-voeux-list');
+            if(pVoeux) pVoeux.innerHTML = rowsHtml;
+            
+            const chkList = document.getElementById('checklist-list');
+            const checklistItems = chkList ? chkList.innerHTML : "";
+            const pChk = document.getElementById('pdf-checklist');
+            if(pChk) pChk.innerHTML = checklistItems || "<li>Aucun justificatif spécifique.</li>";
+
+            const element = document.getElementById('pdf-template');
+            if(!element) {
+                alert("Template PDF non trouvé");
+                return;
+            }
+            element.style.display = 'block';
+
+            const opt = {
+                margin:       10,
+                filename:     'Ma_Liste_Voeux_Manuelle.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                element.style.display = 'none';
+            });
+        }
+
+        /* ==================== MÉMOIRE DU FORMULAIRE ====================
+           Le barème demande une vingtaine de réponses. Avant, tout était perdu au
+           moindre rechargement ; il est maintenant conservé sur l'appareil. */
+        const BAREME_KEY = 'mutation:bareme:v1';
+        const GUIDE_KEY = 'mutation:guide-vu:v1';
+        const TAGS_KEY = 'mutation:etiquettes:v1';
+
+        function baremeFields() {
+            return Array.from(document.querySelectorAll('#calc-form input, #calc-form select')).filter(el => el.id);
+        }
+        function saveBareme() {
+            const snapshot = {};
+            baremeFields().forEach(el => { snapshot[el.id] = (el.type === 'checkbox') ? el.checked : el.value; });
+            try { localStorage.setItem(BAREME_KEY, JSON.stringify(snapshot)); } catch (e) { /* mode privé */ }
+        }
+        function restoreBareme() {
+            let snapshot;
+            try { snapshot = JSON.parse(localStorage.getItem(BAREME_KEY) || 'null'); } catch (e) { return false; }
+            if (!snapshot) return false;
+            baremeFields().forEach(el => {
+                if (!(el.id in snapshot)) return;
+                if (el.type === 'checkbox') el.checked = !!snapshot[el.id];
+                else el.value = snapshot[el.id];
+            });
+            return true;
+        }
+        function resetBareme() {
+            if (!confirm("Effacer toutes vos réponses de barème ? Vos vœux, eux, sont conservés.")) return;
+            try { localStorage.removeItem(BAREME_KEY); } catch (e) { /* ignore */ }
+            const form = document.getElementById('calc-form');
+            if (form) form.reset();
+            updateUI(false); updateHeaderScore(); updateChecklist();
+            showToast("Barème réinitialisé", "Les valeurs par défaut sont revenues.", "success");
+        }
+
+        /* ==================== RECHERCHE ==================== */
+        let searchHighlight = null;
+
+        function normalizeSearch(s) {
+            return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+        }
+
+        function runSearch() {
+            const box = document.getElementById('search-results');
+            const q = normalizeSearch(document.getElementById('etab-search').value.trim());
+            if (q.length < 2) { box.classList.remove('open'); box.innerHTML = ''; return; }
+
+            const hits = AppState.etablissementObjects
+                .filter(e => normalizeSearch(e.nom).includes(q) || normalizeSearch(e.ville).includes(q))
+                .slice(0, 10);
+
+            box.innerHTML = hits.length
+                ? hits.map((e, i) => `<div class="sr-item" role="option" data-i="${i}"><b>${e.nom}</b><span>${e.ville} · ${e.category || ''}</span></div>`).join('')
+                : '<div class="sr-empty">Aucun établissement à ce nom.</div>';
+            box.classList.add('open');
+            box.querySelectorAll('.sr-item').forEach(el => {
+                el.onclick = () => gotoEtab(hits[parseInt(el.dataset.i, 10)]);
+            });
+        }
+
+        function gotoEtab(e) {
+            if (!e || !AppState.map) return;
+            document.getElementById('search-results').classList.remove('open');
+            document.getElementById('etab-search').blur();
+            if (isNarrow()) closeSidebars();
+
+            AppState.map.setView([e.lat, e.lon], 13);
+            if (e.marker && AppState.layers.etablissements.hasLayer(e.marker)) {
+                e.marker.openPopup();
+            } else {
+                /* L'établissement existe mais les filtres en cours le masquent : on le signale
+                   plutôt que de laisser l'utilisateur chercher un point qui n'apparaîtra pas. */
+                if (searchHighlight) AppState.map.removeLayer(searchHighlight);
+                searchHighlight = L.circleMarker([e.lat, e.lon], {
+                    radius: 12, color: '#e74c3c', weight: 3, fill: false, dashArray: '4,3'
+                }).addTo(AppState.map);
+                showToast("Masqué par un filtre", e.nom + " est bien dans la base, mais vos filtres actuels le cachent.", "warning", 7000);
+            }
+        }
+
+        /* ==================== GUIDE ==================== */
+        function openGuide() { document.getElementById('guide').style.display = 'block'; }
+        function closeGuide() {
+            document.getElementById('guide').style.display = 'none';
+            try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) { /* ignore */ }
+        }
+
+        /* ==================== ÉCRAN DE CHARGEMENT ==================== */
+        function splash(message) {
+            const el = document.getElementById('splash');
+            if (!el) return;
+            if (message === null) { el.classList.add('hidden'); setTimeout(() => el.remove(), 400); return; }
+            const msg = document.getElementById('splash-msg');
+            if (msg) msg.textContent = message;
+        }
+
+        /* ==================== DÉMARRAGE ====================
+           Une seule séquence d'initialisation (la v38 en avait deux, dont l'ordre
+           d'exécution n'était pas garanti). */
+        async function start() {
+            restoreBareme();
+            attachChecklistListeners();
+            baremeFields().forEach(el => el.addEventListener('change', saveBareme));
+
+            /* Sur téléphone, les deux panneaux de 380 px recouvraient toute la carte au démarrage. */
+            if (isNarrow()) closeSidebars();
+
+            /* Les étiquettes de points se chevauchent au point de masquer la carte sur un
+               petit écran : éteintes par défaut là, la case reste disponible dans le panneau. */
+            const tagsChk = document.getElementById('chk_show_tags');
+            let tagsPref = null;
+            try { tagsPref = localStorage.getItem(TAGS_KEY); } catch (e) { /* ignore */ }
+            tagsChk.checked = (tagsPref === null) ? !isNarrow() : (tagsPref === '1');
+            toggleTags();
+            tagsChk.addEventListener('change', () => {
+                try { localStorage.setItem(TAGS_KEY, tagsChk.checked ? '1' : '0'); } catch (e) { /* ignore */ }
+            });
+
+            const search = document.getElementById('etab-search');
+            search.addEventListener('input', runSearch);
+            search.addEventListener('focus', runSearch);
+            document.addEventListener('click', ev => {
+                if (!ev.target.closest('.search-bar')) document.getElementById('search-results').classList.remove('open');
+            });
+
+            initMap();
+            updateHeaderScore();
+            updateChecklist();
+            await loadDataChain();
+            splash(null);
+
+            let seen = null;
+            try { seen = localStorage.getItem(GUIDE_KEY); } catch (e) { /* ignore */ }
+            if (!seen) openGuide();
+        }
+
+        window.addEventListener('load', start);
+    </script>
+</body>
+
+</html>
