@@ -340,7 +340,8 @@
         .modal-content {
             background-color: #fefefe; margin: 10% auto; padding: 20px;
             border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); max-height: 70vh; overflow-y: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); max-height: 70vh;
+            overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
             /* Sans cela, les 20 px de marge intérieure et la bordure s'ajoutaient à la
                largeur : sur un écran de 320 px, toutes les fenêtres dépassaient des
                deux côtés et leurs boutons de droite sortaient de l'écran. */
@@ -360,7 +361,7 @@
             background: #fff; border: 1px solid #e4e9ec; border-left: 4px solid #95a5a6;
             border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; cursor: grab;
             display: grid; grid-template-columns: auto 1fr auto; gap: 3px 11px;
-            grid-template-areas: "rang nom points" "rang meta meta" "actions actions actions";
+            grid-template-areas: "rang nom points" "rang meta meta" "actions actions actions" "detail detail detail";
             align-items: center; transition: box-shadow .2s, opacity .2s;
         }
         .wish-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
@@ -393,6 +394,23 @@
             grid-area: actions; display: flex; justify-content: flex-end; gap: 4px;
             margin-top: 7px; padding-top: 7px; border-top: 1px solid #f1f4f6;
         }
+
+        /* Le détail s'ouvre dans la carte : une fenêtre par-dessus une fenêtre
+           obligeait à sortir de sa liste pour comprendre une ligne. */
+        .wish-detail {
+            grid-area: detail; margin-top: 8px; padding: 11px 13px; background: #f7f9fa;
+            border: 1px solid #e9eef1; border-radius: 6px; font-size: .85rem;
+            line-height: 1.55; color: #34495e;
+        }
+        .wish-detail p { margin: 0 0 7px; }
+        .wish-detail p:last-child { margin-bottom: 0; }
+        .wish-detail .total {
+            margin-top: 9px; padding-top: 8px; border-top: 1px solid #e0e6ea;
+            font-weight: bold; color: #d35400;
+        }
+        .wish-chevron { transition: transform .2s ease; display: inline-block; }
+        .wish-item.ouvert .wish-chevron { transform: rotate(180deg); }
+        .wish-item.ouvert { border-color: #cfd8dc; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
         .wish-btn {
             width: 36px; height: 32px; border: 1px solid #e4e9ec; background: #fbfcfd;
             border-radius: 6px; cursor: pointer; font-size: .85rem; line-height: 1;
@@ -2617,8 +2635,14 @@
 
                 const codeDisplay = realData?.Identifiant_de_l_etablissement || realData?.code || wish.id || "";
 
+                /* L'ouverture suit le vœu, pas son rang : réordonner ne referme rien. */
+                const ouvert = AppState.voeuxOuverts.has(cleVoeu(wish));
+                const detail = formaterTexte(
+                    (result.explications || []).map(l => `<p>${l}</p>`).join('') +
+                    `<p class="total">Total pour ce vœu : ${points} pts</p>`);
+
                 const el = document.createElement('div');
-                el.className = 'wish-item type-' + wish.type;
+                el.className = 'wish-item type-' + wish.type + (ouvert ? ' ouvert' : '');
                 el.draggable = true;
                 el.dataset.index = index;
 
@@ -2628,25 +2652,45 @@
                 const meta = [badgeLabel, lieu, codeDisplay].filter(Boolean).join(' · ');
                 const dernier = index === AppState.wishlist.length - 1;
 
+
                 el.innerHTML = `
                     <span class="wish-rank">${index + 1}</span>
                     <span class="wish-name">${wish.nom}</span>
                     <span class="wish-points" title="Total estimé pour ce vœu">${points} pts</span>
                     <span class="wish-meta">${meta}</span>
                     <span class="wish-actions">
-                        <button class="wish-btn" onclick="showWishExplication(${index})"
-                                title="D'où viennent ces points ?" aria-label="D'où viennent ces points ?">💡</button>
+                        <button class="wish-btn wish-deplier" onclick="basculerDetailVoeu(${index}, this)"
+                                aria-expanded="${ouvert}" title="D'où viennent ces points ?"
+                                aria-label="D'où viennent ces points ?"><span class="wish-chevron">⌄</span></button>
                         <button class="wish-btn wish-monter" onclick="moveWish(${index}, -1)" ${index === 0 ? 'disabled' : ''}
                                 title="Monter ce vœu" aria-label="Monter ce vœu">▲</button>
                         <button class="wish-btn wish-descendre" onclick="moveWish(${index}, 1)" ${dernier ? 'disabled' : ''}
                                 title="Descendre ce vœu" aria-label="Descendre ce vœu">▼</button>
                         <button class="wish-btn supprimer" onclick="removeWish(${index})"
                                 title="Retirer ce vœu" aria-label="Retirer ce vœu">✕</button>
-                    </span>`;
+                    </span>
+                    <div class="wish-detail" ${ouvert ? '' : 'hidden'}>${detail}</div>`;
 
                 addDragEvents(el);
                 container.appendChild(el);
             });
+        }
+
+        AppState.voeuxOuverts = new Set();
+
+        const cleVoeu = (wish) => wish.type + '|' + wish.id;
+
+        function basculerDetailVoeu(index, bouton) {
+            const carte = bouton.closest('.wish-item');
+            const detail = carte.querySelector('.wish-detail');
+            const ouvre = detail.hidden;
+
+            detail.hidden = !ouvre;
+            carte.classList.toggle('ouvert', ouvre);
+            bouton.setAttribute('aria-expanded', String(ouvre));
+
+            const cle = cleVoeu(AppState.wishlist[index]);
+            if (ouvre) AppState.voeuxOuverts.add(cle); else AppState.voeuxOuverts.delete(cle);
         }
 
         function showWishExplication(index) {
