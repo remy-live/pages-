@@ -42,6 +42,11 @@ pré-rempli.
 - **Filtrer la carte** par type d'établissement, par groupement, par commune, par
   zone de remplacement, ou par distance autour de chez soi.
 - **Construire sa liste de vœux**, la réordonner, l'exporter en PDF ou en CSV.
+- **Se fixer un objectif** : la commune dont on veut se rapprocher, la mutation
+  simultanée avec son conjoint, et la liste des établissements où l'on ne veut
+  pas aller.
+- **Se faire relire par le guide stratégique** : il confronte la liste de vœux
+  aux règles du mouvement et signale ce qui ne produira pas l'effet attendu.
 - **Partager sa simulation** : le bouton 🔗 produit un lien qui contient le
   barème et les vœux. Le collègue qui l'ouvre voit exactement la même chose,
   sans rien installer.
@@ -150,6 +155,37 @@ faut pour finir sont dans **[`inter/`](inter/)**. En résumé : l'inter n'est pa
 case à cocher, c'est une seconde vue — on y demande des **académies**, pas des
 établissements d'Amiens — et son barème relève des lignes directrices
 ministérielles, pas académiques.
+
+## Le guide stratégique
+
+Le bouton **🎯 Stratégie** relit la liste de vœux et la situation, et rend des
+constats calculés sur les données réelles, chacun accompagné de son « pourquoi »
+et de la source syndicale dont il vient :
+
+- **un vœu précis placé après le vœu large qui le contient est inopérant** — le
+  mouvement n'y arrive jamais. Placé avant, il devient un *vœu indicatif* qui
+  oriente l'affectation à l'intérieur de la zone ;
+- **ce que chaque vœu large recouvre vraiment** : le nombre d'établissements
+  concernés et lesquels sont en éducation prioritaire ;
+- **les établissements écartés qu'un vœu large rend malgré tout atteignables** —
+  on ne peut pas retrancher un établissement d'une commune, seulement en
+  préférer d'autres plus haut dans la liste ;
+- **les points familiaux laissés de côté** faute de vœu large, chiffrés ;
+- **le rapprochement de conjoint** : vérification que le premier vœu
+  infra-départemental porte bien sur la commune renseignée dans l'objectif ;
+- **les communes à établissement unique** : à demander en vœu de commune, pour
+  obtenir le même poste avec les bonifications ;
+- **la mutation simultanée** : rappel que les deux listes doivent être
+  identiques et dans le même ordre.
+
+Ces règles décrivent le fonctionnement général du mouvement, tel que le
+présentent les notes syndicales (SNALC, SGEN-CFDT, SE-UNSA, CGT Éduc'action) et
+les documents rectoraux. Les modalités exactes restent celles des lignes
+directrices de gestion de l'académie.
+
+**L'option « mutation simultanée » n'ajoute aucun point** : le champ
+`mutation_simultanee` du barème vaut `null` faute d'avoir pu établir sa valeur
+pour l'académie d'Amiens. Elle sert au guide, qui rappelle la contrainte.
 
 ## Changer le barème
 

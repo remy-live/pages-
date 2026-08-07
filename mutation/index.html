@@ -685,6 +685,44 @@
             background: #f4f8fb; border-left: 4px solid #3498db; padding: 10px 12px;
             border-radius: 4px; font-size: .9rem; color: #34495e; margin-bottom: 14px; line-height: 1.5;
         }
+        /* ==================== OBJECTIF ==================== */
+        .objectif-bloc { background: #f2f8fd; border-left: 4px solid #2980b9; padding: 12px;
+            border-radius: 5px; margin-bottom: 14px; }
+        .objectif-bloc h4 { margin: 0 0 10px; color: #1f6797; font-size: .98rem; }
+        .objectif-bloc label { display: block; font-weight: bold; font-size: .88rem;
+            color: #2c3e50; margin-bottom: 5px; }
+        .objectif-bloc .note-champ { display: block; font-size: .8rem; color: #5d6d7e; margin: 5px 0 12px; }
+        .liste-eviter { list-style: none; padding: 0; margin: 6px 0 0; }
+        .liste-eviter li { display: flex; align-items: center; gap: 8px; background: #fdecea;
+            border: 1px solid #f5b7b1; border-radius: 5px; padding: 6px 9px; margin-bottom: 6px;
+            font-size: .86rem; color: #922b21; }
+        .liste-eviter li span { flex: 1; min-width: 0; }
+        .liste-eviter button { border: 0; background: none; color: #922b21; cursor: pointer;
+            font-size: 1.05rem; line-height: 1; padding: 0 2px; }
+        .eviter-vide { font-size: .82rem; color: #7f8c8d; font-style: italic; margin: 6px 0 0; }
+
+        /* ==================== GUIDE STRATÉGIQUE ==================== */
+        #strategie .modal-content { max-width: 720px; border-top: 5px solid #16a085; }
+        .strat-intro { background: #eafaf7; border-left: 4px solid #16a085; padding: 12px 14px;
+            border-radius: 5px; font-size: .9rem; line-height: 1.55; color: #145a52; margin-bottom: 18px; }
+        .conseil { border: 1px solid #e4e9ec; border-left-width: 5px; border-radius: 6px;
+            padding: 13px 15px; margin-bottom: 14px; }
+        .conseil.alerte { border-left-color: #e74c3c; background: #fdf3f2; }
+        .conseil.attention { border-left-color: #e67e22; background: #fdf6ee; }
+        .conseil.info { border-left-color: #2980b9; background: #f4f9fd; }
+        .conseil.bien { border-left-color: #27ae60; background: #f2fbf5; }
+        .conseil h4 { margin: 0 0 7px; font-size: .98rem; color: #2c3e50; }
+        .conseil p { margin: 0 0 8px; font-size: .9rem; line-height: 1.5; color: #34495e; }
+        .conseil p:last-child { margin-bottom: 0; }
+        .conseil .pourquoi { background: rgba(255,255,255,.75); border-radius: 4px;
+            padding: 8px 10px; font-size: .86rem; color: #4a5c6a; }
+        .conseil .pourquoi b { color: #2c3e50; }
+        .conseil ul { margin: 6px 0 8px; padding-left: 20px; font-size: .87rem; line-height: 1.5; }
+        .strat-source { font-size: .78rem; color: #7f8c8d; margin-top: 8px; font-style: italic; }
+        .strat-vide { text-align: center; color: #7f8c8d; padding: 26px 10px; font-size: .92rem; line-height: 1.5; }
+        .btn-eviter { background: #c0392b; color: #fff; border: 0; border-radius: 4px;
+            padding: 6px 10px; cursor: pointer; font-size: .82rem; margin-top: 5px; width: 100%; }
+        .btn-eviter.actif { background: #7f8c8d; }
 </style>
 </head>
 
@@ -726,6 +764,7 @@
             </div>
             <div class="header-controls">
                 <button onclick="openWishlistModal()" style="background:#e67e22; border-color:#d35400;" title="Bilan des vœux" aria-label="Bilan des vœux">📋<span class="lbl"> Bilan Vœux</span> (<span id="wish-counter">0</span>)</button>
+                <button onclick="ouvrirStrategie()" title="Guide stratégique" aria-label="Guide stratégique" style="background:#16a085; border-color:#0e6d5c;">🎯<span class="lbl"> Stratégie</span></button>
                 <button onclick="openGuide()" title="Comment ça marche ?" aria-label="Aide">❓<span class="lbl"> Aide</span></button>
                 <button onclick="openGlossary()" title="Glossaire" aria-label="Glossaire">📖<span class="lbl"> Glossaire</span></button>
                 <button onclick="toggleSidebar('right')" title="Mon barème" aria-label="Mon barème">🧮<span class="lbl"> Paramètres</span></button>
@@ -831,6 +870,29 @@
                         <h3>Ma situation</h3>
                         <button type="button" class="btn-action" style="margin-top:0; margin-bottom:14px; background:#2980b9;"
                                 onclick="ouvrirAssistant()">🧭 Me guider pas à pas</button>
+
+                        <div class="objectif-bloc">
+                            <h4>🎯 Mon objectif</h4>
+
+                            <label for="objectif_commune">Je cherche à me rapprocher de</label>
+                            <input type="text" id="objectif_commune" list="liste-communes" placeholder="Nom d'une commune…"
+                                   autocomplete="off" autocorrect="off" spellcheck="false">
+                            <datalist id="liste-communes"></datalist>
+                            <span class="note-champ">En rapprochement de conjoint, indiquez la commune où il ou elle
+                            travaille : le guide vérifiera que votre liste de vœux la place au bon endroit.</span>
+
+                            <label class="checkbox-label" style="font-weight:bold; color:#2c3e50;">
+                                <input type="checkbox" id="voeu_simultane" onchange="enregistrerObjectif(); majUiObjectif();">
+                                Je demande une mutation simultanée avec mon conjoint
+                            </label>
+                            <span class="note-champ">Vos deux listes de vœux devront être strictement identiques,
+                            et dans le même ordre.</span>
+
+                            <label>Établissements que je ne veux pas</label>
+                            <ul class="liste-eviter" id="liste-eviter"></ul>
+                            <p class="eviter-vide" id="eviter-vide">Aucun pour l'instant. Cliquez un point sur la carte,
+                            puis « Ne pas y aller ».</p>
+                        </div>
                         <form id="calc-form">
                             <div class="form-section">
                                 <h4 style="margin-top:0;">1. Carrière</h4>
@@ -1227,6 +1289,28 @@
         </div>
     </div>
 
+    <div id="strategie" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="document.getElementById('strategie').style.display='none'">&times;</span>
+            <h2 style="margin-top:0; color:#12866f;">🎯 Guide stratégique</h2>
+            <div class="strat-intro">
+                Ce guide relit votre situation et votre liste de vœux à la lumière des règles du mouvement
+                et des conseils que publient les syndicats. Il ne décide rien à votre place : il signale ce
+                qui, dans votre liste, ne produira pas l'effet que vous en attendez, et explique pourquoi.
+            </div>
+            <div id="strat-conseils"></div>
+            <p class="strat-source" style="border-top:1px solid #eee; padding-top:12px;">
+                Règles issues des notes syndicales sur le mouvement intra (SNALC, SGEN-CFDT, SE-UNSA,
+                CGT Éduc'action) et des documents rectoraux. Elles décrivent le fonctionnement général du
+                mouvement ; les modalités exactes sont dans les lignes directrices de gestion de l'académie.
+            </p>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="btn-action" style="background:#2c3e50; width:auto;"
+                        onclick="document.getElementById('strategie').style.display='none'">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pdf-template" style="display:none;">
         <div style="padding: 20px; font-family: Arial, sans-serif; color: #333;">
             <div style="border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; display:flex; justify-content:space-between;">
@@ -1489,6 +1573,8 @@
                             sg.style.background = "#e8f8f5";
                         }
                         appliquerModeMemorise();
+                        remplirListeCommunes();
+                        majUiObjectif();
                         updateUI(false);
                         splash(null);
                     } catch (parseError) {
@@ -1624,7 +1710,7 @@
 
         /* Fermer une fenêtre en cliquant à côté, ou avec Échap. */
         window.addEventListener('click', e => {
-            ['glossary-modal', 'rule-modal', 'explication-modal', 'wishlist-modal', 'accueil', 'assistant'].forEach(id => {
+            ['glossary-modal', 'rule-modal', 'explication-modal', 'wishlist-modal', 'accueil', 'assistant', 'strategie'].forEach(id => {
                 const m = document.getElementById(id);
                 if (m && e.target === m) m.style.display = "none";
             });
@@ -1931,6 +2017,7 @@
             <div style="margin:5px 0;">${badgesHtml}</div>
             ${contactHtml}
             <div style="margin-top:8px; text-align:center;">
+                <button class="btn-eviter" id="btn-eviter-${codeEtab}" onclick="basculerEviter('${codeEtab}', '${jsSafeName}')">⛔ Ne pas y aller</button>
                 <button class="btn-add-wish" onclick="addToWishlist('ETB', '${codeEtab}', '${jsSafeName}', '${jsSafeVille}', ${this.lat}, ${this.lon})">
                     ➕ Ajouter aux vœux
                 </button>
@@ -2328,7 +2415,7 @@
             AppState.layers.zones.addTo(AppState.map); AppState.layers.etablissements.addTo(AppState.map);
             AppState.map.on('click', onMapClick);
 
-            AppState.map.on('popupopen', () => { setTimeout(updateHeaderScore, 50); });
+            AppState.map.on('popupopen', () => { setTimeout(() => { updateHeaderScore(); majUiObjectif(); }, 50); });
             AppState.map.on('popupclose', () => { AppState.selectedEtab = null; updateHeaderScore(); });
         }
 
@@ -2930,6 +3017,271 @@
                 : "";
         }
 
+        /* ==================== OBJECTIF ET ÉVITEMENTS ====================
+           « Éviter » n'existe pas dans le mouvement : on ne peut pas retrancher un
+           établissement d'un vœu large. On peut seulement en préférer d'autres, en
+           les demandant plus haut dans la liste — c'est le mécanisme du vœu
+           indicatif. Ces choix ne changent donc aucun point : ils alimentent le
+           guide, qui dit où la liste se contredit. */
+        const OBJECTIF_KEY = 'mutation:objectif:v1';
+        AppState.aEviter = [];
+
+        function lireObjectif() {
+            try { return JSON.parse(localStorage.getItem(OBJECTIF_KEY) || 'null') || {}; } catch (e) { return {}; }
+        }
+
+        function enregistrerObjectif() {
+            const objectif = {
+                commune: document.getElementById('objectif_commune').value.trim(),
+                simultane: document.getElementById('voeu_simultane').checked,
+                aEviter: AppState.aEviter
+            };
+            try { localStorage.setItem(OBJECTIF_KEY, JSON.stringify(objectif)); } catch (e) { /* ignore */ }
+        }
+
+        function appliquerObjectifMemorise() {
+            const objectif = lireObjectif();
+            if (objectif.commune) document.getElementById('objectif_commune').value = objectif.commune;
+            if (objectif.simultane) document.getElementById('voeu_simultane').checked = true;
+            AppState.aEviter = Array.isArray(objectif.aEviter) ? objectif.aEviter : [];
+        }
+
+        function etabParCode(code) {
+            return AppState.etablissementObjects.find(e => e.Identifiant_de_l_etablissement === code) || null;
+        }
+
+        function basculerEviter(code, nom) {
+            const i = AppState.aEviter.indexOf(code);
+            if (i >= 0) {
+                AppState.aEviter.splice(i, 1);
+                showToast("Retiré", nom + " ne fait plus partie des établissements écartés.", "info");
+            } else {
+                AppState.aEviter.push(code);
+                showToast("Noté", nom + " est signalé comme non souhaité. Le guide vous dira quels vœux vous y exposent.", "warning", 7000);
+            }
+            enregistrerObjectif();
+            majUiObjectif();
+        }
+
+        function majUiObjectif() {
+            const liste = document.getElementById('liste-eviter');
+            const vide = document.getElementById('eviter-vide');
+            if (!liste) return;
+            liste.innerHTML = AppState.aEviter.map(code => {
+                const e = etabParCode(code);
+                const nom = e ? `${e.nom} — ${e.ville}` : code;
+                return `<li><span>${nom}</span><button onclick="basculerEviter('${code}', '${(e ? e.nom : code).replace(/'/g, "\\'")}')" title="Retirer" aria-label="Retirer">✕</button></li>`;
+            }).join('');
+            vide.style.display = AppState.aEviter.length ? 'none' : 'block';
+
+            document.querySelectorAll('[id^="btn-eviter-"]').forEach(btn => {
+                const code = btn.id.replace('btn-eviter-', '');
+                const evite = AppState.aEviter.includes(code);
+                btn.classList.toggle('actif', evite);
+                btn.textContent = evite ? '✓ Écarté — annuler' : '⛔ Ne pas y aller';
+            });
+        }
+
+        function remplirListeCommunes() {
+            const vues = new Map();
+            AppState.etablissementObjects.forEach(e => {
+                (e.groupes.COM || []).forEach(c => { if (c.nom) vues.set(c.nom, c.code); });
+            });
+            document.getElementById('liste-communes').innerHTML =
+                Array.from(vues.keys()).sort((a, b) => a.localeCompare(b, 'fr'))
+                    .map(nom => `<option value="${nom}">`).join('');
+        }
+
+        /* ==================== GUIDE STRATÉGIQUE ==================== */
+        const TYPES_LARGES = ['COM', 'GEO', 'ZR', 'DPT', 'ZRD', 'ACA'];
+
+        /* Un vœu large contient-il cet établissement ? Même test que les filtres. */
+        function voeuContient(voeu, etab) {
+            if (!etab || !TYPES_LARGES.includes(voeu.type)) return false;
+            const groupes = etab.groupes[voeu.type] || [];
+            return groupes.some(g => g.code === voeu.id);
+        }
+
+        function etabsCouverts(voeu) {
+            return AppState.etablissementObjects.filter(e => voeuContient(voeu, e));
+        }
+
+        function conseil(niveau, titre, corps, pourquoi, source) {
+            return { niveau, titre, corps, pourquoi, source };
+        }
+
+        function analyserStrategie() {
+            const liste = AppState.wishlist || [];
+            const conseils = [];
+            const fam = document.getElementById('situation_familiale').value;
+            const objectif = lireObjectif();
+            const communeCible = (objectif.commune || '').trim().toUpperCase();
+
+            /* --- 1. Un vœu précis placé après le vœu large qui le contient ne sert à rien. */
+            const inoperants = [];
+            liste.forEach((voeu, i) => {
+                if (voeu.type !== 'ETB') return;
+                const etab = etabParCode(voeu.id);
+                if (!etab) return;
+                const englobant = liste.slice(0, i).find(v => voeuContient(v, etab));
+                if (englobant) inoperants.push({ rang: i + 1, nom: voeu.nom, par: englobant.nom, rangPar: liste.indexOf(englobant) + 1 });
+            });
+            if (inoperants.length) {
+                conseils.push(conseil('alerte', "Des vœux précis sont sans effet",
+                    `<ul>${inoperants.map(x => `<li>Vœu n° ${x.rang}, <b>${x.nom}</b>, est déjà compris dans le vœu n° ${x.rangPar} (<b>${x.par}</b>).</li>`).join('')}</ul>
+                     Remontez-les <b>avant</b> le vœu large, ou retirez-les.`,
+                    `Le mouvement examine vos vœux dans l'ordre. Quand un vœu large est atteint avant le vœu précis
+                     qu'il contient, l'affectation est déjà décidée : le vœu précis n'est jamais examiné.
+                     Placé <b>avant</b>, au contraire, il devient un <b>vœu indicatif</b> — si votre barème vous donne la
+                     zone, l'administration essaie de tenir compte de vos préférences à l'intérieur.`,
+                    "SGEN-CFDT : « si le vœu A est inclus dans le vœu B, A doit être placé avant B, sinon il est inopérant »."));
+            }
+
+            /* --- 2. Les établissements écartés restent atteignables par un vœu large. */
+            const expositions = [];
+            AppState.aEviter.forEach(code => {
+                const etab = etabParCode(code);
+                if (!etab) return;
+                const parQuoi = liste.filter(v => voeuContient(v, etab));
+                if (parQuoi.length) expositions.push({ nom: etab.nom, ville: etab.ville, voeux: parQuoi.map(v => v.nom) });
+            });
+            if (expositions.length) {
+                conseils.push(conseil('alerte', "Vous pouvez être nommé dans un établissement que vous ne voulez pas",
+                    `<ul>${expositions.map(x => `<li><b>${x.nom}</b> (${x.ville}) est compris dans : ${x.voeux.map(n => `« ${n} »`).join(', ')}.</li>`).join('')}</ul>
+                     Deux issues : retirer ce vœu large, ou demander <b>avant lui</b>, en vœux précis, les établissements
+                     de la zone qui vous conviennent.`,
+                    `Un vœu large vous place dans la pile de <b>tous</b> les établissements du territoire visé, sans exception :
+                     on ne peut pas retrancher un établissement d'une commune ou d'un groupement. Le seul levier est
+                     l'ordre — préférer explicitement les autres, en vœux précis placés plus haut.`,
+                    "SGEN-CFDT Versailles : un vœu « tout poste dans la commune » place le candidat dans la pile de chaque collège et chaque lycée de la commune."));
+            }
+
+            /* --- 3. Ce à quoi chaque vœu large vous expose réellement. */
+            const larges = liste.filter(v => TYPES_LARGES.includes(v.type));
+            if (larges.length) {
+                const details = larges.map(v => {
+                    const couverts = etabsCouverts(v);
+                    const prio = couverts.filter(e => (e.educationPrioritaire || '').includes('REP'));
+                    return `<li><b>${v.nom}</b> : ${couverts.length} établissement${couverts.length > 1 ? 's' : ''}` +
+                           (prio.length ? `, dont <b>${prio.length} en éducation prioritaire</b> (${prio.slice(0, 4).map(e => e.nom).join(', ')}${prio.length > 4 ? '…' : ''})` : '') + '.</li>';
+                }).join('');
+                conseils.push(conseil('info', "Ce que vos vœux larges recouvrent",
+                    `<ul>${details}</ul>`,
+                    `Demander une zone, c'est accepter n'importe lequel de ses établissements. Regardez cette liste
+                     avant de valider : c'est exactement l'ensemble des affectations possibles.`,
+                    null));
+            }
+
+            /* --- 4. Des points familiaux qui ne s'appliquent nulle part. */
+            if (['RC', 'APC', 'PI'].includes(fam)) {
+                const surLarge = calculateBreakdown(null, 'GEO').total;
+                const surPrecis = calculateBreakdown(null, 'ETB').total;
+                const perdus = surLarge - surPrecis;
+                if (!larges.length && liste.length) {
+                    conseils.push(conseil('alerte', `Votre liste laisse ${perdus} points de côté`,
+                        `Vous n'avez que des vœux portant sur un établissement précis. Ajoutez au moins un vœu large —
+                         commune, groupement de communes, département — pour que vos points familiaux comptent.`,
+                        `Les bonifications familiales ne s'appliquent pas aux vœux visant un établissement précis.
+                         Vous concourez donc à <b>${surPrecis} points</b> au lieu de <b>${surLarge}</b>.`,
+                        "SGEN-CFDT : « les bonifications ne sont très souvent prises en compte que sur les vœux tout type de poste »."));
+                } else if (larges.length) {
+                    conseils.push(conseil('bien', "Vos points familiaux sont bien employés",
+                        `Votre liste contient ${larges.length} vœu${larges.length > 1 ? 'x' : ''} large${larges.length > 1 ? 's' : ''} :
+                         c'est là que vos bonifications comptent, pour <b>${surLarge} points</b> contre ${surPrecis} sur un établissement précis.`,
+                        `L'écart de ${perdus} points entre les deux est exactement ce que vous perdriez en ne demandant
+                         que des établissements nommément.`,
+                        null));
+                }
+            }
+
+            /* --- 5. Rapprochement de conjoint : la commune du conjoint d'abord. */
+            if (fam === 'RC') {
+                const premierInfra = liste.find(v => ['ETB', 'COM', 'GEO', 'ZR'].includes(v.type));
+                let etat = 'attention', dit;
+                if (!communeCible) {
+                    dit = `Renseignez la commune de votre conjoint dans <b>🎯 Mon objectif</b> : je pourrai alors vérifier
+                           que votre premier vœu infra-départemental est bien celui-là.`;
+                } else if (!premierInfra) {
+                    dit = `Votre liste ne contient aucun vœu infra-départemental. Le premier d'entre eux devra porter
+                           sur <b>${communeCible}</b>.`;
+                } else if ((premierInfra.nom || '').toUpperCase().includes(communeCible)) {
+                    etat = 'bien';
+                    dit = `Votre premier vœu infra-départemental, « ${premierInfra.nom} », correspond bien à ${communeCible}.`;
+                } else {
+                    etat = 'alerte';
+                    dit = `Votre premier vœu infra-départemental est « <b>${premierInfra.nom}</b> », qui ne semble pas
+                           correspondre à <b>${communeCible}</b>. Vérifiez cet ordre avant de valider.`;
+                }
+                conseils.push(conseil(etat, "Rapprochement de conjoint : l'ordre décide de tout", dit,
+                    `Le premier vœu infra-départemental doit porter sur la commune de résidence professionnelle du
+                     conjoint. À défaut, le rectorat retire la bonification familiale — ce n'est pas une préférence,
+                     c'est une condition de validité.`,
+                    "Rappel présent dans les fiches barème académiques et repris par tous les syndicats."));
+            }
+
+            /* --- 6. Une commune où il n'y a qu'un établissement se demande en commune. */
+            const uniques = [];
+            liste.filter(v => v.type === 'ETB').forEach(v => {
+                const etab = etabParCode(v.id);
+                if (!etab) return;
+                const com = (etab.groupes.COM || [])[0];
+                if (!com) return;
+                const voisins = AppState.etablissementObjects.filter(e =>
+                    (e.groupes.COM || []).some(c => c.code === com.code));
+                if (voisins.length === 1) uniques.push({ nom: etab.nom, commune: com.nom });
+            });
+            if (uniques.length && (['RC', 'APC', 'PI'].includes(fam) || document.getElementById('voeu_simultane').checked)) {
+                conseils.push(conseil('attention', "Demandez la commune plutôt que l'établissement",
+                    `<ul>${uniques.map(x => `<li><b>${x.nom}</b> est le seul établissement de ${x.commune}.</li>`).join('')}</ul>
+                     Formulez le vœu sur la <b>commune</b> : vous obtenez le même poste, avec vos bonifications.`,
+                    `Le résultat est identique — un seul établissement peut vous être attribué — mais un vœu de commune
+                     est un vœu large, donc bonifié, là où le vœu d'établissement ne l'est pas.`,
+                    "SGEN-CFDT : « lorsqu'il n'y a qu'un établissement dans la commune, saisir le vœu COM et non le code de l'établissement »."));
+            }
+
+            /* --- 7. Mutation simultanée : contrainte lourde, à rappeler. */
+            if (document.getElementById('voeu_simultane').checked) {
+                conseils.push(conseil('attention', "Mutation simultanée : deux listes strictement identiques",
+                    `Votre conjoint et vous devez saisir <b>les mêmes vœux, dans le même ordre</b>. La moindre différence
+                     — un vœu en plus, deux vœux intervertis — fait tomber le dispositif. Comparez vos deux écrans avant
+                     de valider, et gardez la trace de vos numéros de dossier respectifs.`,
+                    `La mutation simultanée traite les deux demandes comme une seule : l'administration ne peut le faire
+                     que si les listes se superposent exactement.`,
+                    "SGEN-CFDT : « en cas de mutation simultanée, les vœux doivent être identiques et dans le même ordre que ceux du conjoint »."));
+            }
+
+            /* --- 8. Ne demandez que ce que vous acceptez. */
+            if (liste.length) {
+                conseils.push(conseil('info', "Tout vœu formulé peut vous être attribué",
+                    `Votre liste compte ${liste.length} vœu${liste.length > 1 ? 'x' : ''}. Relisez-la en vous demandant,
+                     pour chacun : « si je l'obtiens, est-ce que j'y vais ? » Si la réponse est non, retirez-le.`,
+                    `Il n'y a pas de vœu de confort : le mouvement vous affecte au mieux placé que votre barème permet.
+                     Classer un vœu « au cas où » en bas de liste ne coûte rien tant que vous l'acceptez vraiment —
+                     mais un vœu que vous refuseriez n'a rien à y faire.`,
+                    null));
+            }
+
+            return conseils;
+        }
+
+        function ouvrirStrategie() {
+            const boite = document.getElementById('strat-conseils');
+            const conseils = analyserStrategie();
+
+            boite.innerHTML = conseils.length
+                ? conseils.map(c => `
+                    <div class="conseil ${c.niveau}">
+                        <h4>${c.titre}</h4>
+                        <p>${c.corps}</p>
+                        <p class="pourquoi"><b>Pourquoi :</b> ${c.pourquoi}</p>
+                        ${c.source ? `<p class="strat-source">${c.source}</p>` : ''}
+                    </div>`).join('')
+                : `<div class="strat-vide">Ajoutez des vœux depuis la carte, et renseignez votre situation :
+                   le guide relira votre liste et vous dira ce qui cloche.</div>`;
+
+            document.getElementById('strategie').style.display = 'block';
+        }
+
         /* ==================== BANDEAU D'AVERTISSEMENT ==================== */
         const BANDEAU_KEY = 'mutation:bandeau-replie:v1';
 
@@ -3307,6 +3659,8 @@
             });
 
             document.querySelectorAll('input[name="a_fam"]').forEach(el => el.addEventListener('change', majBlocFamille));
+            appliquerObjectifMemorise();
+            document.getElementById('objectif_commune').addEventListener('change', enregistrerObjectif);
 
             /* Les réponses n'étaient recopiées dans le formulaire qu'au changement
                d'étape : fermer l'onglet au milieu d'une question perdait ce qui
