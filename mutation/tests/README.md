@@ -92,6 +92,23 @@ une fois l'étape parcourue jusqu'en bas, et qu'il est réellement cliquable. Il
 vérifie aussi qu'une réponse saisie est enregistrée sans changer d'étape et
 survit à un rechargement.
 
+## `strategie.mjs` — le guide dit-il vrai ?
+
+```sh
+node tests/strategie.mjs
+```
+
+Le guide serait sans valeur s'il récitait des généralités. Le test construit de
+vraies listes de vœux à partir des données de l'académie et vérifie qu'il
+détecte bien chaque piège : un vœu précis rendu inopérant par le groupement qui
+le précède, la disparition de l'alerte une fois l'ordre corrigé, le décompte des
+établissements couverts par un vœu large, un établissement écarté joignable
+malgré tout, les points familiaux chiffrés, l'ordre du rapprochement de
+conjoint, et la contrainte de la mutation simultanée.
+
+Il contrôle aussi que **cocher « mutation simultanée » ne change aucun total** :
+tant que la valeur n'est pas établie, l'option ne doit inventer aucun point.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
