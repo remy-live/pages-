@@ -140,17 +140,14 @@ de celui qui l'a créé — donc à ne pas diffuser plus loin qu'on ne le souhai
 
 ## Et le mouvement inter-académique ?
 
-Il faudrait un second barème, celui de la phase **inter** (changer d'académie),
-défini par la note de service du 9 octobre 2025 publiée au
-[BO n° 39 du 16 octobre 2025](https://www.education.gouv.fr/bo/2025/Hebdo39/MENH2526218N),
-elle-même adossée aux lignes directrices de gestion du
-[BO spécial n° 5 du 31 octobre 2024](https://www.education.gouv.fr/bo/2024/Special5/MENH2423580N).
+Le chantier est ouvert mais **pas fait**, et il ne doit pas être fait de mémoire :
+un barème approximatif ferait classer des vœux de travers à des collègues.
 
-Le travail n'est pas fait, et il ne doit pas être fait de mémoire : un barème
-approximatif conduirait des collègues à classer leurs vœux de travers. Il faut
-partir du texte officiel, ligne par ligne. La structure à viser est un fichier
-`data/bareme-inter-2026.json` portant chaque règle avec sa référence dans le BO,
-et un sélecteur **intra / inter** en tête de l'outil.
+L'état des lieux, les valeurs déjà reconstituées, celles qui manquent, et ce qu'il
+faut pour finir sont dans **[`inter/`](inter/)**. En résumé : l'inter n'est pas une
+case à cocher, c'est une seconde vue — on y demande des **académies**, pas des
+établissements d'Amiens — et son barème relève des lignes directrices
+ministérielles, pas académiques.
 
 ## Pistes suivantes
 
