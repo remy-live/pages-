@@ -969,15 +969,18 @@ body.tiles-dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness
    s'accompagne d'un libellé et d'une phrase qui dit pourquoi. */
 .prio{
   display:grid; grid-template-columns:auto 1fr; gap:3px 9px; width:100%; text-align:left;
+  align-items:start;
   background:var(--surface-2); border:1px solid var(--hairline); border-left-width:3px;
   border-radius:8px; padding:9px 11px; cursor:pointer; margin-bottom:8px;
 }
-.prio:hover{background:var(--grid)}
+.prio:hover{background:var(--surface-2)}
 .prio.n-critique{border-left-color:var(--critical)}
 .prio.n-serieux{border-left-color:var(--serious)}
 .prio.n-attention{border-left-color:var(--warning)}
 .prio .rk{font-size:11px; color:var(--ink-muted); font-variant-numeric:tabular-nums; padding-top:2px}
-.prio .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.prio .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  background:none; border:0; padding:0; text-align:left; cursor:pointer; color:inherit; min-width:0}
+.prio .nm:hover{text-decoration:underline}
 .prio .sub{grid-column:2; font-size:11px; color:var(--ink-muted)}
 .prio .why{grid-column:2; margin:4px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px}
 .prio .why li{font-size:12px; color:var(--ink-2); display:flex; gap:6px; align-items:flex-start}
@@ -1024,6 +1027,37 @@ table{border-collapse:collapse; width:100%; font-size:12px}
 th,td{padding:5px 8px; text-align:left; border-bottom:1px solid var(--hairline); white-space:nowrap}
 th{position:sticky; top:0; background:var(--surface-2); font-weight:650; z-index:1}
 td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+
+
+/* ---- Suivi des relances, notes, impression ---- */
+.relance{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:1px 7px;border-radius:20px;border:1px solid var(--ring);color:var(--good)}
+.relance.sans{color:var(--ink-muted)}
+.relance.vaine{color:var(--critical)}
+.prio .actions{grid-column:2;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.prio .actions button{font-size:11.5px;padding:3px 9px;border-radius:6px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--hairline);color:var(--ink-2);font-weight:600}
+.prio .actions button:hover{background:var(--grid)}
+textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;font:inherit;
+  font-size:12.5px;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--hairline);border-radius:8px}
+.neuf{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.neuf div{background:var(--surface-2);border:1px solid var(--hairline);border-radius:8px;padding:8px;text-align:center}
+.neuf b{display:block;font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+.neuf span{font-size:10.5px;color:var(--ink-2)}
+
+@media print{
+  /* À l'impression, seul le panneau de droite a du sens : la carte ne rend rien
+     d'utile sur papier et les filtres encore moins. */
+  #sidebar, #mapwrap, #mobilebar, #scrim, .tabs, .map-overlay{display:none !important}
+  .app{display:block;height:auto}
+  #dock{position:static;width:auto;border:0;overflow:visible}
+  .pane-body{overflow:visible;padding:0}
+  .tabpanel[hidden]{display:none !important}
+  body{background:#fff;color:#000;overflow:visible}
+  .prio,.kpi,.inc,.notice{break-inside:avoid}
+  .facet,.row,.chartwrap{display:none !important}
+}
 
 /* Barre mobile */
 #mobilebar{display:none}
@@ -1194,7 +1228,25 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
           <button class="btn" id="btnCsv" style="flex:1">Tableur (CSV)</button>
           <button class="btn" id="btnPdf" style="flex:1">Rapport (PDF)</button>
         </div>
+        <label class="check" style="margin-top:8px"><input type="checkbox" id="chkAnonyme">
+          Masquer les noms des déclarants</label>
         <p class="notice">L'export reprend exactement ce qui est affiché : mêmes filtres, même période.</p>
+
+        <details class="facet" style="margin-top:10px">
+          <summary>Suivi des relances<span class="badge" id="suiviBadge">0</span></summary>
+          <div class="facet-body" style="padding:10px">
+            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px">
+              Vos marques de relance et vos notes ne sont enregistrées que dans ce navigateur.
+              Exportez-les pour les conserver ou les reprendre sur un autre poste.
+            </p>
+            <div class="row wrap">
+              <button class="btn sm" id="btnSuiviExport" style="flex:1 1 110px">Exporter</button>
+              <label class="btn sm" style="flex:1 1 110px;text-align:center">Importer
+                <input type="file" id="fileSuivi" accept=".json,application/json" style="display:none">
+              </label>
+            </div>
+          </div>
+        </details>
       </section>
     </div>
   </aside>
@@ -1234,6 +1286,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
       <div id="synthEmpty" class="emptystate">Chargez les deux fichiers CSV pour afficher la synthèse.</div>
 
       <div id="synthContent" hidden>
+        <div id="quoiDeNeuf" hidden></div>
         <div class="kpis">
           <div class="kpi"><div class="v" id="kSignal">—</div><div class="l">Signalements</div><div class="h" id="kSignalH">&nbsp;</div></div>
           <div class="kpi"><div class="v" id="kEtabs">—</div><div class="l">Établissements</div><div class="h" id="kEtabsH">&nbsp;</div></div>
@@ -2142,6 +2195,61 @@ function parseCsv(text) {
   });
 }
 
+/* ------------------------- Suivi local des relances ------------------------- */
+/* Ce que l'outil ne peut pas deviner : ce que vous avez déjà fait. Ces marques
+   vivent dans ce navigateur — d'où l'export/import, sans quoi elles seraient
+   perdues au premier changement de poste. */
+
+const Suivi = {
+  data: null,
+  charger() {
+    if (!this.data) this.data = Prefs.get('suivi', null) || {};
+    this.data.relances = this.data.relances || {};
+    this.data.notes = this.data.notes || {};
+    return this.data;
+  },
+  ecrire() { Prefs.set('suivi', this.charger()); },
+  relanceDe(inc) { return this.charger().relances[incKey(inc)] || null; },
+  marquer(incidents, jour) {
+    const d = this.charger();
+    for (const inc of incidents) d.relances[incKey(inc)] = jour;
+    this.ecrire();
+  },
+  oublier(incidents) {
+    const d = this.charger();
+    for (const inc of incidents) delete d.relances[incKey(inc)];
+    this.ecrire();
+  },
+  note(uai) { return this.charger().notes[uai] || ''; },
+  ecrireNote(uai, texte) {
+    const d = this.charger();
+    if (texte.trim()) d.notes[uai] = texte.trim(); else delete d.notes[uai];
+    this.ecrire();
+  },
+  remplacer(objet) {
+    this.data = { relances: objet.relances || {}, notes: objet.notes || {} };
+    this.ecrire();
+  },
+};
+
+/** Identifiant d'un signalement, stable d'un export à l'autre. */
+function incKey(inc) {
+  return inc.number
+    ? `${inc.registre}|${inc.number}|${inc.uai}`
+    : `${inc.registre}|${monthKey(inc.date)}-${String(inc.date.getDate()).padStart(2, '0')}`
+      + `|${inc.uai}|${norm(inc.risk).slice(0, 24)}`;
+}
+
+const AUJ = () => new Date().toISOString().slice(0, 10);
+const litJour = (v) => { const d = parseDate(v); return d ? DATE_FMT.format(d) : String(v || ''); };
+
+/* -------------------------------- Anonymat -------------------------------- */
+/* Un registre est nominatif par nature ; une statistique portée devant une
+   instance n'a pas à l'être. L'interrupteur agit partout, exports compris. */
+
+const anonyme = () => Prefs.get('anonyme', false);
+const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom || ''));
+
 /* -------------------------------- Modèle -------------------------------- */
 
 const state = {
@@ -2160,6 +2268,7 @@ const state = {
   },
   view: Prefs.get('view', 'cluster'),
   selectedUai: null,
+  diff: null,
 };
 
 /** Découpe « 17) Risques psychosociaux : Exigences émotionnelles ». */
@@ -2890,11 +2999,21 @@ function computeUrgency(places, now) {
     }
     if (enAttente.length) {
       const pire = enAttente[0];
+      // Une relance déjà faite et restée sans effet ne se traite pas comme un
+      // oubli : c'est elle qui justifie de remonter d'un cran.
+      const relances = enAttente.map((x) => Suivi.relanceDe(x.inc)).filter(Boolean).sort();
+      const suffixe = !relances.length ? ', jamais relancé'
+        : relances.length === enAttente.length
+          ? `, relancé le ${litJour(relances[0])} et toujours sans réponse`
+          : `, dont ${fmtInt(enAttente.length - relances.length)} jamais relancé${enAttente.length - relances.length > 1 ? 's' : ''}`;
       motifs.push({
         type: 'retard',
-        texte: enAttente.length === 1
+        relance: relances[0] || null,
+        vaine: relances.length === enAttente.length && relances.length > 0,
+        texte: (enAttente.length === 1
           ? `1 signalement sans réponse depuis ${fmtInt(pire.age)} jours`
-          : `${fmtInt(enAttente.length)} signalements sans réponse, le plus ancien depuis ${fmtInt(pire.age)} jours`,
+          : `${fmtInt(enAttente.length)} signalements sans réponse, le plus ancien depuis ${fmtInt(pire.age)} jours`)
+          + suffixe,
       });
     }
     if (repetitions.length) {
@@ -2982,15 +3101,23 @@ function renderPriorities(now) {
       pour les filtres en cours.</div>`;
     return;
   }
+  // Un <button> ne peut pas en contenir d'autres : la ligne est un conteneur,
+  // et c'est le nom qui porte l'ouverture de la fiche.
   host.innerHTML = priorites.slice(0, 40).map((p, i) => `
-    <button class="prio n-${esc(p.niveau)}" data-uai="${esc(p.place.etab.uai)}">
+    <div class="prio n-${esc(p.niveau)}" data-uai="${esc(p.place.etab.uai)}">
       <span class="rk">${i + 1}</span>
-      <span class="nm">${esc(p.place.etab.name)}</span>
+      <button type="button" class="nm" data-uai="${esc(p.place.etab.uai)}">${esc(p.place.etab.name)}</button>
       <span class="sub">${esc([p.place.etab.commune, p.place.etab.dept].filter(Boolean).join(' · '))}
         — ${esc(NIVEAUX[p.niveau].label)}</span>
       <ul class="why">${p.motifs.map((m) =>
         `<li class="w-${esc(m.type)}"><span>${esc(m.texte)}</span></li>`).join('')}</ul>
-    </button>`).join('');
+      <span class="actions">
+        <button type="button" data-relance="${esc(p.place.etab.uai)}">
+          ${p.enAttente.every((x) => Suivi.relanceDe(x.inc)) && p.enAttente.length
+            ? 'Relance déjà notée' : 'Noter une relance'}</button>
+        <button type="button" data-fiche="${esc(p.place.etab.uai)}">Fiche à envoyer</button>
+      </span>
+    </div>`).join('');
 
   if (priorites.length > 40) {
     host.insertAdjacentHTML('beforeend',
@@ -3036,7 +3163,7 @@ function exportRelanceCsv() {
     lines.push([
       NIVEAUX[r.p.niveau].label, r.p.place.etab.name, r.inc.uai, r.p.place.etab.commune,
       r.p.place.etab.dept, DATE_FMT.format(r.inc.date), r.age, r.inc.registre, r.inc.number,
-      r.inc.risk, r.inc.state, r.inc.reporter, r.motif,
+      r.inc.risk, r.inc.state, declarant(r.inc.reporter), r.motif,
     ].map(csvCell).join(';'));
   }
   download(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
@@ -3080,6 +3207,129 @@ function exportRelancePdf() {
   });
 
   doc.save(`visu-incidents_a-relancer_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+/* ------------------- Fiche d'un établissement, à envoyer ------------------- */
+/* Un seul établissement par document : on n'adresse pas à une direction les
+   signalements des autres. */
+
+function ficheLignes(etab, incidents) {
+  const now = new Date();
+  return incidents.slice().sort((a, b) => b.date - a.date).map((i) => {
+    const relance = Suivi.relanceDe(i);
+    const etat = i.open
+      ? `en attente depuis ${fmtInt(daysSince(i.date, now))} j`
+      : (i.delay != null ? `clos, réponse en ${fmtInt(i.delay)} j` : 'clos');
+    return {
+      date: DATE_FMT.format(i.date),
+      ref: i.number ? `${i.registre} n° ${i.number}` : i.registre,
+      risque: i.risk, etat: i.state, situation: etat,
+      qui: declarant(i.reporter),
+      relance: relance ? litJour(relance) : '',
+    };
+  });
+}
+
+function ficheTexte(etab, incidents) {
+  const l = ficheLignes(etab, incidents);
+  const lignes = [
+    `${etab.name} — ${[etab.commune, etab.dept].filter(Boolean).join(', ')} (UAI ${etab.uai})`,
+    `Situation des signalements portés au registre, au ${DATE_FMT.format(new Date())}.`,
+    '',
+    ...l.map((x) => `- ${x.date} · ${x.ref} · ${x.risque}`
+      + `\n  ${x.etat} — ${x.situation}${x.qui ? ` — signalé par ${x.qui}` : ''}`
+      + (x.relance ? `\n  relance notée le ${x.relance}` : '')),
+    '',
+    `${fmtInt(l.length)} signalement${l.length > 1 ? 's' : ''} au total.`,
+  ];
+  const texte = lignes.join('\n');
+  const bouton = $('#btnFicheTexte');
+  const rendre = (msg) => { bouton.textContent = msg; setTimeout(() => { bouton.textContent = 'Copier pour un courriel'; }, 2200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texte).then(() => rendre('Copié'), () => rendre('Copie refusée'));
+  } else {
+    // Repli quand le presse-papiers n'est pas accessible (page en file://).
+    download(new Blob([texte], { type: 'text/plain;charset=utf-8' }),
+             `fiche_${etab.uai}.txt`);
+    rendre('Enregistré');
+  }
+}
+
+function fichePdf(etab, incidents) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const l = ficheLignes(etab, incidents);
+
+  doc.setFontSize(15); doc.setTextColor(20);
+  doc.text(doc.splitTextToSize(etab.name, 180), 14, 18);
+  doc.setFontSize(9.5); doc.setTextColor(100);
+  doc.text([etab.commune, etab.dept].filter(Boolean).join(' · ') + `  ·  UAI ${etab.uai}`, 14, 25);
+  if (address(etab)) doc.text(address(etab), 14, 30);
+  doc.text(`Situation au ${DATE_FMT.format(new Date())}.`, 14, 36);
+
+  const ouverts = incidents.filter((i) => i.open).length;
+  doc.setFontSize(10); doc.setTextColor(20);
+  doc.text(`${fmtInt(incidents.length)} signalement${incidents.length > 1 ? 's' : ''}, `
+    + `dont ${fmtInt(ouverts)} non clos.`, 14, 44);
+
+  doc.autoTable({
+    startY: 50,
+    head: [['Date', 'Référence', 'Risque', 'État', 'Situation', 'Relance']],
+    body: l.map((x) => [x.date, x.ref, x.risque, x.etat, x.situation, x.relance || '—']),
+    theme: 'grid', styles: { fontSize: 7.5, cellPadding: 1.6, overflow: 'linebreak' },
+    headStyles: { fillColor: [42, 120, 214], fontSize: 7.5 },
+    columnStyles: { 0: { cellWidth: 19 }, 1: { cellWidth: 24 }, 2: { cellWidth: 58 },
+                    3: { cellWidth: 20 }, 4: { cellWidth: 34 }, 5: { cellWidth: 'auto' } },
+    margin: { left: 14, right: 14 },
+  });
+
+  const note = Suivi.note(etab.uai);
+  if (note) {
+    doc.setFontSize(8); doc.setTextColor(130);
+    doc.text(doc.splitTextToSize('Note interne (non destinée à l\'envoi) : ' + note, 180),
+             14, doc.lastAutoTable.finalY + 8);
+  }
+  doc.save(`fiche_${etab.uai}_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+/* ---------------- Comparaison avec l'export précédent ---------------- */
+/* Sans ce point de repère, chaque chargement repart de zéro et l'outil ne dit
+   jamais ce qui a bougé — ce qui est pourtant la question d'une réunion. */
+
+function instantane() {
+  const par = {};
+  for (const inc of state.incidents) par[incKey(inc)] = inc.open ? 1 : 0;
+  return { date: AUJ(), n: state.incidents.length, par };
+}
+
+function comparer(avant, apres) {
+  if (!avant || !avant.par) return null;
+  const cles = new Set([...Object.keys(avant.par), ...Object.keys(apres.par)]);
+  let nouveaux = 0, clos = 0, encore = 0, disparus = 0;
+  for (const k of cles) {
+    const a = avant.par[k], b = apres.par[k];
+    if (a === undefined) nouveaux++;
+    else if (b === undefined) disparus++;
+    else if (a === 1 && b === 0) clos++;
+    else if (a === 1 && b === 1) encore++;
+  }
+  return { depuis: avant.date, nouveaux, clos, encore, disparus };
+}
+
+function renderQuoiDeNeuf() {
+  const box = $('#quoiDeNeuf');
+  const d = state.diff;
+  if (!d) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `
+    <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:2px">
+      Depuis l'export chargé le ${esc(litJour(d.depuis))}</p>
+    <div class="neuf">
+      <div><b style="color:var(--series-1)">${fmtInt(d.nouveaux)}</b><span>nouveaux</span></div>
+      <div><b style="color:var(--good)">${fmtInt(d.clos)}</b><span>clôturés</span></div>
+      <div><b style="color:var(--serious)">${fmtInt(d.encore)}</b><span>toujours ouverts</span></div>
+      <div><b>${fmtInt(d.disparus)}</b><span>absents</span></div>
+    </div>`;
 }
 
 /* ------------------------------ Fiche établissement ------------------------------ */
@@ -3135,6 +3385,15 @@ function renderEtab() {
       <button class="btn sm" id="btnZoomEtab" style="flex:1 1 130px">Centrer sur la carte</button>
       <button class="btn sm" id="btnOnlyEtab" style="flex:1 1 130px">N'afficher que celui-ci</button>
     </div>
+    <div class="row wrap" style="margin-top:6px">
+      <button class="btn sm" id="btnFichePdf" style="flex:1 1 130px">Fiche PDF</button>
+      <button class="btn sm" id="btnFicheTexte" style="flex:1 1 130px">Copier pour un courriel</button>
+    </div>
+
+    <h3 style="font-size:12.5px;margin-top:16px">Note interne</h3>
+    <p style="font-size:11px;color:var(--ink-muted);margin-bottom:5px">
+      Enregistrée dans ce navigateur, jamais exportée avec les données du registre.</p>
+    <textarea class="note-etab" id="noteEtab" placeholder="Vu avec la direction le…"></textarea>
 
     <h3 style="font-size:12.5px;margin-top:16px">Journal des signalements</h3>
     <div class="inclist">${shown.length ? shown.slice().reverse().map(incCard).join('')
@@ -3142,6 +3401,11 @@ function renderEtab() {
   `;
 
   renderBars('#barsEtab', tally(shown, (i) => i.family), { color: token('--series-1'), limit: 6 });
+
+  $('#noteEtab').value = Suivi.note(etab.uai);
+  $('#noteEtab').addEventListener('change', (e) => Suivi.ecrireNote(etab.uai, e.target.value));
+  $('#btnFichePdf').addEventListener('click', () => fichePdf(etab, shown));
+  $('#btnFicheTexte').addEventListener('click', () => ficheTexte(etab, shown));
 
   $('#btnZoomEtab').addEventListener('click', () => {
     map.setView([etab.lat, etab.lon], 15);
@@ -3156,15 +3420,18 @@ function renderEtab() {
 
 function incCard(inc) {
   const tagClass = { clos: 'clos', encours: 'encours', vise: 'vise' }[inc.stateKey] || 'autre';
+  const relance = Suivi.relanceDe(inc);
   return `<article class="inc">
     <div class="hd">
       <span class="dt">${esc(DATE_FMT.format(inc.date))}</span>
       <span class="tag ${tagClass}">${esc(inc.state)}</span>
     </div>
+    ${relance ? `<div style="margin-top:4px"><span class="relance${inc.open ? ' vaine' : ''}">
+      relancé le ${esc(litJour(relance))}</span></div>` : ''}
     <div class="rq">${esc(inc.risk)}</div>
     <div class="meta">
       ${inc.registre ? esc(inc.registre) : ''}${inc.number ? ' n° ' + esc(inc.number) : ''}
-      ${inc.reporter ? ' · signalé par ' + esc(inc.reporter) : ''}
+      ${declarant(inc.reporter) ? ' · signalé par ' + esc(declarant(inc.reporter)) : ''}
       ${inc.observations ? ' · ' + fmtInt(inc.observations) + ' observation' + (inc.observations > 1 ? 's' : '') : ''}
       ${inc.delay != null ? ' · réponse après ' + fmtInt(inc.delay) + ' j' : ''}
     </div>
@@ -3205,7 +3472,7 @@ function exportCsv() {
     lines.push([
       DATE_FMT.format(i.date), i.registre, i.number, i.uai, i.etab.name, i.etab.commune,
       i.etab.dept, i.etab.nature, i.family, i.risk, i.state, i.open ? 'non' : 'oui',
-      i.reporter, i.observations, i.delay ?? '',
+      declarant(i.reporter), i.observations, i.delay ?? '',
     ].map(cell).join(';'));
   }
   download(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
@@ -3260,7 +3527,7 @@ function exportPdf() {
     head: [['Date', 'Établissement', 'Commune', 'Dépt', 'Risque', 'État', 'Signalé par']],
     body: current.incidents.map((i) => [
       DATE_FMT.format(i.date), i.etab.name, i.etab.commune, i.etab.dept,
-      i.risk, i.state, i.reporter,
+      i.risk, i.state, declarant(i.reporter),
     ]),
     theme: 'grid', styles: { fontSize: 7, cellPadding: 1.4, overflow: 'linebreak' },
     headStyles: { fillColor: [42, 120, 214], fontSize: 7.5 },
@@ -3430,6 +3697,11 @@ function selectTab(which) {
 async function acceptFile(kind, file) {
   if (!file) return;
   const text = await file.text();
+  // Avant de remplacer le registre, on garde l'empreinte du précédent :
+  // c'est elle qui permettra de dire ce qui a bougé.
+  if (kind === 'incidents' && state.incidents.length && text !== state.csv.incidents) {
+    Prefs.set('instantane', instantane());
+  }
   state.csv[kind] = text;
   state.meta[kind] = { name: file.name };
   await Store.set(kind, { name: file.name, text });
@@ -3460,6 +3732,8 @@ async function reload() {
   $('#etabsBadge').textContent = builtin ? 'intégré' : 'remplacé';
   $('#btnRestoreAnnuaire').hidden = builtin || !hasBuiltinAnnuaire();
   syncBuildButtons();
+
+  state.diff = comparer(Prefs.get('instantane', null), instantane());
 
   renderFacets();
   renderTimeline();
@@ -3542,9 +3816,11 @@ function refresh() {
   renderPriorities(now);      // avant la carte : le mode urgence lit ses résultats
   renderMap();
   renderSynthesis();
+  renderQuoiDeNeuf();
   renderEtab();
   updateFacetBadges();
   $('#mbFilterCount').textContent = activeFilterCount();
+  $('#suiviBadge').textContent = Object.keys(Suivi.charger().relances).length;
   $('#btnClearMonth').hidden = !state.filters.month;
 }
 
@@ -3699,9 +3975,47 @@ function wireEvents() {
   $('#btnRelanceCsv').addEventListener('click', exportRelanceCsv);
   $('#btnRelancePdf').addEventListener('click', exportRelancePdf);
 
+  // Anonymat
+  $('#chkAnonyme').checked = anonyme();
+  $('#chkAnonyme').addEventListener('change', (e) => { Prefs.set('anonyme', e.target.checked); refresh(); });
+
+  // Suivi : sauvegarde et reprise
+  $('#btnSuiviExport').addEventListener('click', () => {
+    download(new Blob([JSON.stringify(Suivi.charger(), null, 2)], { type: 'application/json' }),
+             `visu-incidents_suivi_${AUJ()}.json`);
+  });
+  $('#fileSuivi').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const objet = JSON.parse(await f.text());
+      if (!objet || typeof objet !== 'object') throw new Error('format inattendu');
+      const n = Object.keys(objet.relances || {}).length;
+      if (!confirm(`Remplacer le suivi actuel par ${n} relance(s) et `
+                 + `${Object.keys(objet.notes || {}).length} note(s) ?`)) return;
+      Suivi.remplacer(objet);
+      refresh();
+    } catch (err) {
+      alert("Ce fichier n'est pas un suivi exporté par l'outil : " + err.message);
+    } finally { e.target.value = ''; }
+  });
+
   document.addEventListener('click', (e) => {
-    const row = e.target.closest('.prio');
-    if (row) showEtab(row.dataset.uai);
+    const bRel = e.target.closest('[data-relance]');
+    if (bRel) {
+      e.stopPropagation();
+      const p = priorites.find((x) => x.place.etab.uai === bRel.dataset.relance);
+      if (!p || !p.enAttente.length) { alert('Rien en attente à relancer ici.'); return; }
+      const incs = p.enAttente.map((x) => x.inc);
+      const dejaTous = incs.every((i) => Suivi.relanceDe(i));
+      if (dejaTous) Suivi.oublier(incs); else Suivi.marquer(incs, AUJ());
+      refresh();
+      return;
+    }
+    const bFiche = e.target.closest('[data-fiche]');
+    if (bFiche) { e.stopPropagation(); showEtab(bFiche.dataset.fiche); return; }
+    const nom = e.target.closest('.prio .nm[data-uai]');
+    if (nom) showEtab(nom.dataset.uai);
   });
   $('#openDash').addEventListener('click', () => {
     if (window.matchMedia('(max-width:1000px)').matches) openDrawer('dash');

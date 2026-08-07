@@ -136,8 +136,33 @@ L'annuaire ne recense que des écoles, collèges et lycées : les signalements
 portés par un CIO, un service ou une circonscription apparaîtront donc dans
 cette liste, faute de coordonnées où les placer.
 
+**Fiche à envoyer** — depuis la fiche d'un établissement, un PDF d'une page ou
+un texte à coller dans un courriel, ne contenant **que** les signalements de cet
+établissement. On n'adresse pas à une direction les signalements des autres, et
+la recopie manuelle disparaît.
+
+**Suivi des relances** — noter « relancé le… » sur les signalements en attente
+d'un établissement, et une note interne libre. Au chargement suivant, le
+classement distingue *jamais relancé* de *relancé et toujours sans réponse* —
+la seconde situation étant précisément celle qui justifie de remonter d'un cran.
+
+Ces marques vivent dans le navigateur, comme le reste : elles disparaîtraient
+au premier changement de poste. D'où l'export et l'import du suivi, en JSON,
+depuis la section **Export**. La note interne n'apparaît jamais dans un export
+de données, et sur la fiche PDF elle est signalée comme non destinée à l'envoi.
+
+**Quoi de neuf** — au chargement d'un nouvel export, un encart compare au
+précédent : nouveaux signalements, clôtures, dossiers toujours ouverts. Rien au
+premier chargement, faute de point de comparaison.
+
+**Masquage des noms** — un interrupteur remplace partout le nom du déclarant par
+une mention neutre, exports compris. Un registre est nominatif par nature ; une
+statistique portée devant une instance n'a pas à l'être.
+
 **Exports** — CSV (encodage compatible Excel) et rapport PDF, l'un comme l'autre
 strictement limités à ce qui est affiché, avec le rappel des filtres appliqués.
+La page s'imprime proprement : filtres et carte sont retirés du papier, la
+synthèse et les priorités sont conservées.
 
 ## Version autonome (Drive, clé USB, poste hors ligne)
 
