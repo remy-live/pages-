@@ -109,6 +109,20 @@ conjoint, et la contrainte de la mutation simultanée.
 Il contrôle aussi que **cocher « mutation simultanée » ne change aucun total** :
 tant que la valeur n'est pas établie, l'option ne doit inventer aucun point.
 
+## `verifier-bareme.mjs` — la page de recoupement
+
+```sh
+node tests/verifier-bareme.mjs
+```
+
+`verifier-bareme.html` sert à confronter le barème aux LDG et à produire le
+fichier corrigé. Le test contrôle qu'elle présente bien les vingt règles avec
+les valeurs du fichier, qu'elle signale les deux valeurs manquantes, qu'une
+correction est mise en évidence avec son ancienne valeur, et surtout que le
+fichier téléchargé est exploitable : la correction s'y trouve, la référence est
+rangée près de la règle, la date est portée, **rien d'autre n'a bougé**, et
+`verifie_contre_les_ldg` ne passe à `true` que si tout a été coché.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien

@@ -200,9 +200,30 @@ et signale exactement ce qui change. La marche à suivre y est décrite.
 Après modification, incrémenter `VERSION` dans `sw.js` pour que le nouveau barème
 atteigne les visiteurs qui ont la page en cache.
 
-Le champ `verifie_contre_les_ldg` vaut `false` : les valeurs reprennent fidèlement
-celles qui étaient dans le code, mais ce recoupement avec les lignes directrices
-de gestion académiques reste à faire.
+### Recouper avec les LDG
+
+Le champ `verifie_contre_les_ldg` vaut `false`, et il faut lire cette mention
+pour ce qu'elle dit : les valeurs reprennent **fidèlement celles qui étaient
+écrites dans le code d'origine**, mais personne ne les a encore confrontées au
+texte officiel. L'outil reconduit l'existant ; il n'est pas sourcé.
+
+La page **[`verifier-bareme.html`](verifier-bareme.html)** est faite pour ce
+recoupement. Elle présente les vingt règles en français ordinaire — « base 14,
+puis 7 par échelon, plafonné à 98 » — avec la valeur modifiable, une case
+« vérifié dans le texte » et un champ pour noter où vous l'avez lu. L'ancienne
+valeur reste affichée sous celles que vous corrigez, et un récapitulatif liste
+tous vos changements avant de valider.
+
+Le bouton vert produit un `bareme-intra-2026.json` à déposer dans `data/`. Il
+porte la date de vérification, les références saisies à côté de chaque règle, et
+ne passe `verifie_contre_les_ldg` à `true` que si les vingt règles ont été
+cochées — sinon il note combien l'ont été.
+
+Vos réponses restent dans le navigateur : le travail peut être interrompu et
+repris. La page ne modifie jamais le fichier du dépôt, elle en propose un autre.
+
+Deux règles y sont marquées d'un avertissement, faute de valeur connue : le
+stagiaire ex-fonctionnaire et la mutation simultanée.
 
 ## Pistes suivantes
 
