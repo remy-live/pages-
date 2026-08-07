@@ -4,6 +4,12 @@ Une page unique qui liste mes dépôts GitHub et pointe vers ceux qui ont un sit
 
 **Adresse du site :** https://remy-live.github.io/pages-/
 
+## Autres pages de ce dépôt
+
+- [`mutation/`](mutation/) — **Aide Mutation**, carte et simulateur de barème pour
+  le mouvement intra 2026 de l'académie d'Amiens :
+  https://remy-live.github.io/pages-/mutation/
+
 ## Publication
 
 Le site est déjà en ligne. Dans **Settings → Pages**, la source est la branche
