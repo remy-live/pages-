@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>JARVIS Arcade</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/vendor/three/three.module.min.js",
+    "@mediapipe/tasks-vision": "./js/vendor/mediapipe/vision_bundle.mjs"
+  }
+}
+</script>
+</head>
+<body>
+
+<!-- Source vidéo brute : jamais affichée, elle alimente MediaPipe. -->
+<video id="webcam" playsinline muted autoplay></video>
+
+<!-- Retour caméra, dessiné par l'app (miroir, vignette ou plein écran). -->
+<canvas id="camera-canvas"></canvas>
+
+<!-- Toute l'interface : menu, photobooth, HUD, curseur. -->
+<canvas id="ui-canvas"></canvas>
+
+<!-- Couche libre pour les jeux qui veulent du DOM ou de la 3D. -->
+<div id="game-layer"></div>
+
+<div id="boot">
+  <div class="boot-inner">
+    <h1>JARVIS<span>ARCADE</span></h1>
+    <div class="boot-track"><div id="boot-bar"></div></div>
+    <p id="boot-status">Initialisation…</p>
+    <div id="boot-actions" hidden>
+      <button id="boot-retry" type="button">Réessayer</button>
+      <button id="boot-skip" type="button">Continuer à la souris</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>

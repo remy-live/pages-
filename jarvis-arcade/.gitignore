@@ -1,0 +1,2 @@
+# Modèles MediaPipe : binaires lourds, récupérés par scripts/fetch-models.sh
+assets/models/*.task

@@ -1,0 +1,211 @@
+/* JARVIS Arcade — feuille de style de la borne.
+   Volontairement courte : le menu, le photobooth et le HUD sont dessinés
+   dans <canvas>. Le CSS ne gère que la mise en page des couches, l'écran
+   de boot et l'impression. */
+
+:root {
+  --neon: #00ffff;
+  --neon-dim: rgba(0, 255, 255, 0.35);
+  --bg: #05070a;
+  --fg: #e8f6f8;
+  --muted: #7d8f96;
+  --danger: #ff4d6d;
+
+  /* Empilement des couches, du fond vers l'avant. */
+  --z-camera: 0;
+  --z-game: 10;
+  --z-ui: 20;
+  --z-boot: 100;
+
+  /* Police : pas de webfont distante, la borne doit démarrer hors ligne.
+     Orbitron reste à vendoriser dans assets/fonts/ si on veut le look d'origine. */
+  --font: "Orbitron", "Eurostile", "Bahnschrift", "DIN Alternate",
+          system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  /* Borne : rien n'est sélectionnable, rien ne doit rebondir au toucher. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  overscroll-behavior: none;
+  cursor: none;
+}
+
+/* Le flux brut n'est jamais montré : on le dessine nous-mêmes, en miroir.
+   `display:none` empêcherait la lecture sur certains navigateurs, d'où
+   ce masquage par la taille. */
+#webcam {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#camera-canvas,
+#ui-canvas,
+#game-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#camera-canvas { z-index: var(--z-camera); background: #000; }
+#game-layer    { z-index: var(--z-game); }
+#ui-canvas     { z-index: var(--z-ui); }
+
+/* La vignette de contrôle : même canvas, replacé en bas à droite.
+   Les dimensions restent pilotées par le JS (ratio caméra), on ne fixe ici
+   que la position et l'habillage. */
+#camera-canvas.vignette {
+  inset: auto 24px 24px auto;
+  width: 288px;
+  height: auto;
+  border: 2px solid var(--neon-dim);
+  border-radius: 14px;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
+  z-index: 30;
+  transition: opacity 0.3s ease;
+}
+
+#camera-canvas.hidden { opacity: 0; }
+
+/* --- Écran de démarrage ------------------------------------------------ */
+
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, #0b1218 0%, var(--bg) 70%);
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+}
+
+#boot.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boot-inner {
+  width: min(460px, 82vw);
+  text-align: center;
+}
+
+#boot h1 {
+  margin: 0 0 2.2rem;
+  font-size: clamp(1.9rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--neon);
+  text-shadow: 0 0 22px var(--neon-dim);
+}
+
+#boot h1 span {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.42em;
+  letter-spacing: 0.5em;
+  color: var(--muted);
+  text-shadow: none;
+}
+
+.boot-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+#boot-bar {
+  width: 0%;
+  height: 100%;
+  background: var(--neon);
+  box-shadow: 0 0 12px var(--neon);
+  transition: width 0.25s ease-out;
+}
+
+#boot-status {
+  margin: 1.1rem 0 0;
+  min-height: 1.4em;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+#boot-status.error { color: var(--danger); }
+
+#boot-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 1.6rem;
+}
+
+#boot-actions[hidden] { display: none; }
+
+#boot-actions button {
+  padding: 0.7em 1.3em;
+  border: 1px solid var(--neon-dim);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--neon);
+  font-family: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#boot-actions button:hover,
+#boot-actions button:focus-visible {
+  background: rgba(0, 255, 255, 0.1);
+  outline: none;
+}
+
+/* --- Impression du photobooth ------------------------------------------
+   À l'impression, tout disparaît sauf la planche composée, injectée par
+   PhotoBoothState dans #print-sheet. */
+
+#print-sheet { display: none; }
+
+@media print {
+  body > * { display: none !important; }
+
+  #print-sheet {
+    display: block !important;
+    position: static;
+    margin: 0;
+  }
+
+  #print-sheet img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  @page {
+    margin: 0;
+    size: auto;
+  }
+}
+
+/* Confort de développement : au clavier/souris on veut voir le curseur. */
+body.pointer-mouse { cursor: default; }
