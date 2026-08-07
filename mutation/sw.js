@@ -16,7 +16,7 @@
  * Pour forcer la mise à jour chez tout le monde : incrémenter VERSION.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE_COQUILLE = `mutation-coquille-${VERSION}`;
 const CACHE_ANNEXES = `mutation-annexes-${VERSION}`;
 const CACHE_TUILES = `mutation-tuiles-${VERSION}`;

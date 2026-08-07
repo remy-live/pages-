@@ -9,6 +9,31 @@ Il n'y a plus de fichier à télécharger ni à ouvrir : on partage un lien, la 
 s'ouvre sur téléphone comme sur ordinateur, et elle s'installe sur l'écran
 d'accueil si on veut.
 
+## Pour quelqu'un qui n'y connaît rien
+
+C'est le cas d'usage principal : un collègue qui entend parler de mutation pour
+la première fois et à qui les sigles ne disent rien.
+
+- **Un écran d'accueil qui explique la chose avant de demander quoi que ce soit** :
+  ce qu'est le mouvement intra, ce qu'est un barème, et les cinq étapes de la
+  procédure — du calcul des points jusqu'aux résultats.
+- **Deux entrées au choix** : « Je débute, guidez-moi » ou « Je connais déjà ».
+- **Un mode simplifié** qui met de côté ce qui n'a de sens que pour un habitué
+  (zones de remplacement, polygones, couches ferroviaires). Un ruban en haut de
+  page rappelle qu'on peut tout afficher d'un clic.
+- **Un assistant en cinq étapes** qui pose une question à la fois, en français
+  ordinaire, avec pour chacune où trouver la réponse : « l'échelon est sur I-Prof,
+  onglet Votre carrière », « dans le doute, c'est certifié », « laissez décoché si
+  vous n'êtes pas sûr ». Les sigles sont expliqués sur place — TZR, REP, RQTH,
+  carte scolaire — au lieu d'être supposés connus.
+- **Un bilan qui explique le chiffre** au lieu de l'afficher seul : d'où viennent
+  les points, pourquoi le total tombe sur un établissement précis alors qu'il est
+  élevé sur une commune, et quels papiers préparer pour Colibris.
+
+L'assistant écrit dans les mêmes champs que le formulaire complet : on peut
+passer de l'un à l'autre sans rien perdre, et le rouvrir plus tard le retrouve
+pré-rempli.
+
 ## Ce que ça sait faire
 
 - **Chercher** un établissement ou une commune, au clavier comme au doigt.
@@ -112,6 +137,20 @@ d'avertissement, et le fait que le guide d'accueil a déjà été vu.
 Le bouton **Réinitialiser mon barème** efface les réponses ; **Tout effacer**
 dans le bilan efface les vœux. Un lien de partage contient le barème et les vœux
 de celui qui l'a créé — donc à ne pas diffuser plus loin qu'on ne le souhaite.
+
+## Et le mouvement inter-académique ?
+
+Il faudrait un second barème, celui de la phase **inter** (changer d'académie),
+défini par la note de service du 9 octobre 2025 publiée au
+[BO n° 39 du 16 octobre 2025](https://www.education.gouv.fr/bo/2025/Hebdo39/MENH2526218N),
+elle-même adossée aux lignes directrices de gestion du
+[BO spécial n° 5 du 31 octobre 2024](https://www.education.gouv.fr/bo/2024/Special5/MENH2423580N).
+
+Le travail n'est pas fait, et il ne doit pas être fait de mémoire : un barème
+approximatif conduirait des collègues à classer leurs vœux de travers. Il faut
+partir du texte officiel, ligne par ligne. La structure à viser est un fichier
+`data/bareme-inter-2026.json` portant chaque règle avec sa référence dans le BO,
+et un sélecteur **intra / inter** en tête de l'outil.
 
 ## Pistes suivantes
 
