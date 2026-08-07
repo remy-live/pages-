@@ -4,11 +4,36 @@ Une page unique qui liste mes dépôts GitHub et pointe vers ceux qui ont un sit
 
 **Adresse du site :** https://remy-live.github.io/pages-/
 
-## Outils hébergés ici
+La liste des dépôts vient de l'API GitHub. Les outils publiés dans des
+sous-dossiers de ce dépôt lui échappent : ils sont mis en avant à la main dans
+la section « Outils en ligne » de la page.
 
-- [**Visu-Incidents**](visu-incidents/) — carte et tableau de bord des
-  signalements RSST, rapprochés de l'annuaire des établissements.
-  En ligne : https://remy-live.github.io/pages-/visu-incidents/
+## Outils de ce dépôt
+
+- [`mutation/`](mutation/) — **Aide Mutation**, carte et simulateur de barème pour
+  le mouvement intra 2026 de l'académie d'Amiens :
+  https://remy-live.github.io/pages-/mutation/
+- [`visu-incidents/`](visu-incidents/) — **Visu-Incidents**, carte et tableau de
+  bord des signalements portés aux registres santé et sécurité au travail :
+  https://remy-live.github.io/pages-/visu-incidents/
+
+## Notes sur la page d'accueil
+
+- Les polices sont servies depuis `polices/` plutôt que depuis Google Fonts :
+  pas d'appel à un tiers, et l'allure tient sur un réseau qui filtre les CDN.
+- **Le jeton d'accès n'est pas conservé.** Il vaut pour la visite en cours et
+  disparaît au rechargement. Un jeton de portée `repo` ouvre la lecture et
+  l'écriture de tous vos dépôts : le garder dans le navigateur d'un appareil
+  partagé n'en vaut pas la commodité. Un jeton enregistré par une version
+  précédente est effacé au premier chargement de cette page.
+- La dernière liste **publique** est gardée en mémoire du navigateur, ce qui
+  affiche la page instantanément au retour et permet de continuer à la lire
+  quand l'API GitHub ne répond pas ou refuse (60 requêtes par heure sans
+  jeton). Rien n'est gardé quand un jeton est utilisé, pour que les noms de
+  dépôts privés ne traînent nulle part.
+- La page n'a pas de service worker : contrairement à `mutation/`, elle ne
+  s'ouvre pas sans réseau. Ce serait la prochaine étape si le besoin se
+  présente.
 
 ## Publication
 
