@@ -74,6 +74,24 @@ champ n'est écrasé, que chaque libellé partage le bord gauche de son champ,
 qu'aucun couple de champs ne se retrouve côte à côte, et qu'il n'y a pas de
 débordement horizontal.
 
+## `assistant-mobile.mjs` — l'assistant au pouce
+
+```sh
+node tests/assistant-mobile.mjs
+```
+
+Sur un iPhone réel, le bouton « Suivant » se retrouvait sous la barre d'outils de
+Safari : on voyait un liseré bleu au ras du bas, sans pouvoir l'atteindre. Deux
+causes se cumulaient — `vh` ignore cette barre, et `.modal-content` n'avait pas
+`box-sizing: border-box`, si bien que ses 20 px de marge intérieure débordaient
+l'écran par la droite.
+
+Le test contrôle sur quatre gabarits, dont un écran de 320×480 et un iPhone avec
+la barre affichée, que le bouton est visible sans faire défiler, qu'il le reste
+une fois l'étape parcourue jusqu'en bas, et qu'il est réellement cliquable. Il
+vérifie aussi qu'une réponse saisie est enregistrée sans changer d'étape et
+survit à un rechargement.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
