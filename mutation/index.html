@@ -315,8 +315,13 @@
             border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .col { flex: 1; }
+        /* Le panneau ne fait que 380 px, et moins encore au téléphone. Deux colonnes
+           y tronquaient les menus (« Certifié / PLP / PE… ») et désalignaient les
+           champs dès qu'un libellé passait à la ligne. Une colonne, toujours. */
+        .row { display: flex; flex-direction: column; margin-bottom: 10px; }
+        .col { flex: 1 1 auto; min-width: 0; }
+        .col + .col { margin-top: 10px; }
+        .form-section label { display: block; margin-bottom: 4px; }
 
         select, input[type="number"] {
             width: 100%; padding: 8px; border: 1px solid #ddd;

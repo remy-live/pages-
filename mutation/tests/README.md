@@ -59,6 +59,21 @@ sans annoncer de points inventés, et sans planter.
 Sans ce test, on pourrait croire le barème externalisé alors que le code
 continuerait de calculer avec ses anciennes valeurs.
 
+## `reglages-mobile.mjs` — la mise en page du panneau
+
+```sh
+node tests/reglages-mobile.mjs
+```
+
+Le panneau « Ma situation » ne fait que 380 px, et moins encore au téléphone.
+Il tenait deux colonnes, ce qui tronquait les menus (« Certifié / PLP / PE… »)
+et désalignait un champ de son libellé dès que celui-ci passait à la ligne.
+
+Le test contrôle sur trois modèles de téléphone et sur grand écran qu'aucun
+champ n'est écrasé, que chaque libellé partage le bord gauche de son champ,
+qu'aucun couple de champs ne se retrouve côte à côte, et qu'il n'y a pas de
+débordement horizontal.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
