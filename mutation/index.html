@@ -7,6 +7,10 @@
     <title>Aide Mutation — Intra 2026, académie d'Amiens</title>
     <meta name="description" content="Carte, simulateur de barème et liste de vœux pour le mouvement intra-académique 2026 de l'académie d'Amiens.">
     <meta name="theme-color" content="#2c3e50">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icone-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Aide Mutation">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232c3e50'/%3E%3Ccircle cx='16' cy='13' r='5' fill='%23e67e22'/%3E%3Cpath d='M16 18 L16 27' stroke='%23e67e22' stroke-width='3'/%3E%3C/svg%3E">
 
     <link rel="stylesheet" href="./vendor/leaflet.css">
@@ -371,10 +375,10 @@
 
         .wish-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .wish-badge { font-size: 0.75em; font-weight: bold; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-etb { background: #34495e; } 
-        .badge-com { background: #e67e22; } 
-        .badge-geo { background: #2980b9; } 
-        .badge-zr { background: #8e44ad; } 
+        .badge-etb { background: #34495e; }
+        .badge-com { background: #e67e22; }
+        .badge-geo { background: #2980b9; }
+        .badge-zr { background: #8e44ad; }
         .wish-code { font-family: 'Consolas', 'Monaco', monospace; background: #eee; color: #555; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; border: 1px solid #ddd; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -519,6 +523,45 @@
             }
             .close-modal { font-size: 34px; line-height: 1; }
         }
+        /* ==================== BANDEAU REPLIABLE ==================== */
+        .disclaimer { position: relative; padding-right: 42px !important; }
+        .disclaimer-bref { display: none; }
+        .disclaimer.replie .disclaimer-texte { display: none; }
+        .disclaimer.replie .disclaimer-bref { display: inline; }
+        .disclaimer-bascule {
+            position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+            background: rgba(0,0,0,.18); color: #fff; border: 0; border-radius: 50%;
+            width: 24px; height: 24px; cursor: pointer; font-size: 15px; line-height: 1;
+        }
+        .disclaimer-bascule:hover { background: rgba(0,0,0,.32); }
+
+        /* ==================== VŒUX : DÉPLACEMENT AU DOIGT ==================== */
+        .wish-fleches { display: flex; flex-direction: column; gap: 2px; margin-right: 6px; }
+        .wish-fleches button {
+            width: 30px; height: 22px; border: 1px solid #cfd8dc; background: #f7f9fa;
+            color: #2c3e50; border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0;
+        }
+        .wish-fleches button:hover:not(:disabled) { background: #e67e22; color: #fff; border-color: #d35400; }
+        .wish-fleches button:disabled { opacity: .3; cursor: default; }
+
+        /* ==================== COMPTEUR DE RÉSULTATS ==================== */
+        #compteur-visibles {
+            display: block; font-size: .82em; color: #2c3e50; background: #eef3f7;
+            border-left: 4px solid #3498db; padding: 5px 8px; border-radius: 4px; margin-bottom: 8px;
+        }
+        #compteur-visibles.vide { background: #fdecea; border-left-color: #e74c3c; color: #c0392b; }
+
+        /* ==================== BARRE D'ACTIONS DU BILAN ==================== */
+        .bilan-actions { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;
+            display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+        .bilan-actions .btn-action { width: auto; margin-top: 0; }
+        @media (max-width: 560px) {
+            .bilan-actions { justify-content: stretch; }
+            .bilan-actions .btn-action { flex: 1 1 45%; }
+        }
+
+        /* ==================== RÉSULTAT DE RECHERCHE AU CLAVIER ==================== */
+        .sr-item.survol { background: #d6e9f8; }
 </style>
 </head>
 
@@ -530,11 +573,13 @@
     </div>
     <div id="toast-container"></div>
     <div class="app-container">
-        
+
         <div class="disclaimer" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; text-align: center; padding: 12px 20px; font-size: 0.9em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 9999; position: relative; border-bottom: 2px solid #d35400;">
             <span style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;">⚠️</span>
-            <b>Outil d'aide pédagogique (Simulation indicative).</b> 
-            Réfère-toi toujours aux LDGA 2026. Vérifie ton barème sur I-Prof dès le 19 mai 2026 et n'oublie pas Colibris (avant le 21 avril) !
+            <span class="disclaimer-texte"><b>Outil d'aide pédagogique (Simulation indicative).</b>
+            Réfère-toi toujours aux LDGA 2026. Vérifie ton barème sur I-Prof dès le 19 mai 2026 et n'oublie pas Colibris (avant le 21 avril) !</span>
+            <span class="disclaimer-bref"><b>Simulation indicative</b> — le barème officiel est celui d'I-Prof.</span>
+            <button class="disclaimer-bascule" onclick="basculerBandeau()" aria-label="Replier ou déplier l'avertissement" title="Replier ou déplier">−</button>
         </div>
 
         <header>
@@ -552,7 +597,7 @@
                 <div id="search-results" role="listbox"></div>
             </div>
             <div class="header-controls">
-                <button onclick="openWishlistModal()" style="background:#e67e22; border-color:#d35400;" title="Bilan des vœux" aria-label="Bilan des vœux">📋<span class="lbl"> Bilan Vœux</span> (<span id="wish-counter">0</span>)</button> 
+                <button onclick="openWishlistModal()" style="background:#e67e22; border-color:#d35400;" title="Bilan des vœux" aria-label="Bilan des vœux">📋<span class="lbl"> Bilan Vœux</span> (<span id="wish-counter">0</span>)</button>
                 <button onclick="openGuide()" title="Comment ça marche ?" aria-label="Aide">❓<span class="lbl"> Aide</span></button>
                 <button onclick="openGlossary()" title="Glossaire" aria-label="Glossaire">📖<span class="lbl"> Glossaire</span></button>
                 <button onclick="toggleSidebar('right')" title="Mon barème" aria-label="Mon barème">🧮<span class="lbl"> Paramètres</span></button>
@@ -589,24 +634,25 @@
                             <label for="chk_show_tags" style="font-weight:bold; color:#2c3e50; cursor:pointer;">Afficher les scores sur la carte</label>
                         </div>
                         <div class="checkbox-label">
-                            <input type="checkbox" id="chk_show_zones" onchange="toggleZonePolygons()" checked> 
+                            <input type="checkbox" id="chk_show_zones" onchange="toggleZonePolygons()" checked>
                             <label for="chk_show_zones" style="font-weight:bold; color:#e67e22;">Afficher les polygones</label>
                         </div>
 
                         <div id="status-global" class="debug-status">
                             ⏳ Initialisation...
                         </div>
-                        
+                        <span id="compteur-visibles" hidden></span>
+
                         <div id="checkboxes-list" class="filter-container"></div>
 
                         <br>
                         <h3>Transports</h3>
                         <div class="checkbox-label">
-                            <input type="checkbox" id="chk_railways" onchange="toggleTransport('railways')"> 
+                            <input type="checkbox" id="chk_railways" onchange="toggleTransport('railways')">
                             <label for="chk_railways">Chemins de fer</label>
                         </div>
                         <div class="checkbox-label">
-                            <input type="checkbox" id="chk_stations" onchange="toggleTransport('stations')"> 
+                            <input type="checkbox" id="chk_stations" onchange="toggleTransport('stations')">
                             <label for="chk_stations">Gares</label>
                         </div>
                         <br>
@@ -616,7 +662,8 @@
                         <h3>Filtre par Rayon</h3>
                         <p style="font-size:0.9em; color:#666; margin-bottom:15px;">Placez un repère pour afficher uniquement les établissements à proximité.</p>
                         <div class="radius-controls">
-                            <button id="btn-pick-radius" class="btn-action" style="margin-top:0; background:#e67e22;" onclick="toggleRadiusPicker()">📍 Placer mon domicile</button>
+                            <button id="btn-geoloc" class="btn-action" style="margin-top:0; background:#3498db;" onclick="utiliserMaPosition()">📡 Utiliser ma position</button>
+                            <button id="btn-pick-radius" class="btn-action" style="margin-top:8px; background:#e67e22;" onclick="toggleRadiusPicker()">📍 Ou placer un point sur la carte</button>
                             <div style="margin-top:15px; font-weight:bold; color:#555;">Rayon de recherche :</div>
                             <div class="radius-val" id="radius-display">10 km</div>
                             <input type="range" id="radius-slider" min="1" max="50" value="10" oninput="updateRadiusCircle()">
@@ -712,7 +759,7 @@
 
                             <div class="form-section">
                                 <h4 style="margin-top:0;">3. Bonus Spécifiques</h4>
-                                
+
                                 <div style="background: #fdf2e9; border-left: 4px solid #e67e22; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
                                     <label style="font-weight: bold; font-size: 0.9em; margin-bottom:5px; color: #d35400; display:block;">⭐ Vœu préférentiel <span class="info-icon" onclick="showOfficialRule('voeu_pref')">ℹ️</span> :</label>
                                     <select id="voeu_pref" style="width:100%; padding:5px;">
@@ -759,7 +806,7 @@
                         <p style="font-size:.8em; color:#7f8c8d; margin:8px 0 0;">
                             Vos réponses et vos vœux sont enregistrés sur cet appareil : vous pouvez fermer la page et revenir plus tard.
                         </p>
-                        
+
                         <div id="memo-container" style="margin-top:20px; display:none; animation: fadeIn 0.5s;">
                             <h3 style="border-bottom: 2px solid #2c3e50; padding-bottom: 5px; color:#2c3e50;">📂 Votre Dossier Administratif</h3>
                             <div style="background:#f8f9fa; border-left:4px solid #3498db; padding:15px; border-radius:4px; font-size:0.9em;">
@@ -773,7 +820,7 @@
                             <strong style="color:#d35400;">📄 Justificatifs à fournir :</strong>
                             <ul id="checklist-list" style="margin-bottom: 0;"></ul>
                         </div>
-                        
+
                     </div>
                 </div>
             </aside>
@@ -793,15 +840,16 @@
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-modal" onclick="closeWishlistModal()">&times;</span>
             <h2 style="color:#2c3e50; border-bottom:2px solid #e67e22; padding-bottom:10px;">📋 Ma liste de vœux (Simulation)</h2>
-            <p style="font-size:0.9em; color:#666;">Glissez-déposez les éléments pour changer l'ordre. Les points sont recalculés en fonction de vos paramètres actuels.</p>
+            <p style="font-size:0.9em; color:#666;">Réordonnez avec les flèches ▲▼ (ou par glisser-déposer à la souris). Les points sont recalculés en fonction de vos paramètres actuels.</p>
 
             <div id="wishlist-container" class="wishlist-container"></div>
 
-            <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 15px; display:flex; justify-content:flex-end; gap:10px;">
-                <button class="btn-action" style="width:auto; background:#7f8c8d;" onclick="AppState.wishlist=[]; renderWishlist(); updateWishCounter();">🗑️ Tout effacer</button>
-                <button class="btn-action" style="width:auto; background:#e74c3c;" onclick="exportWishlistToPDF()">📄 PDF</button>
-                <button class="btn-action" style="width:auto; background:#27ae60;" onclick="exportWishlistCSV()">📥 Exporter CSV</button>
-                <button class="btn-action" style="width:auto; background:#2c3e50;" onclick="closeWishlistModal()">Fermer</button>
+            <div class="bilan-actions">
+                <button class="btn-action" style="background:#7f8c8d;" onclick="viderWishlist()">🗑️ Tout effacer</button>
+                <button class="btn-action" style="background:#2980b9;" onclick="partagerSimulation()">🔗 Partager</button>
+                <button class="btn-action" style="background:#e74c3c;" onclick="exportWishlistToPDF()">📄 PDF</button>
+                <button class="btn-action" style="background:#27ae60;" onclick="exportWishlistCSV()">📥 CSV</button>
+                <button class="btn-action" style="background:#2c3e50;" onclick="closeWishlistModal()">Fermer</button>
             </div>
         </div>
     </div>
@@ -811,10 +859,10 @@
             <span class="close-modal" onclick="document.getElementById('explication-modal').style.display='none'">&times;</span>
             <h2 style="margin-top:0; color:#2c3e50;">💡 Analyse de votre Barème</h2>
             <div style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 15px;">Voici le détail réglementaire calculé pour ce vœu spécifique.</div>
-            
+
             <div id="journal-container" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; line-height: 1.6; max-height: 400px; overflow-y: auto;">
             </div>
-            
+
             <div style="text-align: right; margin-top: 15px;">
                 <button class="btn-action" style="background:#2c3e50; width:auto;" onclick="document.getElementById('explication-modal').style.display='none'">Fermer</button>
             </div>
@@ -1074,34 +1122,34 @@
             loadCSVAndLinkGroups();
         }
 
-        function loadCSVAndLinkGroups() { 
+        function loadCSVAndLinkGroups() {
             if (typeof dataCsvEtabs === 'undefined') {
                 updateStatus("Erreur : La constante dataCsvEtabs est introuvable. Avez-vous collé les données ?", true);
                 return;
             }
 
-            Papa.parse(dataCsvEtabs, { 
-                header: true, 
-                delimiter: ";", 
-                skipEmptyLines: true, 
+            Papa.parse(dataCsvEtabs, {
+                header: true,
+                delimiter: ";",
+                skipEmptyLines: true,
                 error: function(err) {
                     updateStatus(`Erreur de lecture CSV: ${err.message}`, true);
                 },
-                complete: function (res) { 
+                complete: function (res) {
                     try {
-                        AppState.layers.etablissements.clearLayers(); 
-                        AppState.etablissementObjects = []; 
+                        AppState.layers.etablissements.clearLayers();
+                        AppState.etablissementObjects = [];
 
-                        res.data.forEach(row => { 
-                            const e = new Etablissement(row); 
-                            if (e.isValid()) { 
-                                linkDataToEtab(e, AppState.data.geo, 'GEO', 'departments'); 
-                                linkDataToEtab(e, AppState.data.zr, 'ZR', 'zones_remplacement'); 
-                                e.createMarker().addTo(AppState.layers.etablissements); 
+                        res.data.forEach(row => {
+                            const e = new Etablissement(row);
+                            if (e.isValid()) {
+                                linkDataToEtab(e, AppState.data.geo, 'GEO', 'departments');
+                                linkDataToEtab(e, AppState.data.zr, 'ZR', 'zones_remplacement');
+                                e.createMarker().addTo(AppState.layers.etablissements);
                                 AppState.etablissementObjects.push(e);
-                            } 
-                        }); 
-                        
+                            }
+                        });
+
                         const sg = document.getElementById('status-global');
                         if (sg) {
                             sg.innerHTML = `✅ ${AppState.etablissementObjects.length} établissements chargés.`;
@@ -1110,14 +1158,14 @@
                             sg.style.borderLeftColor = "#27ae60";
                             sg.style.background = "#e8f8f5";
                         }
-                        switchMode('GEO');
+                        appliquerModeMemorise();
                         updateUI(false);
                         splash(null);
                     } catch (parseError) {
                         updateStatus(`Erreur fatale de données : ${parseError.message}`, true);
                     }
-                } 
-            }); 
+                }
+            });
         }
 
         /* ==================== LOGIQUE RAYON ET FILTRES ==================== */
@@ -1142,22 +1190,24 @@
             const radiusKm = slider ? parseFloat(slider.value) : 10;
             const display = document.getElementById('radius-display');
             if (display) display.textContent = radiusKm + " km";
-            
+
             AppState.layers.radius.clearLayers();
             L.marker(AppState.radiusCenter, { draggable: true, zIndexOffset: 1000 }).addTo(AppState.layers.radius)
                 .bindPopup("Votre domicile").openPopup()
                 .on('dragend', function (event) { AppState.radiusCenter = event.target.getLatLng(); updateRadiusCircle(); });
             L.circle(AppState.radiusCenter, { radius: radiusKm * 1000, color: '#e74c3c', fillColor: '#e74c3c', fillOpacity: 0.1, weight: 2, dashArray: '5,5' }).addTo(AppState.layers.radius);
             AppState.layers.radius.addTo(AppState.map);
-            
+
             const chkMask = document.getElementById('chk-mask-outside');
             if (chkMask && chkMask.checked) applyGlobalFilters();
+            enregistrerVue();
         }
         function clearRadius() {
-            AppState.layers.radius.clearLayers(); AppState.radiusCenter = null; 
+            AppState.layers.radius.clearLayers(); AppState.radiusCenter = null;
             const chkMask = document.getElementById('chk-mask-outside');
-            if (chkMask) chkMask.checked = false; 
+            if (chkMask) chkMask.checked = false;
             applyGlobalFilters();
+            enregistrerVue();
         }
 
         function applyGlobalFilters() {
@@ -1175,6 +1225,7 @@
             const sliderElem = document.getElementById('radius-slider');
             const radiusKm = sliderElem ? parseFloat(sliderElem.value) : 10;
 
+            let visibles = 0;
             AppState.etablissementObjects.forEach(etab => {
                 if (!etab.marker) return;
                 let visibleZone = false;
@@ -1191,9 +1242,23 @@
                     if (dist > radiusKm * 1000) visibleRadius = false;
                 }
 
-                if (visibleZone && visibleType && visibleRadius) { if (!AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.addLayer(etab.marker); }
+                if (visibleZone && visibleType && visibleRadius) { if (!AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.addLayer(etab.marker); visibles++; }
                 else { if (AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.removeLayer(etab.marker); }
             });
+
+            majCompteurVisibles(visibles, AppState.etablissementObjects.length);
+            enregistrerVue();
+        }
+
+        /* Sans ce compte, un filtre trop restrictif donnait une carte vide sans explication. */
+        function majCompteurVisibles(visibles, total) {
+            const el = document.getElementById('compteur-visibles');
+            if (!el || !total) return;
+            el.hidden = false;
+            el.classList.toggle('vide', visibles === 0);
+            el.textContent = visibles === 0
+                ? "Aucun établissement ne passe vos filtres actuels."
+                : `${visibles} établissement${visibles > 1 ? 's' : ''} affiché${visibles > 1 ? 's' : ''} sur ${total}.`;
         }
 
         function openLeftTab(tabId, btn) { document.querySelectorAll('#sidebar-left .tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('#sidebar-left .tab-btn').forEach(b => b.classList.remove('active')); const t = document.getElementById(tabId); if (t) t.classList.add('active'); if (btn) btn.classList.add('active'); }
@@ -1243,34 +1308,34 @@
 
         function openTab(tabId, btn) { document.querySelectorAll('#sidebar-right .tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('#sidebar-right .tab-btn').forEach(b => b.classList.remove('active')); const t = document.getElementById(tabId); if (t) t.classList.add('active'); if (btn) btn.classList.add('active'); }
 
-        function linkDataToEtab(e, j, t, k) { 
-            if (!j || !j[k]) return; 
-            const vn = normalizeCityName(e.ville); 
-            j[k].forEach(d => { 
-                d.zones.forEach(z => { 
-                    const cs = z.cities; 
-                    let m = false, dst = null; 
-                    cs.forEach(c => { 
-                        const cn = (typeof c === 'string') ? c : c.name; 
-                        if (normalizeCityName(cn) === vn) { 
-                            m = true; 
-                            if (typeof c !== 'string') dst = c.distance 
-                        } 
-                    }); 
-                    if (m) e.groupes[t].push({ code: z.code, nom: z.zone_name, dist: dst, type: t }) 
-                }) 
-            }) 
+        function linkDataToEtab(e, j, t, k) {
+            if (!j || !j[k]) return;
+            const vn = normalizeCityName(e.ville);
+            j[k].forEach(d => {
+                d.zones.forEach(z => {
+                    const cs = z.cities;
+                    let m = false, dst = null;
+                    cs.forEach(c => {
+                        const cn = (typeof c === 'string') ? c : c.name;
+                        if (normalizeCityName(cn) === vn) {
+                            m = true;
+                            if (typeof c !== 'string') dst = c.distance
+                        }
+                    });
+                    if (m) e.groupes[t].push({ code: z.code, nom: z.zone_name, dist: dst, type: t })
+                })
+            })
         }
 
-        function getConvexHull(p) { 
-            if (p.length < 3) return p; 
-            p.sort((a, b) => a[1] === b[1] ? a[0] - b[0] : a[1] - b[1]); 
-            const c = (o, a, b) => (a[1] - o[1]) * (b[0] - o[0]) - (a[0] - o[0]) * (b[1] - o[1]); 
-            const l = []; 
-            for (let x of p) { while (l.length >= 2 && c(l[l.length - 2], l[l.length - 1], x) <= 0) l.pop(); l.push(x) } 
-            const u = []; 
-            for (let i = p.length - 1; i >= 0; i--) { const x = p[i]; while (u.length >= 2 && c(u[u.length - 2], u[u.length - 1], x) <= 0) u.pop(); u.push(x) } 
-            l.pop(); u.pop(); return l.concat(u) 
+        function getConvexHull(p) {
+            if (p.length < 3) return p;
+            p.sort((a, b) => a[1] === b[1] ? a[0] - b[0] : a[1] - b[1]);
+            const c = (o, a, b) => (a[1] - o[1]) * (b[0] - o[0]) - (a[0] - o[0]) * (b[1] - o[1]);
+            const l = [];
+            for (let x of p) { while (l.length >= 2 && c(l[l.length - 2], l[l.length - 1], x) <= 0) l.pop(); l.push(x) }
+            const u = [];
+            for (let i = p.length - 1; i >= 0; i--) { const x = p[i]; while (u.length >= 2 && c(u[u.length - 2], u[u.length - 1], x) <= 0) u.pop(); u.push(x) }
+            l.pop(); u.pop(); return l.concat(u)
         }
 
         function addMarginToShape(coords, factor) {
@@ -1292,10 +1357,10 @@
         }
 
         function normalizeCityName(n) { if (!n) return ""; let x = n.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); return x.replace(/\//g, " SUR ").replace(/-/g, " ").replace(/'/g, " ").replace(/\bST\b/g, "SAINT").replace(/\bSTE\b/g, "SAINTE").replace(/\s+/g, " ").trim() }
-        
+
         function switchMode(m) {
             AppState.currentMode = m;
-            if (m === 'COM') { generateCommuneCheckboxes(); } 
+            if (m === 'COM') { generateCommuneCheckboxes(); }
             else {
                 const d = (m === 'GEO') ? AppState.data.geo : AppState.data.zr;
                 const k = (m === 'GEO') ? 'departments' : 'zones_remplacement';
@@ -1303,6 +1368,7 @@
             }
             rebuildPolygonsForMode();
             applyGlobalFilters();
+            enregistrerVue();
         }
 
         const transportPending = {};
@@ -1337,7 +1403,7 @@
             }
             if (chk.checked) AppState.layers[t].addTo(AppState.map);
         }
-        
+
         function rebuildPolygonsForMode() {
             AppState.layers.zones.clearLayers();
             const pts = {};
@@ -1372,12 +1438,12 @@
 
                     const zonePolygon = L.polygon(polyShape, {
                         color: cols[i++ % cols.length],
-                        weight: 2,         
-                        opacity: 1,        
-                        dashArray: '5, 5', 
-                        fillOpacity: 0.15, 
+                        weight: 2,
+                        opacity: 1,
+                        dashArray: '5, 5',
+                        fillOpacity: 0.15,
                         pane: 'zonesPane',
-                        lineJoin: 'round'  
+                        lineJoin: 'round'
                     });
 
                     zonePolygon.on('click', function(e) {
@@ -1398,51 +1464,51 @@
             toggleZonePolygons();
         }
 
-        function toggleZonePolygons() { 
+        function toggleZonePolygons() {
             const chk = document.getElementById('chk_show_zones');
-            if (chk && chk.checked) AppState.layers.zones.addTo(AppState.map); 
-            else AppState.map.removeLayer(AppState.layers.zones); 
+            if (chk && chk.checked) AppState.layers.zones.addTo(AppState.map);
+            else AppState.map.removeLayer(AppState.layers.zones);
         }
 
         function toggleTags() {
             const mapDiv = document.getElementById('map');
             const checkbox = document.getElementById('chk_show_tags');
             if(mapDiv && checkbox) {
-                if (checkbox.checked) { mapDiv.classList.remove('no-tags'); } 
+                if (checkbox.checked) { mapDiv.classList.remove('no-tags'); }
                 else { mapDiv.classList.add('no-tags'); }
             }
         }
 
-        function generateCheckboxes(d, k) { 
-            const c = document.getElementById('checkboxes-list'); 
+        function generateCheckboxes(d, k) {
+            const c = document.getElementById('checkboxes-list');
             if (!c) return;
-            c.innerHTML = ""; 
-            if (!d || !d[k]) return; 
-            
-            d[k].forEach((dept, i) => { 
-                const id = `d_${i}`; 
-                const g = document.createElement('div'); 
-                g.className = 'dept-group'; 
-                g.innerHTML = `<div class="dept-header" onclick="if(event.target.tagName === 'INPUT') return; const cb=document.getElementById('${id}');cb.checked=!cb.checked;toggleDepartment('${id}')"><input type="checkbox" id="${id}" checked onchange="toggleDepartment('${id}')"><label>${dept.department_name}</label></div>`; 
-                const l = document.createElement('div'); 
-                l.className = 'zone-list'; 
-                dept.zones.forEach(z => { 
-                    l.innerHTML += `<div class="zone-item" onclick="if(event.target.tagName === 'INPUT') return; const cb=this.querySelector('input');cb.checked=!cb.checked;applyGlobalFilters()"><input type="checkbox" class="chk-zone" data-parent="${id}" value="${z.code}" checked onchange="applyGlobalFilters()"><label>${z.zone_name}</label></div>` 
-                }); 
-                g.appendChild(l); 
-                c.appendChild(g) 
-            }); 
-            c.innerHTML += `<div class="dept-group"><div class="dept-header"><input type="checkbox" id="d_oth" checked onchange="toggleDepartment('d_oth')"><label>Hors Zone</label></div><div class="zone-list"><div class="zone-item"><input type="checkbox" class="chk-zone" data-parent="d_oth" value="OTHERS" checked onchange="applyGlobalFilters()"><label>Non classé</label></div></div></div>` 
+            c.innerHTML = "";
+            if (!d || !d[k]) return;
+
+            d[k].forEach((dept, i) => {
+                const id = `d_${i}`;
+                const g = document.createElement('div');
+                g.className = 'dept-group';
+                g.innerHTML = `<div class="dept-header" onclick="if(event.target.tagName === 'INPUT') return; const cb=document.getElementById('${id}');cb.checked=!cb.checked;toggleDepartment('${id}')"><input type="checkbox" id="${id}" checked onchange="toggleDepartment('${id}')"><label>${dept.department_name}</label></div>`;
+                const l = document.createElement('div');
+                l.className = 'zone-list';
+                dept.zones.forEach(z => {
+                    l.innerHTML += `<div class="zone-item" onclick="if(event.target.tagName === 'INPUT') return; const cb=this.querySelector('input');cb.checked=!cb.checked;applyGlobalFilters()"><input type="checkbox" class="chk-zone" data-parent="${id}" value="${z.code}" checked onchange="applyGlobalFilters()"><label>${z.zone_name}</label></div>`
+                });
+                g.appendChild(l);
+                c.appendChild(g)
+            });
+            c.innerHTML += `<div class="dept-group"><div class="dept-header"><input type="checkbox" id="d_oth" checked onchange="toggleDepartment('d_oth')"><label>Hors Zone</label></div><div class="zone-list"><div class="zone-item"><input type="checkbox" class="chk-zone" data-parent="d_oth" value="OTHERS" checked onchange="applyGlobalFilters()"><label>Non classé</label></div></div></div>`
         }
 
-        function toggleDepartment(pid) { 
+        function toggleDepartment(pid) {
             const parentCb = document.getElementById(pid);
             if(!parentCb) return;
-            const s = parentCb.checked; 
-            document.querySelectorAll(`.chk-zone[data-parent="${pid}"]`).forEach(c => c.checked = s); 
-            applyGlobalFilters() 
+            const s = parentCb.checked;
+            document.querySelectorAll(`.chk-zone[data-parent="${pid}"]`).forEach(c => c.checked = s);
+            applyGlobalFilters()
         }
-        
+
         class Etablissement {
             constructor(r) {
                 const getVal = (key) => r[key] || r[Object.keys(r).find(k => k && k.includes(key))] || "";
@@ -1459,7 +1525,7 @@
                 this.Mail = getVal('Mail') || getVal('mail');
                 this.Web = getVal('Web') || getVal('web');
                 this.segpa = r['Segpa'] || r['segpa'] || "";
-                
+
                 this.groupes = { GEO: [], ZR: [], COM: [] };
                 this.marker = null;
 
@@ -1564,14 +1630,14 @@
         /* ==================== MOTEUR DE CALCUL EXPERT ==================== */
         function calculateBreakdown(e, typeVoeu = 'ETB') {
             let d = [], t = 0;
-            let journal = []; 
+            let journal = [];
 
             const ecElem = document.getElementById('echelon');
             const ec = parseInt(ecElem ? ecElem.value : 4) || 1;
-            
+
             const classeElem = document.getElementById('classe');
             const classe = classeElem ? classeElem.value : 'normale';
-            
+
             let ptsEchelon = 0;
             if (classe === 'normale') ptsEchelon = 14 + 7 * (ec - 1);
             else if (classe === 'hors_classe') ptsEchelon = 56 + 7 * (ec - 1);
@@ -1595,10 +1661,10 @@
 
             const famElem = document.getElementById('situation_familiale');
             const fam = famElem ? famElem.value : '';
-            
+
             const enfElem = document.getElementById('enfants');
             const enfants = parseInt(enfElem ? enfElem.value : 0) || 0;
-            
+
             const sepElem = document.getElementById('separation');
             const separation = parseInt(sepElem ? sepElem.value : 0) || 0;
 
@@ -1686,10 +1752,10 @@
                 t += 1500; d.push({ label: "Carte Scolaire (MCS)", pts: 1500 });
                 journal.push(`🚨 Mesure de Carte Scolaire : +1500 pts.`);
             }
-            
+
             const sortieRepElem = document.getElementById('sortie_rep');
             if (sortieRepElem && sortieRepElem.checked) {
-                t += 100; 
+                t += 100;
                 d.push({ label: "Sortie Educ. Prio", pts: 100 });
                 journal.push(`✅ Sortie Education Prioritaire : +100 pts.`);
             }
@@ -1723,56 +1789,56 @@
         }
 
         /* ==================== UPDATE UI ==================== */
-        function updateUI(os) { 
-            const b = calculateBreakdown(null, 'ETB'); 
-            AppState.etablissementObjects.forEach(x => x.updateTag(b)); 
-            
-            const cl = []; 
+        function updateUI(os) {
+            const b = calculateBreakdown(null, 'ETB');
+            AppState.etablissementObjects.forEach(x => x.updateTag(b));
+
+            const cl = [];
             const fElem = document.getElementById('situation_familiale');
-            const f = fElem ? fElem.value : ''; 
-            if (["RC", "APC"].includes(f)) { cl.push("Livret de famille"); cl.push("Attestation employeur") } 
-            
+            const f = fElem ? fElem.value : '';
+            if (["RC", "APC"].includes(f)) { cl.push("Livret de famille"); cl.push("Attestation employeur") }
+
             const rqthElem = document.getElementById('est_rqth');
-            if (rqthElem && rqthElem.checked) cl.push("RQTH"); 
-            
-            const ul = document.getElementById('checklist-list'); 
+            if (rqthElem && rqthElem.checked) cl.push("RQTH");
+
+            const ul = document.getElementById('checklist-list');
             if (ul) {
-                ul.innerHTML = ""; 
-                cl.forEach(x => { 
-                    const li = document.createElement('li'); 
-                    li.innerHTML = formaterTexte(x); 
-                    ul.appendChild(li) 
-                }); 
+                ul.innerHTML = "";
+                cl.forEach(x => {
+                    const li = document.createElement('li');
+                    li.innerHTML = formaterTexte(x);
+                    ul.appendChild(li)
+                });
             }
-            
+
             const container = document.getElementById('checklist-container');
-            if (container) container.style.display = cl.length ? 'block' : 'none'; 
-            
-            if (AppState.selectedEtab) { 
-                const e = AppState.selectedEtab; 
-                const r = calculateBreakdown(e, 'ETB'); 
-                
+            if (container) container.style.display = cl.length ? 'block' : 'none';
+
+            if (AppState.selectedEtab) {
+                const e = AppState.selectedEtab;
+                const r = calculateBreakdown(e, 'ETB');
+
                 const detName = document.getElementById('det-name');
-                if (detName) detName.textContent = e.nom; 
-                
+                if (detName) detName.textContent = e.nom;
+
                 const detMeta = document.getElementById('det-meta');
-                if (detMeta) detMeta.textContent = `${e.ville} - ${e.category}`; 
-                
+                if (detMeta) detMeta.textContent = `${e.ville} - ${e.category}`;
+
                 const detTotal = document.getElementById('det-total');
-                if (detTotal) detTotal.textContent = r.total; 
-                
-                const g = e.groupes[AppState.currentMode]; 
+                if (detTotal) detTotal.textContent = r.total;
+
+                const g = e.groupes[AppState.currentMode];
                 const detGroups = document.getElementById('det-groups');
-                if (detGroups) detGroups.innerHTML = g.length ? g.map(k => `📍 ${k.nom}`).join('<br>') : "Hors Zone"; 
-                
-                const tb = document.getElementById('det-tbody'); 
+                if (detGroups) detGroups.innerHTML = g.length ? g.map(k => `📍 ${k.nom}`).join('<br>') : "Hors Zone";
+
+                const tb = document.getElementById('det-tbody');
                 if (tb) {
-                    tb.innerHTML = ""; 
-                    r.details.forEach(k => { 
-                        const tr = document.createElement('tr'); 
-                        tr.innerHTML = `<td>${k.label}</td><td style="text-align:right">+${k.pts}</td>`; 
-                        tb.appendChild(tr) 
-                    }); 
+                    tb.innerHTML = "";
+                    r.details.forEach(k => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${k.label}</td><td style="text-align:right">+${k.pts}</td>`;
+                        tb.appendChild(tr)
+                    });
                 }
 
                 const detailPanel = document.getElementById('detail-panel');
@@ -1785,9 +1851,9 @@
                         btnBox.style.textAlign = "center";
                         detailPanel.appendChild(btnBox);
                     }
-                    
+
                     btnBox.innerHTML = `<button id="btn-show-journal" class="btn-action" style="background:#8e44ad; font-size:0.85em; width:100%;">🧐 Comprendre ce calcul</button>`;
-                    
+
                     const btnShow = document.getElementById('btn-show-journal');
                     if (btnShow) {
                         btnShow.onclick = function() {
@@ -1804,21 +1870,21 @@
                 }
 
                 const rightSidebar = document.getElementById('sidebar-right');
-                if (os && rightSidebar) rightSidebar.classList.remove('collapsed') 
-            } 
-        }   
+                if (os && rightSidebar) rightSidebar.classList.remove('collapsed')
+            }
+        }
 
         function updateHeaderScore() {
             const result = calculateBreakdown(AppState.selectedEtab, 'ETB');
             const display = document.getElementById('score-display');
             const badge = document.getElementById('header-score');
-            
+
             if(display) display.textContent = result.total + " pts";
 
             if(badge) {
                 if (result.total >= 1000) badge.style.background = "linear-gradient(135deg, #e67e22, #d35400)";
-                else if (result.total > 200) badge.style.background = "rgba(39, 174, 96, 0.4)"; 
-                else badge.style.background = "rgba(255, 255, 255, 0.2)"; 
+                else if (result.total > 200) badge.style.background = "rgba(39, 174, 96, 0.4)";
+                else badge.style.background = "rgba(255, 255, 255, 0.2)";
             }
         }
 
@@ -1827,7 +1893,7 @@
             const container = document.getElementById('checklist-container');
             if(list) list.innerHTML = "";
             let items = [];
-            
+
             const famElem = document.getElementById('situation_familiale');
             const fam = famElem ? famElem.value : '';
 
@@ -1878,13 +1944,13 @@
                 items.forEach(txt => {
                     if(list) {
                         const li = document.createElement('li');
-                        li.innerHTML = formaterTexte(txt); 
+                        li.innerHTML = formaterTexte(txt);
                         list.appendChild(li);
                     }
                 });
-                if(container) container.style.display = "block"; 
+                if(container) container.style.display = "block";
             } else {
-                if(container) container.style.display = "none"; 
+                if(container) container.style.display = "none";
             }
         }
 
@@ -1894,11 +1960,11 @@
                 input.addEventListener('change', updateChecklist);
             });
         }
-        
-        const inps = document.querySelectorAll('#calc-form input,#calc-form select'); 
-        inps.forEach(i => { 
-            i.oninput = () => { updateUI(false); updateHeaderScore(); }; 
-            i.onchange = () => { updateUI(false); updateHeaderScore(); updateChecklist(); } 
+
+        const inps = document.querySelectorAll('#calc-form input,#calc-form select');
+        inps.forEach(i => {
+            i.oninput = () => { updateUI(false); updateHeaderScore(); };
+            i.onchange = () => { updateUI(false); updateHeaderScore(); updateChecklist(); }
         });
 
         /* ==================== INITIALISATION CARTE ==================== */
@@ -1916,7 +1982,7 @@
             AppState.map.on('popupopen', () => { setTimeout(updateHeaderScore, 50); });
             AppState.map.on('popupclose', () => { AppState.selectedEtab = null; updateHeaderScore(); });
         }
-        
+
         const isNarrow = () => window.matchMedia('(max-width: 900px)').matches;
 
         function toggleSidebar(s) {
@@ -1965,17 +2031,17 @@
             const breakdown = calculateBreakdown(etabObj, type);
 
             AppState.wishlist.push({
-                type: type,      
-                id: id,          
-                nom: nom,        
-                desc: desc,      
-                points: breakdown.total, 
-                lat: lat,        
-                lon: lon         
+                type: type,
+                id: id,
+                nom: nom,
+                desc: desc,
+                points: breakdown.total,
+                lat: lat,
+                lon: lon
             });
 
             updateWishCounter();
-            saveWishlistToLocal(); 
+            saveWishlistToLocal();
 
             const btn = document.activeElement;
             if (btn && btn.tagName === 'BUTTON') {
@@ -1983,7 +2049,7 @@
                 btn.textContent = "✅ Ajouté !";
                 setTimeout(() => { if (btn) btn.innerHTML = originalText; }, 2000);
             }
-        }  
+        }
 
         function updateWishCounter() {
             const counter = document.getElementById('wish-counter');
@@ -2010,8 +2076,8 @@
 
         function renderWishlist() {
             const container = document.getElementById('wishlist-container');
-            if (!container) return; 
-            
+            if (!container) return;
+
             container.innerHTML = "";
 
             if (!AppState.wishlist || AppState.wishlist.length === 0) {
@@ -2045,6 +2111,10 @@
 
                 el.innerHTML = `
                     <div style="display:flex; align-items:center; width:100%;">
+                        <div class="wish-fleches">
+                            <button onclick="moveWish(${index}, -1)" ${index === 0 ? 'disabled' : ''} title="Monter ce vœu" aria-label="Monter ce vœu">▲</button>
+                            <button onclick="moveWish(${index}, 1)" ${index === AppState.wishlist.length - 1 ? 'disabled' : ''} title="Descendre ce vœu" aria-label="Descendre ce vœu">▼</button>
+                        </div>
                         <div class="wish-rank">${index + 1}</div>
                         <div class="wish-info">
                             <div class="wish-header">
@@ -2056,7 +2126,7 @@
                                 ${wish.type === 'ETB' ? formaterTexte(realData?.ville || wish.desc || '') : ''}
                             </div>
                         </div>
-                        
+
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="cursor:pointer; font-size:1.2em; transition: transform 0.2s;" title="Comprendre ce calcul" onclick="showWishExplication(${index})" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">💡</span>
                             <div class="wish-points" title="Total estimé">${points} pts</div>
@@ -2069,11 +2139,11 @@
                 addDragEvents(el);
                 container.appendChild(el);
             });
-        }      
+        }
 
         function showWishExplication(index) {
             const wish = AppState.wishlist[index];
-            
+
             let realData = wish.data;
             if (wish.type === 'ETB' && (!realData || !realData.Identifiant_de_l_etablissement)) {
                 const found = AppState.etablissementObjects.find(e => e.nom === wish.nom);
@@ -2081,10 +2151,10 @@
             }
 
             const result = calculateBreakdown(realData, wish.type);
-            
+
             const jc = document.getElementById('journal-container');
             const mod = document.getElementById('explication-modal');
-            
+
             if (jc && mod) {
                 jc.innerHTML = formaterTexte(result.explications.join('<br><br>'));
                 mod.style.display = 'block';
@@ -2099,19 +2169,19 @@
             item.addEventListener('dragstart', function (e) {
                 dragSrcEl = this;
                 e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', this.innerHTML); 
+                e.dataTransfer.setData('text/html', this.innerHTML);
                 this.classList.add('dragging');
             });
             item.addEventListener('dragover', function (e) {
-                if (e.preventDefault) e.preventDefault(); 
+                if (e.preventDefault) e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
                 return false;
             });
             item.addEventListener('dragenter', function (e) {
-                this.style.borderLeft = "5px solid #e67e22"; 
+                this.style.borderLeft = "5px solid #e67e22";
             });
             item.addEventListener('dragleave', function (e) {
-                this.style.borderLeft = "5px solid #3498db"; 
+                this.style.borderLeft = "5px solid #3498db";
             });
             item.addEventListener('dragend', function (e) {
                 this.classList.remove('dragging');
@@ -2139,7 +2209,7 @@
             const communesMap = new Map();
             AppState.etablissementObjects.forEach(etab => {
                 if (etab.groupes.COM && etab.groupes.COM.length > 0) {
-                    const com = etab.groupes.COM[0]; 
+                    const com = etab.groupes.COM[0];
                     if (!communesMap.has(com.code)) {
                         communesMap.set(com.code, com.nom);
                     }
@@ -2148,7 +2218,7 @@
 
             const parDept = {};
             communesMap.forEach((nom, code) => {
-                const deptCode = code.substring(0, 2); 
+                const deptCode = code.substring(0, 2);
                 if (!parDept[deptCode]) parDept[deptCode] = [];
                 parDept[deptCode].push({ code: code, nom: nom });
             });
@@ -2185,22 +2255,44 @@
         }
 
         function saveWishlistToLocal() {
-            localStorage.setItem('ma_wishlist_v29', JSON.stringify(AppState.wishlist));
+            try { localStorage.setItem('ma_wishlist_v29', JSON.stringify(AppState.wishlist)); } catch (e) { /* mode privé */ }
         }
 
+        /* Cette fonction existait mais n'était jamais appelée : la liste de vœux était
+           écrite dans le navigateur et jamais relue. Elle l'est maintenant au démarrage. */
         function loadWishlistFromLocal() {
-            const saved = localStorage.getItem('ma_wishlist_v29');
-            if (saved) {
-                AppState.wishlist = JSON.parse(saved);
-                updateWishCounter();
-            }
+            let saved = null;
+            try { saved = localStorage.getItem('ma_wishlist_v29'); } catch (e) { return; }
+            if (!saved) return;
+            try {
+                const liste = JSON.parse(saved);
+                if (Array.isArray(liste)) AppState.wishlist = liste;
+            } catch (e) { /* données abîmées : on repart d'une liste vide */ }
+            updateWishCounter();
+        }
+
+        function viderWishlist() {
+            if (AppState.wishlist.length && !confirm("Supprimer les " + AppState.wishlist.length + " vœux de votre liste ?")) return;
+            AppState.wishlist = [];
+            saveWishlistToLocal();
+            renderWishlist();
+            updateWishCounter();
+        }
+
+        function moveWish(index, sens) {
+            const cible = index + sens;
+            if (cible < 0 || cible >= AppState.wishlist.length) return;
+            const [deplace] = AppState.wishlist.splice(index, 1);
+            AppState.wishlist.splice(cible, 0, deplace);
+            saveWishlistToLocal();
+            renderWishlist();
         }
 
         function exportWishlistCSV() {
             if (AppState.wishlist.length === 0) return alert("Liste vide !");
             let csvContent = "data:text/csv;charset=utf-8,Rang;Type;Code;Nom;Description;Points\r\n";
             AppState.wishlist.forEach((w, index) => {
-                const row = [index + 1, w.type, w.id, w.nom, w.desc, w.points].join(";"); 
+                const row = [index + 1, w.type, w.id, w.nom, w.desc, w.points].join(";");
                 csvContent += row + "\r\n";
             });
             const encodedUri = encodeURI(csvContent);
@@ -2256,8 +2348,8 @@
                     if (found) realData = found;
                 }
 
-                const safeData = realData || {}; 
-                const result = calculateBreakdown(safeData, item.type); 
+                const safeData = realData || {};
+                const result = calculateBreakdown(safeData, item.type);
                 const pts = result.total;
                 totalPts += pts;
 
@@ -2285,7 +2377,7 @@
 
             const pDate = document.getElementById('pdf-date');
             if(pDate) pDate.textContent = "Le " + date;
-            
+
             const pTot = document.getElementById('pdf-total-points');
             if(pTot) pTot.textContent = "Total estimé liste : " + parseFloat(totalPts.toFixed(1)) + " pts";
 
@@ -2304,7 +2396,7 @@
 
             const pVoeux = document.getElementById('pdf-voeux-list');
             if(pVoeux) pVoeux.innerHTML = rowsHtml;
-            
+
             const chkList = document.getElementById('checklist-list');
             const checklistItems = chkList ? chkList.innerHTML : "";
             const pChk = document.getElementById('pdf-checklist');
@@ -2328,6 +2420,253 @@
             html2pdf().from(element).set(opt).save().then(() => {
                 element.style.display = 'none';
             });
+        }
+
+        /* ==================== BANDEAU D'AVERTISSEMENT ==================== */
+        const BANDEAU_KEY = 'mutation:bandeau-replie:v1';
+
+        function basculerBandeau(force) {
+            const el = document.querySelector('.disclaimer');
+            if (!el) return;
+            const replie = (force === undefined) ? !el.classList.contains('replie') : force;
+            el.classList.toggle('replie', replie);
+            el.querySelector('.disclaimer-bascule').textContent = replie ? '+' : '−';
+            if (force === undefined) {
+                try { localStorage.setItem(BANDEAU_KEY, replie ? '1' : '0'); } catch (e) { /* ignore */ }
+            }
+            setTimeout(() => { if (AppState.map) AppState.map.invalidateSize(); }, 50);
+        }
+
+        /* ==================== GÉOLOCALISATION ====================
+           Placer son domicile en cliquant sur la carte demande de savoir où l'on
+           habite à l'écran près ; sur téléphone, l'appareil le sait déjà. */
+        function utiliserMaPosition() {
+            const bouton = document.getElementById('btn-geoloc');
+            if (!navigator.geolocation) {
+                showToast("Position indisponible", "Votre navigateur ne sait pas donner votre position.", "warning");
+                return;
+            }
+            const texteInitial = bouton.textContent;
+            bouton.disabled = true;
+            bouton.textContent = "Localisation…";
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    bouton.disabled = false;
+                    bouton.textContent = texteInitial;
+                    AppState.radiusCenter = L.latLng(position.coords.latitude, position.coords.longitude);
+                    if (AppState.isPicking) toggleRadiusPicker();
+                    updateRadiusCircle();
+                    AppState.map.setView(AppState.radiusCenter, 11);
+                    if (isNarrow()) closeSidebars();
+                    showToast("Position trouvée", "Réglez le rayon avec le curseur.", "success");
+                },
+                erreur => {
+                    bouton.disabled = false;
+                    bouton.textContent = texteInitial;
+                    const messages = {
+                        1: "Vous avez refusé l'accès à la position. Placez plutôt un point sur la carte.",
+                        2: "Position introuvable pour l'instant. Réessayez ou placez un point sur la carte.",
+                        3: "La localisation a mis trop de temps. Réessayez."
+                    };
+                    showToast("Localisation impossible", messages[erreur.code] || erreur.message, "warning", 8000);
+                },
+                { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+            );
+        }
+
+        /* ==================== MÉMOIRE DE LA VUE ====================
+           Mode d'affichage, types cochés, domicile et rayon : retrouvés au retour. */
+        const VUE_KEY = 'mutation:vue:v1';
+        let vueRestaurable = false;
+
+        function enregistrerVue() {
+            if (!vueRestaurable) return;
+            const vue = {
+                mode: AppState.currentMode,
+                col: document.getElementById('chk_type_col').checked,
+                lyc: document.getElementById('chk_type_lyc').checked,
+                lp: document.getElementById('chk_type_lp').checked,
+                rayon: document.getElementById('radius-slider').value,
+                masquer: document.getElementById('chk-mask-outside').checked,
+                domicile: AppState.radiusCenter ? [AppState.radiusCenter.lat, AppState.radiusCenter.lng] : null
+            };
+            try { localStorage.setItem(VUE_KEY, JSON.stringify(vue)); } catch (e) { /* ignore */ }
+        }
+
+        function lireVue() {
+            try { return JSON.parse(localStorage.getItem(VUE_KEY) || 'null'); } catch (e) { return null; }
+        }
+
+        function appliquerVueMemorisee() {
+            const vue = lireVue();
+            if (!vue) return;
+            if (typeof vue.col === 'boolean') document.getElementById('chk_type_col').checked = vue.col;
+            if (typeof vue.lyc === 'boolean') document.getElementById('chk_type_lyc').checked = vue.lyc;
+            if (typeof vue.lp === 'boolean') document.getElementById('chk_type_lp').checked = vue.lp;
+            if (vue.rayon) {
+                document.getElementById('radius-slider').value = vue.rayon;
+                document.getElementById('radius-display').textContent = vue.rayon + " km";
+            }
+            if (typeof vue.masquer === 'boolean') document.getElementById('chk-mask-outside').checked = vue.masquer;
+        }
+
+        function appliquerDomicileMemorise() {
+            const vue = lireVue();
+            if (!vue || !Array.isArray(vue.domicile)) return;
+            AppState.radiusCenter = L.latLng(vue.domicile[0], vue.domicile[1]);
+            updateRadiusCircle();
+        }
+
+        function appliquerModeMemorise() {
+            const vue = lireVue();
+            const mode = (vue && ['GEO', 'COM', 'ZR'].includes(vue.mode)) ? vue.mode : 'GEO';
+            const radio = { GEO: 'mode_geo', COM: 'mode_com', ZR: 'mode_zr' }[mode];
+            const el = document.getElementById(radio);
+            if (el) el.checked = true;
+            switchMode(mode);
+            vueRestaurable = true;
+        }
+
+        /* ==================== PARTAGE PAR LIEN ====================
+           Barème et vœux tiennent dans l'adresse : on compare une stratégie avec
+           un collègue sans que personne n'installe ni n'envoie de fichier. */
+        function etatPartageable() {
+            const bareme = {};
+            baremeFields().forEach(el => { bareme[el.id] = (el.type === 'checkbox') ? (el.checked ? 1 : 0) : el.value; });
+            return {
+                b: bareme,
+                m: AppState.currentMode,
+                v: AppState.wishlist.map(w => ({ t: w.type, i: w.id, n: w.nom, d: w.desc, la: w.lat, lo: w.lon }))
+            };
+        }
+
+        function encoderEtat(etat) {
+            const octets = new TextEncoder().encode(JSON.stringify(etat));
+            let binaire = '';
+            octets.forEach(o => { binaire += String.fromCharCode(o); });
+            return btoa(binaire).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function decoderEtat(texte) {
+            const binaire = atob(texte.replace(/-/g, '+').replace(/_/g, '/'));
+            const octets = Uint8Array.from(binaire, c => c.charCodeAt(0));
+            return JSON.parse(new TextDecoder().decode(octets));
+        }
+
+        function lienDePartage() {
+            return location.origin + location.pathname + '#s=' + encoderEtat(etatPartageable());
+        }
+
+        async function partagerSimulation() {
+            let lien;
+            try {
+                lien = lienDePartage();
+            } catch (err) {
+                showToast("Partage impossible", "La simulation n'a pas pu être encodée.", "error");
+                return;
+            }
+            const details = { title: "Ma simulation de mutation", text: "Mon barème et mes vœux :", url: lien };
+            if (navigator.share) {
+                try { await navigator.share(details); return; } catch (err) { if (err.name === 'AbortError') return; }
+            }
+            try {
+                await navigator.clipboard.writeText(lien);
+                showToast("Lien copié", "Collez-le où vous voulez : il contient votre barème et vos vœux.", "success", 7000);
+            } catch (err) {
+                prompt("Copiez ce lien :", lien);
+            }
+        }
+
+        function appliquerEtatPartage(etat) {
+            if (etat.b) {
+                baremeFields().forEach(el => {
+                    if (!(el.id in etat.b)) return;
+                    if (el.type === 'checkbox') el.checked = !!etat.b[el.id];
+                    else el.value = etat.b[el.id];
+                });
+                saveBareme();
+            }
+            if (Array.isArray(etat.v)) {
+                AppState.wishlist = etat.v.map(w => ({
+                    type: w.t, id: w.i, nom: w.n, desc: w.d, lat: w.la, lon: w.lo, points: 0
+                }));
+                saveWishlistToLocal();
+                updateWishCounter();
+            }
+            if (etat.m && ['GEO', 'COM', 'ZR'].includes(etat.m)) {
+                const radio = document.getElementById({ GEO: 'mode_geo', COM: 'mode_com', ZR: 'mode_zr' }[etat.m]);
+                if (radio) radio.checked = true;
+                try {
+                    const vue = lireVue() || {};
+                    vue.mode = etat.m;
+                    localStorage.setItem(VUE_KEY, JSON.stringify(vue));
+                } catch (e) { /* ignore */ }
+            }
+        }
+
+        /* Renvoie true si un état partagé a été appliqué : le guide d'accueil est
+           alors inutile, l'utilisateur arrive avec une simulation déjà remplie. */
+        function lireEtatDepuisLien() {
+            const correspondance = location.hash.match(/[#&]s=([A-Za-z0-9_-]+)/);
+            if (!correspondance) return false;
+            let etat;
+            try {
+                etat = decoderEtat(correspondance[1]);
+            } catch (err) {
+                showToast("Lien illisible", "Ce lien de partage semble tronqué.", "error", 8000);
+                return false;
+            }
+            const aDejaQuelqueChose = AppState.wishlist.length > 0 || (() => {
+                try { return !!localStorage.getItem(BAREME_KEY); } catch (e) { return false; }
+            })();
+            if (aDejaQuelqueChose &&
+                !confirm("Ce lien contient une simulation partagée.\n\nL'ouvrir remplacera votre barème et votre liste de vœux. Continuer ?")) {
+                history.replaceState(null, '', location.pathname);
+                return false;
+            }
+            appliquerEtatPartage(etat);
+            history.replaceState(null, '', location.pathname);
+            showToast("Simulation ouverte", "Barème et vœux partagés ont été chargés.", "success", 7000);
+            return true;
+        }
+
+        /* ==================== FONCTIONNEMENT HORS LIGNE ==================== */
+        function activerHorsLigne() {
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.register('./sw.js').then(enregistrement => {
+                enregistrement.addEventListener('updatefound', () => {
+                    const arrivant = enregistrement.installing;
+                    if (!arrivant) return;
+                    arrivant.addEventListener('statechange', () => {
+                        if (arrivant.state === 'installed' && navigator.serviceWorker.controller) {
+                            showToast("Nouvelle version disponible", "Rechargez la page pour l'appliquer.", "info", 12000);
+                        }
+                    });
+                });
+            }).catch(() => { /* contexte non sécurisé ou navigateur sans support */ });
+        }
+
+        /* ==================== RECHERCHE AU CLAVIER ==================== */
+        let indexSurvol = -1;
+
+        function deplacerSurvol(sens) {
+            const items = Array.from(document.querySelectorAll('#search-results .sr-item'));
+            if (!items.length) return;
+            indexSurvol = (indexSurvol + sens + items.length) % items.length;
+            items.forEach((el, i) => el.classList.toggle('survol', i === indexSurvol));
+            items[indexSurvol].scrollIntoView({ block: 'nearest' });
+        }
+
+        function gererClavierRecherche(evenement) {
+            const boite = document.getElementById('search-results');
+            if (!boite.classList.contains('open')) return;
+            if (evenement.key === 'ArrowDown') { evenement.preventDefault(); deplacerSurvol(1); }
+            else if (evenement.key === 'ArrowUp') { evenement.preventDefault(); deplacerSurvol(-1); }
+            else if (evenement.key === 'Enter') {
+                const actif = boite.querySelector('.sr-item.survol') || boite.querySelector('.sr-item');
+                if (actif) { evenement.preventDefault(); actif.click(); }
+            }
         }
 
         /* ==================== MÉMOIRE DU FORMULAIRE ====================
@@ -2385,6 +2724,7 @@
                 ? hits.map((e, i) => `<div class="sr-item" role="option" data-i="${i}"><b>${e.nom}</b><span>${e.ville} · ${e.category || ''}</span></div>`).join('')
                 : '<div class="sr-empty">Aucun établissement à ce nom.</div>';
             box.classList.add('open');
+            indexSurvol = -1;
             box.querySelectorAll('.sr-item').forEach(el => {
                 el.onclick = () => gotoEtab(hits[parseInt(el.dataset.i, 10)]);
             });
@@ -2430,7 +2770,17 @@
            Une seule séquence d'initialisation (la v38 en avait deux, dont l'ordre
            d'exécution n'était pas garanti). */
         async function start() {
+            activerHorsLigne();
             restoreBareme();
+            loadWishlistFromLocal();
+            appliquerVueMemorisee();
+            let venuDunLienPartage = false;
+            try { venuDunLienPartage = lireEtatDepuisLien(); } catch (e) { /* lien exotique */ }
+
+            let bandeauReplie = null;
+            try { bandeauReplie = localStorage.getItem(BANDEAU_KEY); } catch (e) { /* ignore */ }
+            if (bandeauReplie === '1') basculerBandeau(true);
+
             attachChecklistListeners();
             baremeFields().forEach(el => el.addEventListener('change', saveBareme));
 
@@ -2451,15 +2801,20 @@
             const search = document.getElementById('etab-search');
             search.addEventListener('input', runSearch);
             search.addEventListener('focus', runSearch);
+            search.addEventListener('keydown', gererClavierRecherche);
             document.addEventListener('click', ev => {
                 if (!ev.target.closest('.search-bar')) document.getElementById('search-results').classList.remove('open');
             });
 
             initMap();
+            appliquerDomicileMemorise();
             updateHeaderScore();
             updateChecklist();
             await loadDataChain();
             splash(null);
+
+            /* Arrivé par un lien de partage, on entre directement dans le vif du sujet. */
+            if (venuDunLienPartage) { openWishlistModal(); return; }
 
             let seen = null;
             try { seen = localStorage.getItem(GUIDE_KEY); } catch (e) { /* ignore */ }
