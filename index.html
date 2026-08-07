@@ -10,10 +10,23 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23212A33'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FFB347'/%3E%3C/svg%3E">
 <title>Mes projets GitHub</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* Polices servies depuis le dépôt : plus d'appel à Google à chaque visite,
+   et la page garde son allure sur un réseau qui filtre les CDN. */
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;
+  src:url("polices/barlow-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;
+  src:url("polices/barlow-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:500;font-display:swap;
+  src:url("polices/barlow-condensed-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;
+  src:url("polices/barlow-condensed-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;
+  src:url("polices/barlow-condensed-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url("polices/ibm-plex-mono-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;
+  src:url("polices/ibm-plex-mono-latin-500-normal.woff2") format("woff2")}
 :root{
   --panel-a:#2B3742;
   --panel-b:#212A33;
@@ -98,6 +111,24 @@ input::placeholder{color:#6E7B85}
 .list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
 @media(min-width:600px){.list{grid-template-columns:1fr 1fr}}
 
+/* Les outils publiés dans ce dépôt vivent dans des sous-dossiers : l'API GitHub
+   ne les voit pas, et la liste des dépôts renvoyait donc vers cette page même. */
+.outils{margin:16px 0 0}
+.outils h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;font-size:15px;color:var(--silk-dim);margin:0 0 10px;padding:0 4px}
+.outil{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;
+  background:linear-gradient(180deg,#3C4A55,#2E3941);border:1px solid var(--led);
+  border-radius:var(--radius);padding:14px 16px;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 16px rgba(0,0,0,.35)}
+.outil:active{background:rgba(0,0,0,.22)}
+.outil .pastille{flex:0 0 40px;height:40px;border-radius:10px;background:var(--jack);
+  display:grid;place-items:center;font-size:20px;border:1px solid #0E1418}
+.outil>span{min-width:0}
+.outil .titre{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:700;
+  text-transform:uppercase;font-size:21px;line-height:1.05;letter-spacing:.02em;color:var(--silk)}
+.outil .quoi{display:block;font-size:14px;line-height:1.35;color:#BFC8CF;margin-top:4px}
+.outil .fleche{margin-left:auto;color:var(--led);font-size:20px}
+
 .sw{display:flex;background:linear-gradient(180deg,#38454F,#2B353D);
   border:1px solid #47555F;border-radius:var(--radius);overflow:hidden;
   box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 6px 14px rgba(0,0,0,.35)}
@@ -152,10 +183,38 @@ input::placeholder{color:#6E7B85}
     <input type="text" id="user" value="remy-live" autocapitalize="off" autocorrect="off" spellcheck="false">
     <label for="tok">Jeton d'accès (pour voir aussi les dépôts privés)</label>
     <input type="password" id="tok" placeholder="ghp_…" autocomplete="off">
-    <div class="check"><input type="checkbox" id="save"> <label for="save" style="flex:0;margin:0;text-transform:none;letter-spacing:0;font-family:inherit;font-size:14px">Retenir sur cet appareil</label></div>
     <button class="btn" id="reload">Charger</button>
     <p class="note">Sans jeton, seuls les dépôts publics apparaissent. Un jeton en lecture seule (scope <code>repo</code>) suffit.</p>
+    <p class="note">Le jeton n'est pas conservé : il vaut pour cette visite et disparaît au rechargement. Un jeton donne accès à tous vos dépôts — il n'a rien à faire dans la mémoire d'un navigateur, surtout sur un appareil partagé.</p>
   </div>
+
+  <section class="outils">
+    <h2>Outils en ligne</h2>
+    <a class="outil" href="mutation/">
+      <span class="pastille">📍</span>
+      <span>
+        <span class="titre">Aide Mutation</span>
+        <span class="quoi">Carte, barème et liste de vœux pour le mouvement intra 2026 de l'académie d'Amiens.</span>
+      </span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+    <a class="outil" href="visu-incidents/">
+      <span class="pastille">🗺️</span>
+      <span>
+        <span class="titre">Visu-Incidents</span>
+        <span class="quoi">Carte et tableau de bord des signalements portés aux registres santé et sécurité au travail.</span>
+      </span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+    <a class="outil" href="puzzle/">
+      <span class="pastille">🧩</span>
+      <span>
+        <span class="titre">Puzzle de calcul</span>
+        <span class="quoi">Fabrique une fiche où une image découpée en pièces se reconstitue si les calculs sont justes.</span>
+      </span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+  </section>
 
   <ul class="list" id="list"></ul>
   <p class="state" id="state">Chargement des dépôts…</p>
@@ -187,7 +246,7 @@ function render(){
 
   listEl.innerHTML = "";
   $("#num").textContent = rows.length;
-  $("#numLabel").textContent = rows.length > 1 ? "projets" : "projet";
+  $("#numLabel").textContent = rows.length === 1 ? "projet" : "projets";
   if (!rows.length){
     stateEl.textContent = repos.length ? "Aucun projet ne correspond." : "";
     return;
@@ -215,12 +274,43 @@ function render(){
   });
 }
 
+function trier(liste){
+  liste.sort((a,b) => (b.has_pages - a.has_pages) || (new Date(b.updated_at) - new Date(a.updated_at)));
+  return liste;
+}
+
+/* La dernière liste publique est gardée de côté : la page s'affiche instantanément
+   au retour, survit à une coupure de réseau et à la limite de 60 requêtes par heure
+   de l'API GitHub. Rien n'est gardé quand un jeton est utilisé — les dépôts privés
+   n'ont pas à traîner dans le navigateur. */
+function lireCache(user){
+  try {
+    const brut = store.get("gh:cache:" + user);
+    if (!brut) return null;
+    const { repos } = JSON.parse(brut);
+    return Array.isArray(repos) && repos.length ? repos : null;
+  } catch { return null; }
+}
+
 async function load(){
   const user = $("#user").value.trim() || "remy-live";
   const tok = $("#tok").value.trim();
   $("#userLine").textContent = "github · " + user;
-  listEl.innerHTML = "";
-  stateEl.textContent = "Chargement des dépôts…";
+
+  const cache = tok ? null : lireCache(user);
+  if (cache){
+    repos = trier(cache);
+    render();
+  } else {
+    listEl.innerHTML = "";
+    stateEl.textContent = "Chargement des dépôts…";
+  }
+
+  const echec = (html) => {
+    /* Avec une liste déjà affichée, un échec ne doit pas effacer l'écran. */
+    if (repos.length) stateEl.innerHTML = html + `<br>Liste affichée : celle de la dernière visite.`;
+    else stateEl.innerHTML = html;
+  };
 
   const url = tok
     ? "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner"
@@ -228,15 +318,16 @@ async function load(){
 
   try {
     const res = await fetch(url, { headers: tok ? { Authorization: "Bearer " + tok } : {} });
-    if (res.status === 404) { stateEl.innerHTML = `<b>Compte introuvable.</b><br>Vérifie le nom dans Réglages.`; return; }
-    if (res.status === 401) { stateEl.innerHTML = `<b>Jeton refusé.</b><br>Recopie-le dans Réglages.`; return; }
-    if (res.status === 403) { stateEl.innerHTML = `<b>Trop de requêtes vers GitHub.</b><br>Réessaie dans une heure, ou ajoute un jeton.`; return; }
+    if (res.status === 404) { echec(`<b>Compte introuvable.</b><br>Vérifie le nom dans Réglages.`); return; }
+    if (res.status === 401) { echec(`<b>Jeton refusé.</b><br>Recopie-le dans Réglages.`); return; }
+    if (res.status === 403) { echec(`<b>Trop de requêtes vers GitHub.</b><br>Réessaie dans une heure, ou ajoute un jeton.`); return; }
     if (!res.ok) throw new Error(res.status);
-    repos = await res.json();
-    repos.sort((a,b) => (b.has_pages - a.has_pages) || (new Date(b.updated_at) - new Date(a.updated_at)));
+
+    repos = trier(await res.json());
     render();
+    if (!tok) store.set("gh:cache:" + user, JSON.stringify({ repos }));
   } catch (e) {
-    stateEl.innerHTML = `<b>GitHub n'a pas répondu.</b><br>Vérifie la connexion et recharge.`;
+    echec(`<b>GitHub n'a pas répondu.</b><br>Vérifie la connexion et recharge.`);
   }
 }
 
@@ -251,21 +342,17 @@ $("#gear").addEventListener("click", e => {
   e.currentTarget.setAttribute("aria-expanded", String(open));
 });
 $("#reload").addEventListener("click", () => {
-  if ($("#save").checked){
-    store.set("gh:user", $("#user").value.trim());
-    store.set("gh:tok", $("#tok").value.trim());
-  } else {
-    store.del("gh:tok");
-  }
+  store.set("gh:user", $("#user").value.trim());
   $("#settings").classList.remove("open");
   $("#gear").setAttribute("aria-expanded","false");
   load();
 });
 
 (() => {
-  const u = store.get("gh:user"), t = store.get("gh:tok");
+  /* Le jeton d'une version précédente pouvait rester en mémoire : on le retire. */
+  store.del("gh:tok");
+  const u = store.get("gh:user");
   if (u) $("#user").value = u;
-  if (t) { $("#tok").value = t; $("#save").checked = true; }
   load();
 })();
 </script>
