@@ -1,7 +1,7 @@
 # Puzzle de calcul
 
-Fabrique automatiquement une fiche « puzzle » : une image découpée en pièces
-carrées, un plateau d'énoncés, la banque de pièces mélangées et le corrigé.
+Fabrique une fiche « puzzle » : une silhouette découpée en pièces, un plateau
+d'énoncés, la banque de pièces mélangées et le corrigé.
 
 **En ligne :** https://remy-live.github.io/pages-/puzzle/
 
@@ -9,11 +9,11 @@ carrées, un plateau d'énoncés, la banque de pièces mélangées et le corrig�
 
 C'est le procédé fait jusqu'ici à la main dans LibreOffice Draw, mais automatisé :
 
-1. une image (silhouette, dessin au trait) est posée sur une grille de carrés ;
-2. chaque carré ne montre que le morceau d'image qui tombe dedans — c'est une pièce ;
+1. une image est posée sur une grille ;
+2. chaque case ne montre que le morceau d'image qui tombe dedans — c'est une pièce ;
 3. chaque pièce porte le **résultat** d'un calcul, les pièces sont mélangées (et
    éventuellement tournées) ;
-4. le plateau porte les **énoncés**, une case par pièce, à la même taille.
+4. le plateau porte les **énoncés**, une case par pièce, exactement à la même taille.
 
 L'élève calcule, cherche la pièce qui porte son résultat et la colle sur la case.
 Si tout est juste, l'image se reconstitue : elle sert d'autocorrection.
@@ -22,17 +22,26 @@ Si tout est juste, l'image se reconstitue : elle sert d'autocorrection.
 
 | Réglage | Ce qu'il change |
 |---|---|
-| **Image** | quatre dessins fournis, ou un fichier à toi (SVG de préférence, sinon PNG/JPEG) |
-| **Cadrage** | remplir la grille (recadre les bords) ou tout montrer ; zoom et décalages |
-| **Découpe** | de 2 à 12 colonnes et lignes, soit 4 à 144 pièces |
-| **Rotation** | aucune, demi-tours, ou quarts de tour |
+| **Silhouette** | dix-sept dessins fournis, ou un fichier à toi (SVG de préférence, sinon PNG/JPEG) |
+| **Cadrage** | remplir la grille ou tout montrer ; zoom et décalages pour choisir ce qui tombe dans les pièces |
+| **Découpe** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces |
+| **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
+| **Cases carrées** | décochée, les cases s'étirent pour remplir toute la page (imposée aux quarts de tour) |
 | **Mélange** | une graine : même graine = même fiche, « Remélanger » en tire une autre |
 | **Calculs** | cinq générateurs, ou ta propre liste tapée à la main |
-| **Étiquettes** | position du nombre sur la pièce, taille, halo blanc, fond gris |
-| **Pages** | banque sur la même page ou séparée, corrigé optionnel |
+| **Page** | portrait ou paysage, marges de 0 à 25 mm, pièces sur une page à part, corrigé, consigne, titres |
+| **Nombres** | position sur la pièce, taille, halo blanc, fond gris |
 
-Tout est enregistré dans le navigateur : la fiche est retrouvée telle quelle à la
-prochaine visite.
+Il n'y a ni en-tête ni pied de page : la grille occupe toute la place disponible.
+Tout est enregistré dans le navigateur et retrouvé à la visite suivante.
+
+## Aperçu et impression
+
+**Aperçu** ouvre les pages en plein écran, telles qu'elles sortiront. De là ou
+depuis la barre du haut, **Imprimer** ouvre la boîte du navigateur : le format
+(A4 portrait ou paysage) est déjà posé, il reste à mettre les marges sur
+« aucune » et à cocher **Graphiques d'arrière-plan** si les fonds gris des pièces
+manquent.
 
 ## Les calculs
 
@@ -57,19 +66,15 @@ deviennent interchangeables, et un élève qui calcule juste peut quand même
 casser l'image. La page le signale, et les générateurs ne produisent que des
 résultats tous différents.
 
-## Impression
-
-Bouton **Imprimer / enregistrer en PDF**, puis dans la boîte du navigateur :
-format A4, marges « aucune », et **Graphiques d'arrière-plan** coché si les fonds
-gris des pièces manquent.
-
 ## Comment ça marche
 
 Un seul fichier, `index.html` : HTML, CSS et JavaScript, aucun outil de build,
-aucun appel réseau. Une pièce est un carré en `overflow:hidden` qui contient
+aucun appel réseau. Une pièce est une case en `overflow:hidden` qui contient
 l'image entière, décalée pour n'en laisser voir que la bonne portion — c'est
 l'équivalent de l'intersection faite dans LibreOffice, mais sans toucher au
 fichier source. Une image SVG reste donc vectorielle jusqu'au PDF.
+
+Les silhouettes fournies sont dessinées à la main dans le fichier, en SVG.
 
 Pour tester en local :
 
