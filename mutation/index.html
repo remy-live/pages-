@@ -352,29 +352,59 @@
         .glossary-term { font-weight: bold; color: #2c3e50; width: 60px; display: inline-block; }
 
         /* --- WISHLIST --- */
-        .wishlist-container { padding: 10px; background: #f9f9f9; border-radius: 5px; min-height: 200px; }
+        .wishlist-container { padding: 0; background: none; }
+
+        /* Trois lignes, une hiérarchie : le nom domine, les points le suivent,
+           le reste se tait. L'ancienne carte alignait six éléments de force égale. */
         .wish-item {
-            background: white; border: 1px solid #ddd; border-left: 5px solid #3498db;
-            padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; display: flex;
-            justify-content: space-between; align-items: center; cursor: grab; transition: transform 0.2s, box-shadow 0.2s;
+            background: #fff; border: 1px solid #e4e9ec; border-left: 4px solid #95a5a6;
+            border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; cursor: grab;
+            display: grid; grid-template-columns: auto 1fr auto; gap: 3px 11px;
+            grid-template-areas: "rang nom points" "rang meta meta" "actions actions actions";
+            align-items: center; transition: box-shadow .2s, opacity .2s;
         }
+        .wish-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
         .wish-item:active { cursor: grabbing; }
-        .wish-item.dragging { opacity: 0.5; border: 2px dashed #3498db; }
+        .wish-item.dragging { opacity: .5; border-style: dashed; }
+        .wish-item.type-ETB { border-left-color: #34495e; }
+        .wish-item.type-COM { border-left-color: #e67e22; }
+        .wish-item.type-GEO { border-left-color: #2980b9; }
+        .wish-item.type-ZR  { border-left-color: #8e44ad; }
+        .wish-item.type-DPT { border-left-color: #16a085; }
 
         .wish-rank {
-            font-weight: bold; font-size: 1.2em; color: #fff; background: #3498db;
-            width: 25px; height: 25px; display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; margin-right: 10px;
+            grid-area: rang; width: 26px; height: 26px; border-radius: 50%;
+            background: #eef2f5; color: #5d6d7e; font-weight: bold; font-size: .88rem;
+            display: grid; place-items: center; font-variant-numeric: tabular-nums;
         }
-        .wish-info { flex: 1; }
-        .wish-name { font-weight: bold; color: #2c3e50; }
-        .wish-desc { font-size: 0.85em; color: #7f8c8d; }
+        .wish-name {
+            grid-area: nom; font-weight: 600; color: #2c3e50; font-size: 1rem;
+            line-height: 1.25; overflow-wrap: anywhere;
+        }
         .wish-points {
-            font-weight: bold; color: #e67e22; background: #fff3e0;
-            padding: 3px 8px; border-radius: 10px; margin: 0 10px; font-size: 0.9em;
+            grid-area: points; color: #d35400; font-weight: bold; font-size: 1rem;
+            white-space: nowrap; font-variant-numeric: tabular-nums;
         }
-        .wish-remove { color: #e74c3c; cursor: pointer; font-weight: bold; padding: 5px; font-size: 1.1em; }
-        .wish-remove:hover { color: #c0392b; background: #fee; border-radius: 3px; }
+        .wish-meta {
+            grid-area: meta; font-size: .8rem; color: #8a97a3; line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+        .wish-actions {
+            grid-area: actions; display: flex; justify-content: flex-end; gap: 4px;
+            margin-top: 7px; padding-top: 7px; border-top: 1px solid #f1f4f6;
+        }
+        .wish-btn {
+            width: 36px; height: 32px; border: 1px solid #e4e9ec; background: #fbfcfd;
+            border-radius: 6px; cursor: pointer; font-size: .85rem; line-height: 1;
+            color: #5d6d7e; padding: 0;
+        }
+        .wish-btn:hover:not(:disabled) { background: #eef2f5; border-color: #cfd8dc; }
+        .wish-btn:disabled { opacity: .3; cursor: default; }
+        .wish-btn.supprimer { color: #c0392b; }
+        .wish-btn.supprimer:hover { background: #fdecea; border-color: #f5b7b1; }
+
+        .wish-vide { text-align: center; padding: 34px 16px; color: #8a97a3;
+            font-size: .92rem; line-height: 1.5; background: #f7f9fa; border-radius: 8px; }
 
         .btn-add-wish {
             background: #27ae60; color: white; border: none; width: 100%;
@@ -738,6 +768,23 @@
         .filtres-ep .ex-nom { color: #7f8c8d; font-size: .85em; }
         .avertissement-filtre { margin: 9px 0 0; font-size: .78rem; line-height: 1.45; color: #8a6d3b;
             background: #fdf6e3; border-left: 3px solid #e0b84c; padding: 7px 9px; border-radius: 4px; }
+        /* ==================== EN-TÊTE ET PIED DU BILAN ==================== */
+        .wish-titre { margin: 0 0 4px; color: #2c3e50; font-size: 1.25rem;
+            border-bottom: 2px solid #e67e22; padding-bottom: 9px; }
+        .wish-consigne { font-size: .85rem; color: #7f8c8d; margin: 0 0 14px; line-height: 1.4; }
+
+        /* Les quatre actions restaient sous la ligne de flottaison sur un téléphone. */
+        .bilan-actions {
+            position: sticky; bottom: 0; background: #fff; z-index: 2;
+            margin: 16px -20px -20px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+            border-top: 1px solid #e4e9ec; display: flex; gap: 8px; flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .bilan-actions .btn-action { width: auto; margin-top: 0; padding: 9px 14px; font-size: .88rem; }
+        @media (max-width: 560px) {
+            .bilan-actions { justify-content: stretch; }
+            .bilan-actions .btn-action { flex: 1 1 30%; padding: 10px 6px; }
+        }
 </style>
 </head>
 
@@ -1061,13 +1108,13 @@
     <div id="wishlist-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <span class="close-modal" onclick="closeWishlistModal()">&times;</span>
-            <h2 style="color:#2c3e50; border-bottom:2px solid #e67e22; padding-bottom:10px;">📋 Ma liste de vœux (Simulation)</h2>
-            <p style="font-size:0.9em; color:#666;">Réordonnez avec les flèches ▲▼ (ou par glisser-déposer à la souris). Les points sont recalculés en fonction de vos paramètres actuels.</p>
+            <h2 class="wish-titre">Ma liste de vœux</h2>
+            <p class="wish-consigne">Du plus désiré au moins désiré — réordonnez avec ▲▼. Les points se recalculent seuls.</p>
 
             <div id="wishlist-container" class="wishlist-container"></div>
 
             <div class="bilan-actions">
-                <button class="btn-action" style="background:#7f8c8d;" onclick="viderWishlist()">🗑️ Tout effacer</button>
+                <button class="btn-action" style="background:#7f8c8d;" onclick="viderWishlist()">🗑️ Effacer</button>
                 <button class="btn-action" style="background:#2980b9;" onclick="partagerSimulation()">🔗 Partager</button>
                 <button class="btn-action" style="background:#e74c3c;" onclick="exportWishlistToPDF()">📄 PDF</button>
                 <button class="btn-action" style="background:#27ae60;" onclick="exportWishlistCSV()">📥 CSV</button>
@@ -2549,7 +2596,7 @@
             container.innerHTML = "";
 
             if (!AppState.wishlist || AppState.wishlist.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa; font-style:italic;">Votre liste est vide.<br>Ajoutez des vœux depuis la carte.</div>';
+                container.innerHTML = '<div class="wish-vide">Votre liste est vide.<br>Cliquez un point ou une zone sur la carte, puis « Ajouter ce vœu ».</div>';
                 return;
             }
 
@@ -2563,46 +2610,39 @@
                 const result = calculateBreakdown(realData, wish.type);
                 const points = result.total;
 
-                let badgeClass = "badge-etb";
-                let badgeLabel = "ETABLISSEMENT";
-                if (wish.type === 'COM') { badgeClass = "badge-com"; badgeLabel = "COMMUNE"; }
-                else if (wish.type === 'GEO') { badgeClass = "badge-geo"; badgeLabel = "GROUPEMENT"; }
-                else if (wish.type === 'ZR') { badgeClass = "badge-zr"; badgeLabel = "ZONE REMPL."; }
-                else if (wish.type === 'DPT') { badgeClass = "badge-dpt"; badgeLabel = "DEPARTEMENT"; }
+                const badgeLabel = {
+                    ETB: "Établissement", COM: "Commune", GEO: "Groupement",
+                    ZR: "Zone de remplacement", DPT: "Département"
+                }[wish.type] || wish.type;
 
                 const codeDisplay = realData?.Identifiant_de_l_etablissement || realData?.code || wish.id || "";
 
                 const el = document.createElement('div');
-                el.className = 'wish-item';
+                el.className = 'wish-item type-' + wish.type;
                 el.draggable = true;
                 el.dataset.index = index;
 
+                /* La ville n'a de sens que pour un établissement ; ailleurs le libellé
+                   du vœu la contient déjà. */
+                const lieu = (wish.type === 'ETB') ? (realData?.ville || wish.desc || '') : '';
+                const meta = [badgeLabel, lieu, codeDisplay].filter(Boolean).join(' · ');
+                const dernier = index === AppState.wishlist.length - 1;
+
                 el.innerHTML = `
-                    <div style="display:flex; align-items:center; width:100%;">
-                        <div class="wish-fleches">
-                            <button onclick="moveWish(${index}, -1)" ${index === 0 ? 'disabled' : ''} title="Monter ce vœu" aria-label="Monter ce vœu">▲</button>
-                            <button onclick="moveWish(${index}, 1)" ${index === AppState.wishlist.length - 1 ? 'disabled' : ''} title="Descendre ce vœu" aria-label="Descendre ce vœu">▼</button>
-                        </div>
-                        <div class="wish-rank">${index + 1}</div>
-                        <div class="wish-info">
-                            <div class="wish-header">
-                                <span class="wish-badge ${badgeClass}">${badgeLabel}</span>
-                                ${codeDisplay ? `<span class="wish-code" style="font-family:monospace; color:#c0392b; background:#eee; padding:1px 4px; border-radius:3px; margin-left:5px;">${codeDisplay}</span>` : ''}
-                            </div>
-                            <div class="wish-name">${wish.nom}</div>
-                            <div class="wish-desc" style="font-style:italic;">
-                                ${wish.type === 'ETB' ? formaterTexte(realData?.ville || wish.desc || '') : ''}
-                            </div>
-                        </div>
-
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="cursor:pointer; font-size:1.2em; transition: transform 0.2s;" title="Comprendre ce calcul" onclick="showWishExplication(${index})" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">💡</span>
-                            <div class="wish-points" title="Total estimé">${points} pts</div>
-                        </div>
-
-                        <div class="wish-remove" onclick="removeWish(${index})" title="Supprimer ce vœu">&times;</div>
-                    </div>
-                `;
+                    <span class="wish-rank">${index + 1}</span>
+                    <span class="wish-name">${wish.nom}</span>
+                    <span class="wish-points" title="Total estimé pour ce vœu">${points} pts</span>
+                    <span class="wish-meta">${meta}</span>
+                    <span class="wish-actions">
+                        <button class="wish-btn" onclick="showWishExplication(${index})"
+                                title="D'où viennent ces points ?" aria-label="D'où viennent ces points ?">💡</button>
+                        <button class="wish-btn wish-monter" onclick="moveWish(${index}, -1)" ${index === 0 ? 'disabled' : ''}
+                                title="Monter ce vœu" aria-label="Monter ce vœu">▲</button>
+                        <button class="wish-btn wish-descendre" onclick="moveWish(${index}, 1)" ${dernier ? 'disabled' : ''}
+                                title="Descendre ce vœu" aria-label="Descendre ce vœu">▼</button>
+                        <button class="wish-btn supprimer" onclick="removeWish(${index})"
+                                title="Retirer ce vœu" aria-label="Retirer ce vœu">✕</button>
+                    </span>`;
 
                 addDragEvents(el);
                 container.appendChild(el);

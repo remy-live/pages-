@@ -140,6 +140,24 @@ laisse rien et que le compteur le dit, que le choix survit au rechargement, et
 que l'avertissement contre le malentendu est bien présent : masquer un
 établissement de la carte ne l'exclut pas d'un vœu large.
 
+## `liste-voeux.mjs` — la carte de vœu
+
+```sh
+node tests/liste-voeux.mjs
+```
+
+La carte alignait six éléments de force égale : une pastille de type, un code en
+rouge sur gris, un rang, deux flèches, une ampoule et les points. Sur un
+téléphone, le code passait à la ligne, « 35 pts » se coupait en deux, le rang
+chevauchait les flèches, et deux des cinq actions du bilan restaient sous la
+ligne de flottaison.
+
+Le test contrôle sur iPhone SE, iPhone 13 et grand écran que rien ne se coupe ni
+ne déborde, que les libellés sont écrits correctement — « Établissement » et non
+« ETABLISSEMENT » ni « etablissement » —, que les cinq actions du bilan sont
+visibles sans faire défiler, que les flèches font au moins 32 px de côté, et
+qu'elles réordonnent toujours.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
