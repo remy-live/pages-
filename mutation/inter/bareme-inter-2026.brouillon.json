@@ -1,0 +1,174 @@
+{
+  "_avertissement": "BROUILLON NON VÉRIFIÉ — ne pas brancher sur un calculateur en l'état. Chiffres reconstitués à partir de synthèses syndicales et rectorales lues indirectement, sans accès au texte officiel. Chaque ligne porte son niveau de confiance et sa provenance. Tant que verifie vaut false, ce fichier est une note de travail, pas une donnée d'application.",
+  "verifie": false,
+  "mouvement": "inter-académique",
+  "annee": 2026,
+  "textes_de_reference": {
+    "note_de_service": {
+      "intitule": "Règles et procédures du mouvement national à gestion déconcentrée — rentrée scolaire 2026",
+      "date": "2025-10-09",
+      "nor": "MENH2526218N",
+      "publication": "BO n° 39 du 16 octobre 2025",
+      "url": "https://www.education.gouv.fr/bo/2025/Hebdo39/MENH2526218N"
+    },
+    "lignes_directrices_de_gestion": {
+      "intitule": "Lignes directrices de gestion ministérielles relatives à la mobilité",
+      "publication": "BO spécial n° 5 du 31 octobre 2024",
+      "url": "https://www.education.gouv.fr/bo/2024/Special5/MENH2423580N",
+      "remarque": "L'annexe III porte le tableau du barème."
+    }
+  },
+  "sources_consultees": [
+    {
+      "cle": "se-unsa",
+      "intitule": "Barème mutations inter-académiques 2025-2026 — partie commune du barème",
+      "url": "https://www.se-unsa.org/wp-content/uploads/2025/10/bareme2025_2026.pdf",
+      "nature": "synthèse syndicale (PDF)"
+    },
+    {
+      "cle": "ac-amiens",
+      "intitule": "Mouvement interacadémique 2026 — synthèse des barèmes",
+      "url": "https://www.ac-amiens.fr/media/21649/download",
+      "nature": "document du rectorat d'Amiens — la source à privilégier pour cet outil"
+    },
+    {
+      "cle": "snes-amiens",
+      "intitule": "INTER 2026 : les infos essentielles",
+      "url": "https://www.amiens.snes.edu/INTER-2026-Les-infos-essentielles.html",
+      "nature": "synthèse syndicale académique"
+    },
+    {
+      "cle": "fo-snfolc",
+      "intitule": "Votre barème inter-académique — mouvement 2026",
+      "url": "https://www.fo-snfolc.fr/wp-content/uploads/2025/11/fiches-mut-inter-2026-int-3.pdf",
+      "nature": "fiche syndicale (PDF)"
+    },
+    {
+      "cle": "cgt-versailles",
+      "intitule": "Le barème interacadémique",
+      "url": "https://www.cgteduc-versailles.fr/le-bareme-interacademique/",
+      "nature": "synthèse syndicale"
+    },
+    {
+      "cle": "ldg-annexe3",
+      "intitule": "BO spécial n° 5 du 31 octobre 2024 — annexe III (copie mise en ligne par l'académie de Limoges)",
+      "url": "https://www.ac-limoges.fr/media/21409/download",
+      "nature": "reprise du texte officiel"
+    }
+  ],
+
+  "partie_fixe": {
+    "echelon": {
+      "classe_normale": { "points_par_echelon": 7, "minimum": 14, "confiance": "haute", "sources": ["se-unsa", "cgt-versailles"] },
+      "hors_classe": {
+        "socle": 63,
+        "points_par_echelon": 7,
+        "cas_particuliers_agreges": [
+          { "condition": "échelon 4 depuis 2 ans", "total": 98 },
+          { "condition": "échelon 4 depuis 3 ans", "total": 105 }
+        ],
+        "confiance": "moyenne",
+        "sources": ["se-unsa"],
+        "a_verifier": "Le socle s'ajoute-t-il aux points d'échelon, ou les remplace-t-il ? La formulation lue est ambiguë."
+      },
+      "classe_exceptionnelle": {
+        "socle": 77,
+        "points_par_echelon": 7,
+        "plafond": 105,
+        "confiance": "moyenne",
+        "sources": ["se-unsa"],
+        "a_verifier": "Même ambiguïté que pour la hors-classe, et périmètre exact du plafond."
+      }
+    },
+    "anciennete_de_poste": {
+      "points_par_an": 20,
+      "bonus_par_tranche_de_4_ans": 50,
+      "date_appreciation": "2026-08-31",
+      "confiance": "moyenne",
+      "sources": ["se-unsa"],
+      "a_verifier": "Une seule source. Vérifier aussi le traitement des années sur poste précédent après carte scolaire."
+    }
+  },
+
+  "situation_familiale": {
+    "rapprochement_de_conjoints": {
+      "points": 150.2,
+      "condition": "Académie de résidence professionnelle du conjoint demandée en vœu 1 ; s'applique ensuite aux académies limitrophes.",
+      "majoration_academies_non_limitrophes": 100,
+      "date_limite_mariage_ou_pacs": "2025-08-31",
+      "confiance": "haute",
+      "sources": ["se-unsa", "cgt-versailles"]
+    },
+    "annees_de_separation": {
+      "1": 190, "2": 325, "3": 475, "4_et_plus": 600,
+      "confiance": "haute",
+      "sources": ["se-unsa"],
+      "a_verifier": "Conditions de décompte d'une année de séparation (positions administratives ouvrant droit)."
+    },
+    "enfants_a_charge": {
+      "points_par_enfant": 100,
+      "condition": "enfant de moins de 18 ans au 31/08/2026",
+      "confiance": "haute",
+      "sources": ["se-unsa", "snes-amiens"]
+    },
+    "autorite_parentale_conjointe": {
+      "points_premier_enfant": 250.2,
+      "points_par_enfant_supplementaire": 100,
+      "confiance": "moyenne",
+      "sources": ["se-unsa"],
+      "a_verifier": "250,2 pour un enfant cohabite mal avec les 150,2 du rapprochement de conjoints : vérifier si ce total inclut déjà les 100 points d'enfant."
+    },
+    "mutation_simultanee": {
+      "points": 80,
+      "condition": "Entre conjoints, sur le vœu 1 correspondant au département demandé, puis académies limitrophes.",
+      "confiance": "moyenne",
+      "sources": ["se-unsa"]
+    },
+    "parent_isole": {
+      "points": null,
+      "confiance": "aucune",
+      "a_verifier": "NON RENSEIGNÉ VOLONTAIREMENT. La recherche a renvoyé une bonification de 6,9 points qui relève d'un barème INTRA académique, et une mention d'arrêt du Conseil d'État sans référence vérifiable. À reprendre entièrement depuis le texte."
+    }
+  },
+
+  "education_prioritaire": {
+    "rep_plus_ou_politique_de_la_ville": { "points": 400, "condition": "au moins 5 ans d'exercice", "confiance": "haute", "sources": ["se-unsa", "cgt-versailles"] },
+    "rep": { "points": 200, "condition": "au moins 5 ans d'exercice", "confiance": "haute", "sources": ["se-unsa", "cgt-versailles"] }
+  },
+
+  "handicap": {
+    "beneficiaire_obligation_emploi": { "points": 100, "portee": "tous les vœux", "confiance": "haute", "sources": ["se-unsa"] },
+    "bonification_exceptionnelle": {
+      "points": 1000,
+      "condition": "Académie (exceptionnellement académies) où la mutation améliorerait la situation de l'agent, de son conjoint ou d'un enfant en situation de handicap.",
+      "confiance": "haute",
+      "sources": ["se-unsa"],
+      "a_verifier": "Procédure d'attribution (avis du médecin conseiller), non automatique."
+    }
+  },
+
+  "stagiaires": {
+    "ex_contractuels": {
+      "detail": [
+        { "condition": "jusqu'au 3e échelon", "points": 150 },
+        { "condition": "4e échelon", "points": 165 },
+        { "condition": "à partir du 5e échelon", "points": 180 }
+      ],
+      "condition_generale": "1 ETP sur les deux dernières années",
+      "perimetre": "enseignants, CPE, PsyEN, CFA public, AED, AED préprofessionnalisation, AESH, EAP",
+      "confiance": "moyenne",
+      "sources": ["se-unsa"]
+    },
+    "stagiaire_classique": { "points": null, "confiance": "aucune", "a_verifier": "Non obtenu." },
+    "ex_fonctionnaire": { "points": null, "confiance": "aucune", "a_verifier": "Non obtenu." }
+  },
+
+  "non_renseigne": {
+    "mesure_de_carte_scolaire": "Les chiffres remontés (300 / 200 / 100 « poste adjoint », « circonscription ») relèvent du MOUVEMENT DU PREMIER DEGRÉ et n'ont rien à faire ici. À reprendre depuis le texte.",
+    "voeu_preferentiel": "Existence confirmée et non-cumul avec le rapprochement de conjoints évoqué, mais aucune valeur en points obtenue.",
+    "reintegration": "Non obtenu.",
+    "cimm_et_dom": "Non obtenu. Sujet sensible : bonifications importantes pour les centres d'intérêts matériels et moraux outre-mer.",
+    "stabilisation_tzr": "Non obtenu pour la phase inter.",
+    "regles_de_vœux": "Nombre de vœux (31 évoqué), typage des vœux, ordre imposé pour déclencher les bonifications familiales : rien de tout cela n'est consigné ici."
+  }
+}
