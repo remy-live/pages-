@@ -11,7 +11,8 @@ les fichiers CSV sont lus sur place et restent sur l'appareil.
 ## Utilisation
 
 Déposer l'**export du registre** (colonnes `UAI`, `Risque`, `Observé le`,
-`Etat`, …). C'est tout : l'annuaire des établissements est intégré à la page.
+`Etat`, …). C'est tout : l'annuaire de l'académie d'Amiens — 2 061
+établissements de l'Oise, de la Somme et de l'Aisne — est intégré à la page.
 
 Les colonnes sont reconnues sans tenir compte des accents, de la casse ni des
 espaces, et le séparateur (`;`, `,` ou tabulation) est détecté automatiquement.
@@ -27,10 +28,11 @@ déposer à l'usage.
 
 L'annuaire est réduit aux onze colonnes réellement lues, débarrassé des
 établissements sans coordonnées, compressé en gzip et encodé en base64 dans
-`annuaire.js`. Sur un fichier de 635 Ko à 37 colonnes, le résultat pèse 61 Ko —
-10 % de l'original. La page le décompresse au démarrage avec
-`DecompressionStream`, natif au navigateur : aucune bibliothèque supplémentaire,
-et 0,2 à 0,7 s au chargement.
+`annuaire.js`. L'annuaire livré passe ainsi de 877 Ko à 143 Ko, soit 16 % de
+l'original (2 061 établissements, 37 colonnes ramenées à 11).
+
+La page le décompresse au démarrage avec `DecompressionStream`, natif au
+navigateur : aucune bibliothèque supplémentaire, et 0,2 s au chargement.
 
 ### Depuis la page, sans rien installer
 
@@ -86,13 +88,17 @@ signalements sont masqués.
 dont l'UAI est absent de l'annuaire, ceux sans date exploitable, et les
 établissements sans coordonnées. Ils ne disparaissent plus silencieusement.
 
+L'annuaire ne recense que des écoles, collèges et lycées : les signalements
+portés par un CIO, un service ou une circonscription apparaîtront donc dans
+cette liste, faute de coordonnées où les placer.
+
 **Exports** — CSV (encodage compatible Excel) et rapport PDF, l'un comme l'autre
 strictement limités à ce qui est affiché, avec le rappel des filtres appliqués.
 
 ## Version autonome (Drive, clé USB, poste hors ligne)
 
-`visu-incidents-autonome.html` est un fichier unique (environ 900 Ko, plus la taille de l'annuaire intégré) : toutes
-les bibliothèques y sont incorporées. Il s'ouvre par double-clic, sans serveur
+`visu-incidents-autonome.html` est un fichier unique de 1,1 Mo : les
+bibliothèques et l'annuaire y sont incorporés. Il s'ouvre par double-clic, sans serveur
 et sans accès aux CDN — souvent bloqués sur les réseaux d'établissement.
 
 Seul le fond de carte OpenStreetMap vient du réseau. S'il est inaccessible,
