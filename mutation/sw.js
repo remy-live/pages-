@@ -16,7 +16,7 @@
  * Pour forcer la mise à jour chez tout le monde : incrémenter VERSION.
  */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE_COQUILLE = `mutation-coquille-${VERSION}`;
 const CACHE_ANNEXES = `mutation-annexes-${VERSION}`;
 const CACHE_TUILES = `mutation-tuiles-${VERSION}`;
@@ -37,6 +37,7 @@ const COQUILLE = [
   './vendor/images/marker-shadow.png',
   './vendor/images/layers.png',
   './vendor/images/layers-2x.png',
+  './data/bareme-intra-2026.json',
   './data/etablissements.csv',
   './data/regroupements.json',
   './data/zones_remplacement.json'

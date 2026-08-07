@@ -1253,6 +1253,7 @@
        ne sont téléchargées que si on coche la case correspondante. */
     const DATA_DIR = './data/';
     const DATA_FILES = {
+        bareme:   'bareme-intra-2026.json',
         groups:   'regroupements.json',
         zr:       'zones_remplacement.json',
         etabs:    'etablissements.csv',
@@ -1267,6 +1268,17 @@
     }
 
     let dataGroups = null, dataZr = null, dataCsvEtabs = null;
+
+    /* Les valeurs du barème vivent dans data/bareme-intra-2026.json : la mise à jour
+       annuelle se fait dans ce fichier, sans toucher au calcul. */
+    let BAREME = null;
+
+    /* Beaucoup de bonifications se lisent en paliers : on retient le plus élevé atteint. */
+    function pointsDePalier(paliers, valeur) {
+        let points = 0;
+        (paliers || []).forEach(p => { if (valeur >= p.a_partir_de) points = p.points; });
+        return points;
+    }
 
 
 
@@ -1928,17 +1940,26 @@
             let d = [], t = 0;
             let journal = [];
 
+            /* Avant que le fichier ne soit lu, aucun point ne peut être annoncé. */
+            if (!BAREME) return { total: 0, details: [], explications: [] };
+
             const ecElem = document.getElementById('echelon');
             const ec = parseInt(ecElem ? ecElem.value : 4) || 1;
 
             const classeElem = document.getElementById('classe');
             const classe = classeElem ? classeElem.value : 'normale';
 
+            const regleEchelon = {
+                normale: BAREME.echelon.classe_normale,
+                hors_classe: BAREME.echelon.hors_classe,
+                classe_exc: BAREME.echelon.classe_exceptionnelle
+            }[classe];
+
             let ptsEchelon = 0;
-            if (classe === 'normale') ptsEchelon = 14 + 7 * (ec - 1);
-            else if (classe === 'hors_classe') ptsEchelon = 56 + 7 * (ec - 1);
-            else if (classe === 'classe_exc') ptsEchelon = 77 + 7 * (ec - 1);
-            if (classe === 'normale' && ptsEchelon > 98) ptsEchelon = 98;
+            if (regleEchelon) {
+                ptsEchelon = regleEchelon.base + regleEchelon.pas * (ec - 1);
+                if (regleEchelon.plafond !== null && ptsEchelon > regleEchelon.plafond) ptsEchelon = regleEchelon.plafond;
+            }
 
             t += ptsEchelon;
             d.push({ label: `Échelon ${ec} (${classe})`, pts: ptsEchelon });
@@ -1947,9 +1968,10 @@
             const apElem = document.getElementById('anc_poste');
             const ap = parseInt(apElem ? apElem.value : 0) || 0;
             if (ap > 0) {
-                let ptsAnc = 20 * ap;
+                const regleAnc = BAREME.anciennete_de_poste;
+                let ptsAnc = regleAnc.par_an * ap;
                 const tranches = Math.floor(ap / 4);
-                if (tranches > 0) ptsAnc += tranches * 50;
+                if (tranches > 0) ptsAnc += tranches * regleAnc.bonus_par_tranche_de_4_ans;
                 t += ptsAnc;
                 d.push({ label: `Anc. Poste (${ap} ans)`, pts: ptsAnc });
                 journal.push(`✅ Ancienneté de poste (${ap} ans) : +${ptsAnc} pts.`);
@@ -1964,26 +1986,26 @@
             const sepElem = document.getElementById('separation');
             const separation = parseInt(sepElem ? sepElem.value : 0) || 0;
 
+            const regleFam = BAREME.situation_familiale;
+
             if (["RC", "APC"].includes(fam)) {
-                if (typeVoeu === 'ETB') {
+                if (regleFam.types_voeu_exclus.includes(typeVoeu)) {
                     journal.push(`<span style="color:#c0392b;">❌ RC/APC refusé : 0 pt. (La circulaire interdit la bonification familiale sur un vœu précis de type ETB).</span>`);
                 } else {
-                    let ptsBaseFam = (['DPT', 'ZRD', 'ACA'].includes(typeVoeu)) ? 150.2 : 90.2;
+                    const regleRC = regleFam.rapprochement_conjoint_ou_apc;
+                    let ptsBaseFam = regleRC.types_voeu_majores.includes(typeVoeu) ? regleRC.points_majores : regleRC.points;
                     t += ptsBaseFam;
                     d.push({ label: `RC/APC (${typeVoeu})`, pts: ptsBaseFam });
                     journal.push(`<span style="color:#27ae60;">✅ Rapprochement conjoint/APC activé : +${ptsBaseFam} pts (Car vœu large de type ${typeVoeu}).</span>`);
 
                     if (enfants > 0) {
-                        t += 100 * enfants;
-                        d.push({ label: `${enfants} enfant(s)`, pts: 100 * enfants });
-                        journal.push(`✅ Enfants à charge (${enfants}) : +${100 * enfants} pts.`);
+                        const ptsEnfants = regleFam.enfant_a_charge.points_par_enfant * enfants;
+                        t += ptsEnfants;
+                        d.push({ label: `${enfants} enfant(s)`, pts: ptsEnfants });
+                        journal.push(`✅ Enfants à charge (${enfants}) : +${ptsEnfants} pts.`);
                     }
 
-                    let ptsSep = 0;
-                    if (separation === 1) ptsSep = 50;
-                    else if (separation === 2) ptsSep = 280;
-                    else if (separation === 3) ptsSep = 400;
-                    else if (separation >= 4) ptsSep = 600;
+                    const ptsSep = pointsDePalier(regleFam.separation.paliers, separation);
                     if (ptsSep > 0) {
                         t += ptsSep;
                         d.push({ label: `Séparation (${separation} ans)`, pts: ptsSep });
@@ -1991,22 +2013,23 @@
                     }
                 }
             } else if (fam === "PI") {
-                if (typeVoeu === 'ETB') {
+                if (regleFam.types_voeu_exclus.includes(typeVoeu)) {
                     journal.push(`<span style="color:#c0392b;">❌ Parent Isolé refusé : 0 pt. (La bonification Parent Isolé de 30 pts ne s'applique que sur les vœux larges : COM, GEO, DPT).</span>`);
                 } else {
-                    t += 30;
-                    d.push({ label: "Parent Isolé", pts: 30 });
-                    journal.push(`<span style="color:#27ae60;">✅ Parent Isolé activé : +30 pts (Car vœu large de type ${typeVoeu}).</span>`);
+                    const ptsPI = regleFam.parent_isole.points;
+                    t += ptsPI;
+                    d.push({ label: "Parent Isolé", pts: ptsPI });
+                    journal.push(`<span style="color:#27ae60;">✅ Parent Isolé activé : +${ptsPI} pts (Car vœu large de type ${typeVoeu}).</span>`);
                 }
             }
 
             const vpElem = document.getElementById('voeu_pref');
             const vp = vpElem ? (parseInt(vpElem.value) || 0) : 0;
             if (vp > 0) {
-                if (typeVoeu === 'ETB') {
+                if (BAREME.voeu_preferentiel.types_voeu_exclus.includes(typeVoeu)) {
                     journal.push(`<span style="color:#c0392b;">❌ Vœu préférentiel ignoré : Ne s'applique pas sur un vœu ETB.</span>`);
                 } else {
-                    const ptsVp = vp * 15;
+                    const ptsVp = vp * BAREME.voeu_preferentiel.points_par_annee;
                     t += ptsVp;
                     d.push({ label: `Vœu préférentiel (${vp+1}e an)`, pts: ptsVp });
                     journal.push(`✅ Vœu préférentiel : +${ptsVp} pts.`);
@@ -2015,68 +2038,75 @@
 
             const rqthElem = document.getElementById('est_rqth');
             if (rqthElem && rqthElem.checked) {
-                if (typeVoeu === 'ETB') {
+                if (BAREME.rqth.types_voeu_exclus.includes(typeVoeu)) {
                     journal.push(`<span style="color:#c0392b;">❌ RQTH (100 pts) ignorée : Automatique uniquement sur vœux larges (COM, GEO, DPT). Demande une dérogation médicale pour un ETB.</span>`);
                 } else {
-                    t += 100;
-                    d.push({ label: "RQTH (Auto)", pts: 100 });
-                    journal.push(`✅ RQTH : +100 pts appliqués (Vœu large valide).`);
+                    const ptsRqth = BAREME.rqth.points;
+                    t += ptsRqth;
+                    d.push({ label: "RQTH (Auto)", pts: ptsRqth });
+                    journal.push(`✅ RQTH : +${ptsRqth} pts appliqués (Vœu large valide).`);
                 }
             }
 
             const stagElem = document.getElementById('type_stagiaire');
             const typeStagiaire = stagElem ? stagElem.value : '';
             if (typeStagiaire === 'classique') {
-                t += 19; d.push({ label: "Stagiaire", pts: 19 }); journal.push(`✅ Stagiaire : +19 pts.`);
+                const ptsStag = BAREME.stagiaires.classique.points;
+                t += ptsStag; d.push({ label: "Stagiaire", pts: ptsStag }); journal.push(`✅ Stagiaire : +${ptsStag} pts.`);
             } else if (typeStagiaire === 'ex_contractuel') {
-                let ptsContract = 50; if (ec === 4) ptsContract = 60; if (ec >= 5) ptsContract = 65;
+                const regleExC = BAREME.stagiaires.ex_contractuel;
+                let ptsContract = pointsDePalier(regleExC.paliers_echelon, ec) || regleExC.base;
                 t += ptsContract; d.push({ label: "Ex-Contractuel", pts: ptsContract }); journal.push(`✅ Ex-contractuel : +${ptsContract} pts.`);
             }
 
             const tzrElem = document.getElementById('anc_tzr');
             const ancTzr = parseInt(tzrElem ? tzrElem.value : 0) || 0;
             if (ancTzr > 0) {
-                let ptsTzr = 0;
-                if (ancTzr >= 1 && ancTzr < 3) ptsTzr = 40;
-                if (ancTzr >= 3 && ancTzr < 6) ptsTzr = 70;
-                if (ancTzr >= 6) ptsTzr = 90;
+                const ptsTzr = pointsDePalier(BAREME.stabilisation_tzr.paliers, ancTzr);
                 t += ptsTzr; d.push({ label: "Stabilisation TZR", pts: ptsTzr }); journal.push(`✅ TZR : +${ptsTzr} pts.`);
             }
 
             const mcsElem = document.getElementById('est_mcs');
             if (mcsElem && mcsElem.checked) {
-                t += 1500; d.push({ label: "Carte Scolaire (MCS)", pts: 1500 });
-                journal.push(`🚨 Mesure de Carte Scolaire : +1500 pts.`);
+                const ptsMcs = BAREME.mesure_de_carte_scolaire.points;
+                t += ptsMcs; d.push({ label: "Carte Scolaire (MCS)", pts: ptsMcs });
+                journal.push(`🚨 Mesure de Carte Scolaire : +${ptsMcs} pts.`);
             }
 
             const sortieRepElem = document.getElementById('sortie_rep');
             if (sortieRepElem && sortieRepElem.checked) {
-                t += 100;
-                d.push({ label: "Sortie Educ. Prio", pts: 100 });
-                journal.push(`✅ Sortie Education Prioritaire : +100 pts.`);
+                const ptsSortie = BAREME.sortie_education_prioritaire.points;
+                t += ptsSortie;
+                d.push({ label: "Sortie Educ. Prio", pts: ptsSortie });
+                journal.push(`✅ Sortie Education Prioritaire : +${ptsSortie} pts.`);
             }
 
             if (e) {
+                const regleLieu = BAREME.etablissement_vise;
+
                 if (e.educationPrioritaire && e.educationPrioritaire.includes("REP+")) {
-                    if (typeVoeu === 'ETB') {
-                        t += 600; d.push({ label: "Entrée REP+", pts: 600 });
-                        journal.push(`🎓 Entrée REP+ : +600 pts car vous ciblez cet établissement précisément.`);
+                    const regle = regleLieu.entree_rep_plus;
+                    if (regle.types_voeu.includes(typeVoeu)) {
+                        t += regle.points; d.push({ label: "Entrée REP+", pts: regle.points });
+                        journal.push(`🎓 Entrée REP+ : +${regle.points} pts car vous ciblez cet établissement précisément.`);
                     } else {
-                        journal.push(`ℹ️ Information : Ce vœu large inclut un REP+, mais le bonus de 600 pts nécessite un vœu ETB.`);
+                        journal.push(`ℹ️ Information : Ce vœu large inclut un REP+, mais le bonus de ${regle.points} pts nécessite un vœu ETB.`);
                     }
                 } else if (e.educationPrioritaire && e.educationPrioritaire.includes("REP")) {
-                    if (typeVoeu === 'ETB') {
-                        t += 75; d.push({ label: "Entrée REP", pts: 75 });
-                        journal.push(`🎓 Entrée REP : +75 pts car vous ciblez cet établissement précisément.`);
+                    const regle = regleLieu.entree_rep;
+                    if (regle.types_voeu.includes(typeVoeu)) {
+                        t += regle.points; d.push({ label: "Entrée REP", pts: regle.points });
+                        journal.push(`🎓 Entrée REP : +${regle.points} pts car vous ciblez cet établissement précisément.`);
                     }
                 }
 
                 const corpsElem = document.getElementById('corps');
                 const corps = corpsElem ? corpsElem.value : '';
                 if (corps === 'agrege' && e.category === 'LYC') {
-                    if (typeVoeu === 'ETB') {
-                        t += 120; d.push({ label: "Agrégé en Lycée", pts: 120 });
-                        journal.push(`👨‍🏫 Agrégé en Lycée : +120 pts (sur vœu ETB).`);
+                    const regle = regleLieu.agrege_en_lycee;
+                    if (regle.types_voeu.includes(typeVoeu)) {
+                        t += regle.points; d.push({ label: "Agrégé en Lycée", pts: regle.points });
+                        journal.push(`👨‍🏫 Agrégé en Lycée : +${regle.points} pts (sur vœu ETB).`);
                     }
                 }
             }
@@ -3263,6 +3293,16 @@
             document.addEventListener('click', ev => {
                 if (!ev.target.closest('.search-bar')) document.getElementById('search-results').classList.remove('open');
             });
+
+            /* Le barème conditionne tout affichage de points : il est lu avant le reste. */
+            try {
+                BAREME = await fetchData(DATA_FILES.bareme);
+            } catch (err) {
+                splash(null);
+                updateStatus("Barème introuvable : " + err.message + ". La page doit être ouverte depuis un serveur web (ou son adresse en ligne).", true);
+                showToast("Chargement impossible", "Le fichier du barème n'a pas pu être lu.", "error", 12000);
+                return;
+            }
 
             initMap();
             appliquerDomicileMemorise();
