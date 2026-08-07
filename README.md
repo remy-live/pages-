@@ -4,6 +4,12 @@ Une page unique qui liste mes dépôts GitHub et pointe vers ceux qui ont un sit
 
 **Adresse du site :** https://remy-live.github.io/pages-/
 
+## Outils hébergés ici
+
+- [**Visu-Incidents**](visu-incidents/) — carte et tableau de bord des
+  signalements RSST, rapprochés de l'annuaire des établissements.
+  En ligne : https://remy-live.github.io/pages-/visu-incidents/
+
 ## Publication
 
 Le site est déjà en ligne. Dans **Settings → Pages**, la source est la branche
