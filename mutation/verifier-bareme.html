@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vérifier le barème — Aide Mutation</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --bleu:#2980b9; --sombre:#2c3e50; --vert:#1e8449; --orange:#d35400; --gris:#7f8c8d; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0 0 60px; background:#eef2f5; color:var(--sombre);
+         font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.5; }
+  header { background:var(--sombre); color:#fff; padding:18px 20px; position:sticky; top:0; z-index:10;
+           box-shadow:0 2px 8px rgba(0,0,0,.2); }
+  header h1 { margin:0 0 4px; font-size:1.25rem; }
+  header p { margin:0; font-size:.85rem; opacity:.85; }
+  .avancement { display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .barre { flex:1; height:8px; background:rgba(255,255,255,.2); border-radius:4px; overflow:hidden; }
+  .barre i { display:block; height:100%; width:0; background:#27ae60; transition:width .3s ease; }
+  .compte { font-size:.85rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+  main { max-width:860px; margin:0 auto; padding:20px 16px; }
+  .intro { background:#fff; border-left:5px solid var(--bleu); border-radius:6px;
+           padding:16px 18px; margin-bottom:22px; font-size:.94rem; }
+  .intro p { margin:0 0 10px; } .intro p:last-child { margin:0; }
+  .intro code { background:#eef2f5; padding:1px 5px; border-radius:3px; font-size:.9em; }
+
+  .regle { background:#fff; border:1px solid #dde3e8; border-left:5px solid #cfd8dc;
+           border-radius:6px; padding:16px 18px; margin-bottom:14px; }
+  .regle.faite { border-left-color:#27ae60; background:#f7fdf9; }
+  .regle.modifiee { border-left-color:var(--orange); }
+  .regle h2 { margin:0 0 6px; font-size:1.02rem; color:var(--sombre); }
+  .regle .dit { margin:0 0 12px; font-size:.9rem; color:#4a5c6a; }
+  .regle .dit b { color:var(--sombre); }
+
+  .champs { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+  .champ { flex:1 1 190px; min-width:0; }
+  .champ label { display:block; font-size:.82rem; font-weight:bold; color:#4a5c6a; margin-bottom:4px; }
+  .champ input { width:100%; padding:8px 10px; border:1px solid #cfd8dc; border-radius:4px;
+                 font-size:16px; font-family:inherit; }
+  .champ input.change { border-color:var(--orange); background:#fdf6ee; font-weight:bold; }
+  .champ .avant { display:block; font-size:.76rem; color:var(--orange); margin-top:3px; }
+  .champ .vide { display:block; font-size:.76rem; color:var(--gris); margin-top:3px; }
+
+  .pied { display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+          border-top:1px solid #eef2f5; padding-top:12px; }
+  .pied label.conforme { display:flex; align-items:center; gap:8px; font-size:.9rem;
+                         font-weight:bold; color:var(--vert); cursor:pointer; white-space:nowrap; }
+  .pied input[type=checkbox] { width:19px; height:19px; }
+  .pied .ref { flex:1 1 260px; min-width:0; }
+  .pied .ref input { width:100%; padding:7px 10px; border:1px solid #cfd8dc; border-radius:4px;
+                     font-size:15px; font-family:inherit; }
+
+  .actions { position:sticky; bottom:0; background:#fff; border-top:2px solid #dde3e8;
+             padding:14px 16px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+             box-shadow:0 -2px 10px rgba(0,0,0,.08); }
+  button { border:0; border-radius:5px; padding:11px 18px; font-size:.95rem; font-weight:bold;
+           color:#fff; cursor:pointer; font-family:inherit; }
+  .b-telecharger { background:var(--vert); } .b-telecharger:disabled { background:#b2bec3; cursor:not-allowed; }
+  .b-recap { background:var(--bleu); } .b-raz { background:#95a5a6; }
+
+  .recap { background:#fff; border:1px solid #dde3e8; border-radius:6px; padding:16px 18px; margin-bottom:22px; }
+  .recap h2 { margin:0 0 10px; font-size:1.02rem; }
+  .recap table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  .recap th, .recap td { text-align:left; padding:6px 8px; border-bottom:1px solid #eef2f5; }
+  .recap th { color:var(--gris); font-weight:normal; font-size:.8rem; text-transform:uppercase; }
+  .recap .ancienne { color:var(--gris); text-decoration:line-through; }
+  .recap .nouvelle { color:var(--orange); font-weight:bold; }
+  .recap .rien { color:var(--gris); font-style:italic; }
+  #erreur { background:#fdecea; border-left:5px solid #c0392b; color:#922b21;
+            padding:14px 16px; border-radius:6px; margin-bottom:20px; display:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vérifier le barème face aux LDG</h1>
+  <p>Chaque règle telle que l'outil la calcule aujourd'hui. Confrontez-la au texte, corrigez, cochez.</p>
+  <div class="avancement">
+    <div class="barre"><i id="barre"></i></div>
+    <span class="compte" id="compte">— / —</span>
+  </div>
+</header>
+
+<main>
+  <div id="erreur"></div>
+
+  <div class="intro">
+    <p><b>Pourquoi cette page.</b> Les valeurs du barème ont été reprises telles quelles du code
+       d'origine. Personne ne les a encore confrontées aux lignes directrices de gestion de
+       l'académie : le fichier porte donc <code>verifie_contre_les_ldg: false</code>, et l'outil ne
+       peut pas se prétendre sourcé.</p>
+    <p><b>Comment faire.</b> Ouvrez les LDG à côté. Pour chaque règle : si la valeur est juste,
+       cochez « conforme » et notez où vous l'avez lue. Si elle a changé, corrigez le nombre —
+       l'ancienne valeur reste affichée dessous — puis cochez.</p>
+    <p><b>À la fin.</b> Le bouton vert produit un <code>bareme-intra-2026.json</code> à déposer dans
+       <code>mutation/data/</code>. Vos réponses sont conservées dans ce navigateur : vous pouvez
+       vous arrêter et reprendre plus tard.</p>
+  </div>
+
+  <div class="recap" id="recap" style="display:none;">
+    <h2>Ce que vous allez changer</h2>
+    <div id="recap-corps"></div>
+  </div>
+
+  <div id="regles"></div>
+</main>
+
+<div class="actions">
+  <button class="b-recap" onclick="basculerRecap()">Voir les changements</button>
+  <button class="b-telecharger" id="btn-telecharger" onclick="telecharger()">Télécharger le fichier</button>
+  <button class="b-raz" onclick="toutEffacer()">Recommencer</button>
+</div>
+
+<script>
+const FICHIER = './data/bareme-intra-2026.json';
+const CLE = 'mutation:verif-bareme:v1';
+
+/* Comment présenter chaque règle. Le JSON reste la source des valeurs ; ce tableau
+   ne dit que comment les nommer, les expliquer et où écrire la référence. */
+const REGLES = [
+  { id:'echelon_cn', objet:'echelon.classe_normale', titre:"Points d'échelon — classe normale",
+    dit:"Le total vaut <b>base + pas × (échelon − 1)</b>, sans dépasser le plafond. À l'échelon 1 on a donc la base ; à l'échelon 5, base + 4 pas.",
+    champs:[['echelon.classe_normale.base','Base (échelon 1)'],['echelon.classe_normale.pas','Pas par échelon'],['echelon.classe_normale.plafond','Plafond']] },
+  { id:'echelon_hc', objet:'echelon.hors_classe', titre:"Points d'échelon — hors-classe",
+    dit:"Même calcul, avec une base plus élevée et aucun plafond appliqué aujourd'hui.",
+    champs:[['echelon.hors_classe.base','Base'],['echelon.hors_classe.pas','Pas par échelon'],['echelon.hors_classe.plafond','Plafond (vide = aucun)']] },
+  { id:'echelon_ce', objet:'echelon.classe_exceptionnelle', titre:"Points d'échelon — classe exceptionnelle",
+    dit:"Même calcul encore, avec la base la plus haute.",
+    champs:[['echelon.classe_exceptionnelle.base','Base'],['echelon.classe_exceptionnelle.pas','Pas par échelon'],['echelon.classe_exceptionnelle.plafond','Plafond (vide = aucun)']] },
+  { id:'anc_poste', objet:'anciennete_de_poste', titre:"Ancienneté dans le poste",
+    dit:"Tant de points par année, plus un bonus à chaque tranche de quatre ans révolues. Huit ans donnent donc 8 × le taux annuel, plus deux fois le bonus.",
+    champs:[['anciennete_de_poste.par_an','Points par année'],['anciennete_de_poste.bonus_par_tranche_de_4_ans','Bonus par tranche de 4 ans']] },
+  { id:'fam_rc', objet:'situation_familiale.rapprochement_conjoint_ou_apc', titre:"Rapprochement de conjoint et autorité parentale conjointe",
+    dit:"Bonification de base sur les vœux larges, majorée sur les vœux les plus larges (département, toutes ZR du département, académie). Rien sur un établissement précis.",
+    champs:[['situation_familiale.rapprochement_conjoint_ou_apc.points','Points (vœu large)'],['situation_familiale.rapprochement_conjoint_ou_apc.points_majores','Points (vœu très large)']] },
+  { id:'fam_enf', objet:'situation_familiale.enfant_a_charge', titre:"Enfants à charge",
+    dit:"S'ajoute par enfant, uniquement si une priorité familiale est déclarée et sur un vœu large.",
+    champs:[['situation_familiale.enfant_a_charge.points_par_enfant','Points par enfant']] },
+  { id:'fam_sep', objet:'situation_familiale.separation', titre:"Années de séparation",
+    dit:"On retient le palier le plus élevé atteint : quatre ans ne cumulent pas les quatre lignes, ils donnent la dernière.",
+    champs:[['situation_familiale.separation.paliers.0.points','1 an'],['situation_familiale.separation.paliers.1.points','2 ans'],['situation_familiale.separation.paliers.2.points','3 ans'],['situation_familiale.separation.paliers.3.points','4 ans et plus']] },
+  { id:'fam_pi', objet:'situation_familiale.parent_isole', titre:"Parent isolé",
+    dit:"Bonification forfaitaire, sur les vœux larges seulement.",
+    champs:[['situation_familiale.parent_isole.points','Points']] },
+  { id:'voeu_pref', objet:'voeu_preferentiel', titre:"Vœu préférentiel",
+    dit:"Multiplié par le nombre d'années consécutives déjà demandées : deuxième année = 1 × le taux, sixième année = 5 × le taux.",
+    champs:[['voeu_preferentiel.points_par_annee','Points par année consécutive']] },
+  { id:'rqth', objet:'rqth', titre:"RQTH",
+    dit:"Attribution automatique sur les vœux larges. Sur un établissement précis, il faut une dérogation médicale que l'outil ne simule pas.",
+    champs:[['rqth.points','Points']] },
+  { id:'stag_cl', objet:'stagiaires.classique', titre:"Stagiaire — situation classique",
+    dit:"Bonification forfaitaire du stagiaire qui obtient son premier poste.",
+    champs:[['stagiaires.classique.points','Points']] },
+  { id:'stag_exc', objet:'stagiaires.ex_contractuel', titre:"Stagiaire ex-contractuel",
+    dit:"Dépend de l'échelon de reclassement : la valeur de base s'applique en dessous du premier palier.",
+    champs:[['stagiaires.ex_contractuel.base','Base (échelons 1 à 3)'],['stagiaires.ex_contractuel.paliers_echelon.0.points','Échelon 4'],['stagiaires.ex_contractuel.paliers_echelon.1.points','Échelon 5 et plus']] },
+  { id:'stag_exf', objet:'stagiaires.ex_fonctionnaire', titre:"Stagiaire ex-fonctionnaire", alerte:true,
+    dit:"<b>Le formulaire propose ce choix, mais il ne rapporte rien aujourd'hui</b> : aucune valeur ne lui a jamais été associée. Soit c'est exact, soit il manque un nombre — c'est au texte de trancher.",
+    champs:[['stagiaires.ex_fonctionnaire.points','Points (vide = aucune bonification)']] },
+  { id:'tzr', objet:'stabilisation_tzr', titre:"Stabilisation TZR",
+    dit:"On retient le palier le plus élevé atteint par l'ancienneté en zone de remplacement.",
+    champs:[['stabilisation_tzr.paliers.0.points','1 à 2 ans'],['stabilisation_tzr.paliers.1.points','3 à 5 ans'],['stabilisation_tzr.paliers.2.points','6 ans et plus']] },
+  { id:'mcs', objet:'mesure_de_carte_scolaire', titre:"Mesure de carte scolaire",
+    dit:"Priorité la plus forte du mouvement, pour qui perd son poste sans l'avoir choisi.",
+    champs:[['mesure_de_carte_scolaire.points','Points']] },
+  { id:'sortie_ep', objet:'sortie_education_prioritaire', titre:"Sortie d'éducation prioritaire",
+    dit:"Pour qui quitte un REP ou REP+ après cinq ans d'exercice.",
+    champs:[['sortie_education_prioritaire.points','Points']] },
+  { id:'rep_plus', objet:'etablissement_vise.entree_rep_plus', titre:"Entrée en REP+",
+    dit:"S'applique quand on demande nommément un établissement REP+ — donc sur un vœu d'établissement uniquement.",
+    champs:[['etablissement_vise.entree_rep_plus.points','Points']] },
+  { id:'rep', objet:'etablissement_vise.entree_rep', titre:"Entrée en REP",
+    dit:"Même logique, pour un établissement classé REP.",
+    champs:[['etablissement_vise.entree_rep.points','Points']] },
+  { id:'agrege', objet:'etablissement_vise.agrege_en_lycee', titre:"Agrégé demandant un lycée",
+    dit:"S'ajoute quand un agrégé demande nommément un lycée.",
+    champs:[['etablissement_vise.agrege_en_lycee.points','Points']] },
+  { id:'simultanee', objet:'mutation_simultanee', titre:"Mutation simultanée avec le conjoint", alerte:true,
+    dit:"<b>Valeur inconnue à ce jour</b> : elle n'était pas dans le code d'origine. Tant que ce champ est vide, cocher l'option dans l'outil n'ajoute aucun point.",
+    champs:[['mutation_simultanee.points','Points (vide = aucune bonification)']] }
+];
+
+let baremeOrigine = null;   // tel que servi par le dépôt
+let baremeCourant = null;   // avec les corrections en cours
+let etat = {};              // { idRegle: { conforme, reference } }
+
+/* --- accès par chemin pointé, y compris à travers les tableaux --- */
+function lire(obj, chemin) {
+  return chemin.split('.').reduce((o, c) => (o == null ? undefined : o[c]), obj);
+}
+function ecrire(obj, chemin, valeur) {
+  const cles = chemin.split('.');
+  const derniere = cles.pop();
+  const cible = cles.reduce((o, c) => o[c], obj);
+  cible[derniere] = valeur;
+}
+
+function lireEtat() {
+  try { return JSON.parse(localStorage.getItem(CLE) || '{}'); } catch (e) { return {}; }
+}
+function enregistrerEtat() {
+  try { localStorage.setItem(CLE, JSON.stringify({ etat, bareme: baremeCourant })); } catch (e) { /* mode privé */ }
+}
+
+function afficherErreur(message) {
+  const el = document.getElementById('erreur');
+  el.style.display = 'block';
+  el.innerHTML = message;
+}
+
+async function demarrer() {
+  try {
+    const res = await fetch(FICHIER, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    baremeOrigine = await res.json();
+  } catch (err) {
+    afficherErreur(`<b>Le barème n'a pas pu être lu</b> (${err.message}).<br>
+      Cette page doit être ouverte depuis un serveur web — son adresse en ligne, ou
+      <code>python3 -m http.server</code> à la racine du dépôt. Un double-clic sur le fichier ne suffit pas.`);
+    document.getElementById('btn-telecharger').disabled = true;
+    return;
+  }
+
+  const sauvegarde = lireEtat();
+  etat = sauvegarde.etat || {};
+  baremeCourant = sauvegarde.bareme || JSON.parse(JSON.stringify(baremeOrigine));
+
+  dessiner();
+}
+
+function dessiner() {
+  document.getElementById('regles').innerHTML = REGLES.map(regle => {
+    const e = etat[regle.id] || {};
+    const champs = regle.champs.map(([chemin, libelle]) => {
+      const valeur = lire(baremeCourant, chemin);
+      const origine = lire(baremeOrigine, chemin);
+      const change = String(valeur ?? '') !== String(origine ?? '');
+      return `<div class="champ">
+          <label for="c-${chemin}">${libelle}</label>
+          <input type="number" step="any" id="c-${chemin}" data-chemin="${chemin}"
+                 value="${valeur ?? ''}" class="${change ? 'change' : ''}"
+                 oninput="majValeur(this)">
+          <span id="i-${chemin}"></span>
+        </div>`;
+    }).join('');
+
+    const modifiee = regle.champs.some(([c]) =>
+      String(lire(baremeCourant, c) ?? '') !== String(lire(baremeOrigine, c) ?? ''));
+
+    return `<section class="regle ${e.conforme ? 'faite' : ''} ${modifiee ? 'modifiee' : ''}" id="r-${regle.id}">
+      <h2>${regle.alerte ? '⚠️ ' : ''}${regle.titre}</h2>
+      <p class="dit">${regle.dit}</p>
+      <div class="champs">${champs}</div>
+      <div class="pied">
+        <label class="conforme">
+          <input type="checkbox" ${e.conforme ? 'checked' : ''} onchange="majConforme('${regle.id}', this.checked)">
+          Vérifié dans le texte
+        </label>
+        <span class="ref"><input type="text" placeholder="Où l'avez-vous lu ? (page, annexe…)"
+              value="${(e.reference || '').replace(/"/g, '&quot;')}"
+              oninput="majReference('${regle.id}', this.value)"></span>
+      </div>
+    </section>`;
+  }).join('');
+
+  REGLES.forEach(r => r.champs.forEach(([chemin]) => majIndice(chemin)));
+  majAvancement();
+}
+
+/* La mention « avant : … » est le repère qui permet de corriger sans crainte :
+   elle doit apparaître à la frappe, pas seulement au redessin complet. */
+function majIndice(chemin) {
+  const el = document.getElementById('i-' + chemin);
+  if (!el) return;
+  const valeur = lire(baremeCourant, chemin);
+  const origine = lire(baremeOrigine, chemin);
+  if (String(valeur ?? '') !== String(origine ?? '')) {
+    el.className = 'avant';
+    el.textContent = `avant : ${origine ?? '(vide)'}`;
+  } else if (valeur === null || valeur === undefined) {
+    el.className = 'vide';
+    el.textContent = "aucune valeur aujourd'hui";
+  } else {
+    el.className = '';
+    el.textContent = '';
+  }
+}
+
+function majValeur(input) {
+  const brut = input.value.trim();
+  ecrire(baremeCourant, input.dataset.chemin, brut === '' ? null : parseFloat(brut));
+  enregistrerEtat();
+  dessinerLeger(input);
+}
+
+/* Redessiner tout à chaque frappe ferait perdre le curseur : on ne touche qu'à l'apparence. */
+function dessinerLeger(input) {
+  const chemin = input.dataset.chemin;
+  const change = String(lire(baremeCourant, chemin) ?? '') !== String(lire(baremeOrigine, chemin) ?? '');
+  input.classList.toggle('change', change);
+  majIndice(chemin);
+  const section = input.closest('.regle');
+  const regle = REGLES.find(r => 'r-' + r.id === section.id);
+  section.classList.toggle('modifiee', regle.champs.some(([c]) =>
+    String(lire(baremeCourant, c) ?? '') !== String(lire(baremeOrigine, c) ?? '')));
+  majRecap();
+}
+
+function majConforme(id, valeur) {
+  etat[id] = Object.assign({}, etat[id], { conforme: valeur });
+  document.getElementById('r-' + id).classList.toggle('faite', valeur);
+  enregistrerEtat();
+  majAvancement();
+}
+
+function majReference(id, valeur) {
+  etat[id] = Object.assign({}, etat[id], { reference: valeur });
+  enregistrerEtat();
+}
+
+function nombreVerifiees() {
+  return REGLES.filter(r => (etat[r.id] || {}).conforme).length;
+}
+
+function majAvancement() {
+  const faites = nombreVerifiees();
+  document.getElementById('compte').textContent = `${faites} / ${REGLES.length} règles`;
+  document.getElementById('barre').style.width = (100 * faites / REGLES.length) + '%';
+  majRecap();
+}
+
+function changements() {
+  const liste = [];
+  REGLES.forEach(regle => regle.champs.forEach(([chemin, libelle]) => {
+    const avant = lire(baremeOrigine, chemin), apres = lire(baremeCourant, chemin);
+    if (String(avant ?? '') !== String(apres ?? '')) {
+      liste.push({ regle: regle.titre, libelle, avant, apres });
+    }
+  }));
+  return liste;
+}
+
+function majRecap() {
+  const liste = changements();
+  document.getElementById('recap-corps').innerHTML = liste.length
+    ? `<table><tr><th>Règle</th><th>Valeur</th><th>Avant</th><th>Après</th></tr>
+       ${liste.map(c => `<tr><td>${c.regle}</td><td>${c.libelle}</td>
+         <td class="ancienne">${c.avant ?? '(vide)'}</td>
+         <td class="nouvelle">${c.apres ?? '(vide)'}</td></tr>`).join('')}</table>`
+    : `<p class="rien">Aucune valeur modifiée pour l'instant : le fichier produit serait identique
+       à l'actuel, à la mention de vérification près.</p>`;
+}
+
+function basculerRecap() {
+  const el = document.getElementById('recap');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function telecharger() {
+  const sortie = JSON.parse(JSON.stringify(baremeCourant));
+  const faites = nombreVerifiees();
+  const tout = faites === REGLES.length;
+
+  sortie.verifie_contre_les_ldg = tout;
+  sortie._verifie_le = new Date().toISOString().slice(0, 10);
+  if (!tout) sortie._verification_partielle = `${faites} règles sur ${REGLES.length} confrontées au texte.`;
+  else delete sortie._verification_partielle;
+
+  /* La référence est rangée à côté de la règle qu'elle justifie. */
+  REGLES.forEach(regle => {
+    const ref = (etat[regle.id] || {}).reference;
+    const objet = lire(sortie, regle.objet);
+    if (objet && typeof objet === 'object') {
+      if (ref) objet._reference = ref;
+      else delete objet._reference;
+    }
+  });
+
+  const blob = new Blob([JSON.stringify(sortie, null, 2) + '\n'], { type: 'application/json' });
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(blob);
+  lien.download = 'bareme-intra-2026.json';
+  lien.click();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+}
+
+function toutEffacer() {
+  if (!confirm("Effacer vos corrections et repartir du barème actuel ?")) return;
+  try { localStorage.removeItem(CLE); } catch (e) { /* ignore */ }
+  etat = {};
+  baremeCourant = JSON.parse(JSON.stringify(baremeOrigine));
+  dessiner();
+}
+
+demarrer();
+</script>
+</body>
+</html>
