@@ -284,6 +284,35 @@ body.tiles-dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness
 .topitem .ct{font-size:12px; font-weight:650; font-variant-numeric:tabular-nums}
 .topitem .sub{grid-column:2/-1; font-size:11px; color:var(--ink-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
+/* ---- Priorités ---- */
+/* Les couleurs d'état ne portent jamais seules le sens : chaque niveau
+   s'accompagne d'un libellé et d'une phrase qui dit pourquoi. */
+.prio{
+  display:grid; grid-template-columns:auto 1fr; gap:3px 9px; width:100%; text-align:left;
+  background:var(--surface-2); border:1px solid var(--hairline); border-left-width:3px;
+  border-radius:8px; padding:9px 11px; cursor:pointer; margin-bottom:8px;
+}
+.prio:hover{background:var(--grid)}
+.prio.n-critique{border-left-color:var(--critical)}
+.prio.n-serieux{border-left-color:var(--serious)}
+.prio.n-attention{border-left-color:var(--warning)}
+.prio .rk{font-size:11px; color:var(--ink-muted); font-variant-numeric:tabular-nums; padding-top:2px}
+.prio .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.prio .sub{grid-column:2; font-size:11px; color:var(--ink-muted)}
+.prio .why{grid-column:2; margin:4px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px}
+.prio .why li{font-size:12px; color:var(--ink-2); display:flex; gap:6px; align-items:flex-start}
+.prio .why li::before{content:""; width:6px; height:6px; border-radius:50%; margin-top:5px; flex:0 0 auto; background:currentColor}
+.prio .why li.w-retard{color:var(--critical)}
+.prio .why li.w-collectif{color:var(--critical)}
+.prio .why li.w-lent{color:var(--serious)}
+.prio .why li span{color:var(--ink-2)}
+
+.urgset{display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; padding:10px 11px}
+.urgset label{font-size:12px; color:var(--ink-2)}
+.urgset input{width:74px; padding:5px 7px; font:inherit; font-size:12px; text-align:right;
+  background:var(--surface-2); border:1px solid var(--hairline); border-radius:6px; color:var(--ink);
+  font-variant-numeric:tabular-nums}
+
 .tabs{display:flex; gap:2px; padding:0 8px; border-bottom:1px solid var(--hairline); flex:0 0 auto; background:var(--surface)}
 .tabs button{
   padding:9px 11px; background:none; border:0; border-bottom:2px solid transparent;
@@ -472,6 +501,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
           <button id="vwCluster" aria-pressed="true">Groupes</button>
           <button id="vwPoints" aria-pressed="false">Points</button>
           <button id="vwHeat" aria-pressed="false">Densité</button>
+          <button id="vwUrgence" aria-pressed="false">Urgence</button>
         </div>
         <label class="check" style="margin-top:6px"><input type="checkbox" id="chkDimTiles"> Atténuer le fond de carte</label>
       </section>
@@ -514,6 +544,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
   <aside class="pane" id="dock" aria-label="Synthèse">
     <div class="tabs" role="tablist">
       <button id="tabSynth" role="tab" aria-selected="true" aria-controls="panelSynth">Synthèse</button>
+      <button id="tabPrio" role="tab" aria-selected="false" aria-controls="panelPrio">Priorités</button>
       <button id="tabEtab" role="tab" aria-selected="false" aria-controls="panelEtab">Établissement</button>
       <button class="btn icon only-mobile" id="closeDash" style="margin-left:auto;align-self:center" title="Fermer" aria-label="Fermer la synthèse">✕</button>
     </div>
@@ -565,6 +596,49 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
             </div>
           </div>
         </details>
+      </div>
+    </div>
+
+    <div class="pane-body tabpanel" id="panelPrio" role="tabpanel" aria-labelledby="tabPrio" hidden>
+      <div id="prioEmpty" class="emptystate">Chargez l'export du registre pour établir les priorités.</div>
+
+      <div id="prioContent" hidden>
+        <div class="kpis">
+          <div class="kpi"><div class="v" id="uRetard">—</div><div class="l">Sans réponse</div><div class="h" id="uRetardH">&nbsp;</div></div>
+          <div class="kpi"><div class="v" id="uCollectif">—</div><div class="l">Situations collectives</div><div class="h" id="uCollectifH">&nbsp;</div></div>
+        </div>
+
+        <p class="notice" id="prioAsOf" style="margin-top:10px"></p>
+
+        <div id="prioList" style="margin-top:12px"></div>
+
+        <div class="row wrap" style="margin-top:6px">
+          <button class="btn sm" id="btnRelanceCsv" style="flex:1 1 130px">Liste à relancer (CSV)</button>
+          <button class="btn sm" id="btnRelancePdf" style="flex:1 1 130px">Courrier de relance (PDF)</button>
+        </div>
+
+        <details class="facet" style="margin-top:14px">
+          <summary>Régler les seuils<span class="badge" id="urgBadge">4</span></summary>
+          <div class="facet-body">
+            <div class="urgset">
+              <label for="uSansReponse">Sans réponse au-delà de (jours)</label>
+              <input type="number" id="uSansReponse" min="1" max="1000" step="1">
+              <label for="uDelaiLong">Réponse jugée tardive au-delà de (jours)</label>
+              <input type="number" id="uDelaiLong" min="1" max="1000" step="1">
+              <label for="uFenetre">Fenêtre du regroupement (jours)</label>
+              <input type="number" id="uFenetre" min="1" max="365" step="1">
+              <label for="uDeclarants">Déclarants distincts pour un collectif</label>
+              <input type="number" id="uDeclarants" min="2" max="50" step="1">
+              <button class="btn sm" id="btnUrgReset" style="grid-column:1/-1">Revenir aux valeurs par défaut</button>
+            </div>
+          </div>
+        </details>
+
+        <p class="notice warn" style="margin-top:12px">
+          <b>Aucun signalement ne veut pas dire aucun risque.</b> Ce classement porte sur
+          le traitement des registres — délais et regroupements —, pas sur la sécurité des
+          lieux. Un établissement absent d'ici peut être un établissement où l'on n'écrit pas.
+        </p>
       </div>
     </div>
 
@@ -1254,20 +1328,26 @@ function renderMap() {
     return;
   }
 
-  const target = state.view === 'cluster' ? clusterLayer : pointLayer;
+  const urgence = state.view === 'urgence';
+  const niveaux = urgence ? urgencyByUai() : null;
+  const target = urgence ? pointLayer : (state.view === 'cluster' ? clusterLayer : pointLayer);
   const maxCount = scale.max || 1;
 
   for (const p of places) {
-    const color = scale.colorOf(p.count);
+    const niveau = urgence ? (niveaux.get(p.etab.uai) || 'ok') : null;
+    const color = urgence ? token(NIVEAUX[niveau].couleur) : scale.colorOf(p.count);
     // Points : la surface du disque suit le nombre (racine carrée = perception juste).
-    const radius = state.view === 'points'
+    // En urgence, la taille suit le niveau : c'est lui qu'on cherche du regard.
+    const radius = urgence
+      ? (niveau === 'ok' ? 3.5 : 5 + NIVEAUX[niveau].rang * 2.5)
+      : state.view === 'points'
       ? (p.count === 0 ? 3.5 : 4 + 12 * Math.sqrt(p.count / maxCount))
       : (p.count === 0 ? 4 : 7);
 
     const marker = L.circleMarker([p.etab.lat, p.etab.lon], {
       radius,
       fillColor: color,
-      fillOpacity: p.count === 0 ? 0.55 : 0.88,
+      fillOpacity: (urgence ? niveau === 'ok' : p.count === 0) ? 0.5 : 0.88,
       color: token('--surface'),          // anneau de 2px : sépare les points superposés
       weight: 2,
       viCount: p.count,
@@ -1278,11 +1358,18 @@ function renderMap() {
           .sort((a, b) => b[1] - a[1])[0][0]
       : null;
 
+    const motifs = urgence
+      ? (priorites.find((x) => x.place.etab.uai === p.etab.uai) || {}).motifs
+      : null;
+
     marker.bindPopup(
       `<span class="pname">${esc(p.etab.name)}</span>` +
       `<span class="pmeta">${esc(p.etab.commune)}<br>` +
       `<b>${fmtInt(p.count)}</b> signalement${p.count > 1 ? 's' : ''}` +
-      (top ? `<br>Principal : ${esc(top)}` : '') + '</span>'
+      (urgence
+        ? `<br><b>${esc(NIVEAUX[niveau].label)}</b>`
+          + (motifs ? motifs.map((m) => `<br>${esc(m.texte)}`).join('') : '')
+        : (top ? `<br>Principal : ${esc(top)}` : '')) + '</span>'
     );
     marker.on('click', () => showEtab(p.etab.uai));
     target.addLayer(marker);
@@ -1296,6 +1383,21 @@ function renderLegend(scale, isHeat) {
   const box = $('#legend');
   if (!current.places.length) { box.hidden = true; return; }
   box.hidden = false;
+
+  if (state.view === 'urgence') {
+    // Chaque pastille porte son libellé : la couleur ne dit jamais le niveau seule.
+    box.querySelector('.t').textContent = 'Niveau de priorité';
+    $('#legendScale').innerHTML = ['critique', 'serieux', 'attention', 'ok'].map((n) =>
+      `<span style="display:flex;align-items:center;gap:6px;margin-right:10px">
+         <i style="width:9px;height:9px;border-radius:50%;background:${token(NIVEAUX[n].couleur)};
+            border:1px solid var(--ring);display:block"></i>${esc(NIVEAUX[n].label)}</span>`).join('');
+    $('#legendScale').style.flexWrap = 'wrap';
+    $('#legendLabels').innerHTML = '';
+    $('#legendZero').hidden = true;
+    return;
+  }
+  $('#legendScale').style.flexWrap = '';
+
   const used = scale.used || [];
   $('#legendScale').innerHTML = used
     .map((v) => `<span class="sw" style="background:${token(v)}"></span>`).join('');
@@ -1501,6 +1603,260 @@ function renderBars(sel, entries, { color, colorFor, onPick, limit = 9 } = {}) {
       el.addEventListener('click', () => onPick(el.dataset.value));
     });
   }
+}
+
+/* --------------------------------- Priorités --------------------------------- */
+/* Trois signaux, tous tirés de dates et de noms de déclarants — rien d'interprété :
+     1. le retard   : un signalement non clos qu'aucune réponse n'a suivi ;
+     2. le collectif: plusieurs agents différents sur une fenêtre courte ;
+     3. la lenteur  : une réponse arrivée bien après le signalement.
+   Les seuils appartiennent à l'utilisateur : ils sont affichés et modifiables. */
+
+const URGENCE_DEFAUT = { sansReponse: 60, delaiLong: 60, fenetre: 30, declarants: 3 };
+const NIVEAUX = {
+  critique:  { rang: 3, label: 'Critique',    couleur: '--critical' },
+  serieux:   { rang: 2, label: 'Sérieux',     couleur: '--serious' },
+  attention: { rang: 1, label: 'À surveiller', couleur: '--warning' },
+  ok:        { rang: 0, label: 'Rien à signaler', couleur: '--good' },
+};
+
+const seuils = () => ({ ...URGENCE_DEFAUT, ...(Prefs.get('urgence', {}) || {}) });
+
+const DAY = 86400000;
+const daysSince = (date, now) => Math.floor((now - date) / DAY);
+
+/**
+ * Plus grand nombre de déclarants distincts observé sur une fenêtre glissante.
+ * Renvoie aussi la famille de risque quand elle est commune à la fenêtre :
+ * cinq agents sur le même risque ne se lit pas comme cinq agents sur cinq risques.
+ */
+function plusGrosRegroupement(incidents, fenetreJours) {
+  let best = { declarants: 0, debut: null, fin: null, famille: null, total: 0 };
+  const tri = [...incidents].sort((a, b) => a.date - b.date);
+  for (let i = 0; i < tri.length; i++) {
+    const limite = tri[i].date.getTime() + fenetreJours * DAY;
+    const noms = new Set();
+    const familles = new Set();
+    const risques = new Set();
+    let total = 0, dernier = tri[i].date;
+    for (let j = i; j < tri.length && tri[j].date.getTime() <= limite; j++) {
+      const nom = norm(tri[j].reporter);
+      if (nom) noms.add(nom);
+      familles.add(tri[j].family);
+      // Sans le numéro de nomenclature : ce libellé va dans une phrase.
+      risques.add(tri[j].riskDetail ? `${tri[j].family} : ${tri[j].riskDetail}` : tri[j].family);
+      dernier = tri[j].date;
+      total++;
+    }
+    if (noms.size > best.declarants) {
+      // Le risque exact quand il est le même pour tous, la famille sinon :
+      // « tous sur Exigences émotionnelles » en dit plus que « sur les RPS ».
+      best = {
+        declarants: noms.size, debut: tri[i].date, fin: dernier, total,
+        famille: risques.size === 1 ? [...risques][0]
+               : familles.size === 1 ? [...familles][0] : null,
+      };
+    }
+  }
+  return best;
+}
+
+/** Établit, pour chaque établissement affiché, son niveau et ses motifs. */
+function computeUrgency(places, now) {
+  const s = seuils();
+  const out = [];
+
+  for (const p of places) {
+    if (!p.incidents.length) continue;
+
+    // 1. Sans réponse : non clos, et aucune observation portée au registre.
+    const enAttente = p.incidents
+      .filter((i) => i.open && !i.lastReply)
+      .map((i) => ({ inc: i, age: daysSince(i.date, now) }))
+      .filter((x) => x.age >= s.sansReponse)
+      .sort((a, b) => b.age - a.age);
+
+    // 2. Réponses tardives.
+    const lents = p.incidents
+      .filter((i) => i.delay != null && i.delay > s.delaiLong)
+      .sort((a, b) => b.delay - a.delay);
+
+    // 3. Regroupement de déclarants.
+    const groupe = plusGrosRegroupement(p.incidents, s.fenetre);
+    const collectif = groupe.declarants >= s.declarants;
+
+    const motifs = [];
+    if (collectif) {
+      const jours = Math.max(1, daysSince(groupe.debut, groupe.fin) || 1);
+      motifs.push({
+        type: 'collectif',
+        texte: `${fmtInt(groupe.declarants)} agents différents ont signalé en ${fmtInt(jours)} jour${jours > 1 ? 's' : ''}`
+             + (groupe.famille ? `, tous sur « ${groupe.famille} »` : ''),
+      });
+    }
+    if (enAttente.length) {
+      const pire = enAttente[0];
+      motifs.push({
+        type: 'retard',
+        texte: enAttente.length === 1
+          ? `1 signalement sans réponse depuis ${fmtInt(pire.age)} jours`
+          : `${fmtInt(enAttente.length)} signalements sans réponse, le plus ancien depuis ${fmtInt(pire.age)} jours`,
+      });
+    }
+    if (lents.length) {
+      motifs.push({
+        type: 'lent',
+        texte: lents.length === 1
+          ? `1 réponse arrivée après ${fmtInt(lents[0].delay)} jours`
+          : `${fmtInt(lents.length)} réponses tardives, jusqu'à ${fmtInt(lents[0].delay)} jours`,
+      });
+    }
+    if (!motifs.length) continue;
+
+    const pireAge = enAttente.length ? enAttente[0].age : 0;
+    let niveau = 'attention';
+    if (collectif || pireAge >= 2 * s.sansReponse) niveau = 'critique';
+    else if (enAttente.length || lents.length >= 2) niveau = 'serieux';
+
+    out.push({
+      place: p, niveau, motifs, enAttente, lents, collectif, groupe,
+      score: (collectif ? 10000 + groupe.declarants * 100 : 0)
+           + enAttente.length * 200 + pireAge
+           + lents.length * 20,
+    });
+  }
+
+  out.sort((a, b) => b.score - a.score
+    || a.place.etab.name.localeCompare(b.place.etab.name, 'fr'));
+  return out;
+}
+
+let priorites = [];
+
+function renderPriorities(now) {
+  const has = current.incidents.length > 0;
+  $('#prioEmpty').hidden = has;
+  $('#prioContent').hidden = !has;
+  if (!has) { priorites = []; return; }
+
+  const s = seuils();
+  priorites = computeUrgency(current.places, now);
+
+  const retards = priorites.reduce((n, p) => n + p.enAttente.length, 0);
+  const collectifs = priorites.filter((p) => p.collectif).length;
+  $('#uRetard').textContent = fmtInt(retards);
+  $('#uRetardH').textContent = `au-delà de ${fmtInt(s.sansReponse)} jours`;
+  $('#uCollectif').textContent = fmtInt(collectifs);
+  $('#uCollectifH').textContent = `${fmtInt(s.declarants)} agents en ${fmtInt(s.fenetre)} jours`;
+
+  // Un export ancien fait paraître tout en retard : on le dit.
+  const dernier = current.incidents.reduce((d, i) => (i.date > d ? i.date : d), current.incidents[0].date);
+  const ecart = daysSince(dernier, now);
+  $('#prioAsOf').innerHTML = ecart > 45
+    ? `Ancienneté calculée au ${esc(DATE_FMT.format(now))}, alors que le signalement le plus récent
+       du fichier date du ${esc(DATE_FMT.format(dernier))} — soit ${fmtInt(ecart)} jours.
+       Rechargez un export à jour pour des délais justes.`
+    : `Ancienneté calculée au ${esc(DATE_FMT.format(now))}.`;
+  $('#prioAsOf').className = ecart > 45 ? 'notice warn' : 'notice';
+
+  const host = $('#prioList');
+  if (!priorites.length) {
+    host.innerHTML = `<div class="emptystate">Aucun établissement ne dépasse les seuils
+      pour les filtres en cours.</div>`;
+    return;
+  }
+  host.innerHTML = priorites.slice(0, 40).map((p, i) => `
+    <button class="prio n-${esc(p.niveau)}" data-uai="${esc(p.place.etab.uai)}">
+      <span class="rk">${i + 1}</span>
+      <span class="nm">${esc(p.place.etab.name)}</span>
+      <span class="sub">${esc([p.place.etab.commune, p.place.etab.dept].filter(Boolean).join(' · '))}
+        — ${esc(NIVEAUX[p.niveau].label)}</span>
+      <ul class="why">${p.motifs.map((m) =>
+        `<li class="w-${esc(m.type)}"><span>${esc(m.texte)}</span></li>`).join('')}</ul>
+    </button>`).join('');
+
+  if (priorites.length > 40) {
+    host.insertAdjacentHTML('beforeend',
+      `<p class="note" style="font-size:11.5px;color:var(--ink-muted)">
+        40 établissements affichés sur ${fmtInt(priorites.length)}. L'export les reprend tous.</p>`);
+  }
+}
+
+/** Niveau par UAI, pour colorer la carte. */
+function urgencyByUai() {
+  const m = new Map();
+  for (const p of priorites) m.set(p.place.etab.uai, p.niveau);
+  return m;
+}
+
+/* --- Exports de relance --- */
+
+function lignesRelance() {
+  const rows = [];
+  for (const p of priorites) {
+    for (const x of p.enAttente) {
+      rows.push({ p, inc: x.inc, motif: `Sans réponse depuis ${fmtInt(x.age)} jours`, age: x.age });
+    }
+    for (const inc of p.lents) {
+      rows.push({ p, inc, motif: `Réponse après ${fmtInt(inc.delay)} jours`, age: inc.delay });
+    }
+  }
+  return rows;
+}
+
+function exportRelanceCsv() {
+  const rows = lignesRelance();
+  if (!rows.length) { alert('Aucun signalement à relancer avec les seuils et filtres actuels.'); return; }
+  const head = ['Niveau', 'Etablissement', 'UAI', 'Commune', 'Departement', 'Date du signalement',
+                'Anciennete (j)', 'Registre', 'Numero', 'Risque', 'Etat', 'Signale par', 'Motif'];
+  const lines = [head.join(';')];
+  for (const r of rows) {
+    lines.push([
+      NIVEAUX[r.p.niveau].label, r.p.place.etab.name, r.inc.uai, r.p.place.etab.commune,
+      r.p.place.etab.dept, DATE_FMT.format(r.inc.date), r.age, r.inc.registre, r.inc.number,
+      r.inc.risk, r.inc.state, r.inc.reporter, r.motif,
+    ].map(csvCell).join(';'));
+  }
+  download(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
+           `visu-incidents_a-relancer_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+function exportRelancePdf() {
+  const rows = lignesRelance();
+  if (!rows.length) { alert('Aucun signalement à relancer avec les seuils et filtres actuels.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const s = seuils();
+
+  doc.setFontSize(16); doc.setTextColor(20);
+  doc.text('Signalements en attente de traitement', 14, 16);
+  doc.setFontSize(9); doc.setTextColor(110);
+  doc.text(`Édité le ${new Date().toLocaleString('fr-FR')}`, 14, 22);
+  doc.text(doc.splitTextToSize(
+    `Seuils retenus : sans réponse au-delà de ${s.sansReponse} jours, réponse jugée tardive `
+    + `au-delà de ${s.delaiLong} jours. Filtres : ${filterSummary()}.`, 265), 14, 27);
+  doc.text(doc.splitTextToSize(
+    "Ce relevé porte sur le traitement des registres — délais et regroupements — et non sur "
+    + "la sécurité des lieux : l'absence d'un établissement n'y vaut pas quitus.", 265), 14, 36);
+
+  doc.autoTable({
+    startY: 44,
+    head: [['Niveau', 'Établissement', 'Commune', 'Date', 'Anc. (j)', 'Risque', 'État', 'Motif']],
+    body: rows.map((r) => [
+      NIVEAUX[r.p.niveau].label, r.p.place.etab.name, r.p.place.etab.commune,
+      DATE_FMT.format(r.inc.date), r.age, r.inc.risk, r.inc.state, r.motif,
+    ]),
+    theme: 'grid', styles: { fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [208, 59, 59], fontSize: 7.5 },
+    columnStyles: {
+      0: { cellWidth: 20 }, 1: { cellWidth: 52 }, 2: { cellWidth: 28 }, 3: { cellWidth: 18 },
+      4: { cellWidth: 15, halign: 'right' }, 5: { cellWidth: 66 }, 6: { cellWidth: 20 },
+      7: { cellWidth: 'auto' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.save(`visu-incidents_a-relancer_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /* ------------------------------ Fiche établissement ------------------------------ */
@@ -1838,11 +2194,12 @@ function syncMobileBar() {
 }
 
 function selectTab(which) {
-  const isSynth = which === 'synth';
-  $('#tabSynth').setAttribute('aria-selected', String(isSynth));
-  $('#tabEtab').setAttribute('aria-selected', String(!isSynth));
-  $('#panelSynth').hidden = !isSynth;
-  $('#panelEtab').hidden = isSynth;
+  for (const name of ['synth', 'prio', 'etab']) {
+    const on = name === which;
+    $('#tab' + name[0].toUpperCase() + name.slice(1))
+      .setAttribute('aria-selected', String(on));
+    $('#panel' + name[0].toUpperCase() + name.slice(1)).hidden = !on;
+  }
 }
 
 /* ------------------------------ Chargement des fichiers ------------------------------ */
@@ -1958,6 +2315,8 @@ function exportOrphans() {
 
 function refresh() {
   current = computeFiltered();
+  const now = new Date();
+  renderPriorities(now);      // avant la carte : le mode urgence lit ses résultats
   renderMap();
   renderSynthesis();
   renderEtab();
@@ -2064,7 +2423,7 @@ function wireEvents() {
   $('#speed').addEventListener('change', () => { if (playTimer) { stopPlay(); togglePlay(); } });
 
   /* --- Carte --- */
-  const views = { cluster: '#vwCluster', points: '#vwPoints', heat: '#vwHeat' };
+  const views = { cluster: '#vwCluster', points: '#vwPoints', heat: '#vwHeat', urgence: '#vwUrgence' };
   for (const [name, sel] of Object.entries(views)) {
     $(sel).addEventListener('click', () => {
       state.view = name; Prefs.set('view', name);
@@ -2085,7 +2444,36 @@ function wireEvents() {
 
   /* --- Onglets, tiroirs, thème --- */
   $('#tabSynth').addEventListener('click', () => selectTab('synth'));
+  $('#tabPrio').addEventListener('click', () => selectTab('prio'));
   $('#tabEtab').addEventListener('click', () => selectTab('etab'));
+
+  // Priorités : seuils, exports, ouverture d'une fiche.
+  const champs = { sansReponse: '#uSansReponse', delaiLong: '#uDelaiLong',
+                   fenetre: '#uFenetre', declarants: '#uDeclarants' };
+  const ecrireSeuils = () => {
+    const s = seuils();
+    for (const [cle, sel] of Object.entries(champs)) $(sel).value = s[cle];
+  };
+  for (const [cle, sel] of Object.entries(champs)) {
+    $(sel).addEventListener('change', (e) => {
+      const v = parseInt(e.target.value, 10);
+      if (!Number.isFinite(v) || v < 1) { ecrireSeuils(); return; }
+      Prefs.set('urgence', { ...seuils(), [cle]: v });
+      refresh();
+    });
+  }
+  $('#btnUrgReset').addEventListener('click', () => {
+    Prefs.set('urgence', {}); ecrireSeuils(); refresh();
+  });
+  ecrireSeuils();
+
+  $('#btnRelanceCsv').addEventListener('click', exportRelanceCsv);
+  $('#btnRelancePdf').addEventListener('click', exportRelancePdf);
+
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.prio');
+    if (row) showEtab(row.dataset.uai);
+  });
   $('#openDash').addEventListener('click', () => {
     if (window.matchMedia('(max-width:1000px)').matches) openDrawer('dash');
     else $('#app').classList.toggle('dock-hidden');

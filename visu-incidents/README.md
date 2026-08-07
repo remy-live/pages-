@@ -80,6 +80,37 @@ médian entre le signalement et la dernière réponse portée au registre.
 Répartition mensuelle (cliquable), par famille de risque et par état. Les
 chiffres sont aussi consultables en tableau.
 
+**Priorités** — où intervenir. Le classement repose sur trois signaux, tous
+tirés de dates et de noms de déclarants, sans rien d'interprété :
+
+- **Sans réponse** — un signalement non clos qu'aucune observation n'a suivi
+  au-delà du seuil. C'est le signal le plus objectif : il ne dit rien du risque,
+  seulement que personne n'a répondu.
+- **Situation collective** — plusieurs agents *différents* sur une fenêtre
+  courte. Cinq signalements par cinq personnes en une semaine ne se lisent pas
+  comme cinq signalements par une personne sur deux ans ; le motif nomme le
+  risque quand il est commun à tous.
+- **Réponse tardive** — une réponse arrivée bien après le signalement, que la
+  médiane de la synthèse masque par construction.
+
+Chaque établissement porte un niveau (critique, sérieux, à surveiller) **et une
+phrase qui dit pourquoi** : « 5 agents différents ont signalé en 5 jours, tous
+sur Risques psychosociaux : Exigences émotionnelles ». Aucun score opaque.
+
+Les quatre seuils sont affichés, modifiables et mémorisés — ils appartiennent à
+qui se sert de l'outil, pas au code. Deux exports en découlent : la liste à
+relancer (CSV) et un relevé imprimable (PDF).
+
+La carte a un mode **Urgence** correspondant, où la couleur suit le niveau au
+lieu du nombre de signalements.
+
+Deux limites inscrites dans l'interface : **aucun signalement ne veut pas dire
+aucun risque** — un établissement silencieux peut être celui où l'on n'ose pas
+écrire —, et ce classement porte sur le traitement des registres, pas sur la
+sécurité des lieux ni sur une performance d'établissement. Si l'export chargé
+est ancien, l'outil le signale plutôt que de faire passer tout le monde pour
+en retard.
+
 **Fiche d'établissement** — indicateurs, répartition des risques et journal des
 signalements. La fiche respecte les filtres actifs et indique combien de
 signalements sont masqués.
