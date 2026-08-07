@@ -47,16 +47,80 @@ h1,h2,h3,legend,summary,.k{font-family:"Barlow Condensed","Barlow",system-ui,san
 .top h1{font-size:21px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin:0;flex:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .acts{display:flex;gap:8px;flex:0 0 auto}
+.etapes{display:flex;gap:6px;margin:0;padding:0;list-style:none;flex:0 0 auto}
+.etapes li{display:flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;border-radius:99px;
+  font-family:"Barlow Condensed",sans-serif;font-size:15px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--dim);border:1px solid transparent}
+.etapes li b{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;
+  background:#3B4853;color:var(--dim);font-size:13px}
+body[data-etape=plan] .etapes li[data-e=plan],
+body[data-etape=fiche] .etapes li[data-e=fiche]{color:var(--ink);border-color:var(--edge-2);background:#2B3641}
+body[data-etape=plan] .etapes li[data-e=plan] b,
+body[data-etape=fiche] .etapes li[data-e=fiche] b{background:var(--acc);color:#1C232A}
+@media (max-width:640px){.etapes li{font-size:0;padding:5px}.etapes li b{font-size:13px}}
+
+/* ─────────────────────────── les deux étapes ─────────────────────────── */
+body{padding-bottom:96px}   /* remesuré en JS, la barre change de hauteur */
+body[data-etape=fiche] .side{display:none}
+body[data-etape=fiche] .app{grid-template-columns:1fr}
+body[data-etape=fiche] #planwrap{display:none}
+body[data-etape=plan] .stage{display:none}
+
+.barre{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:rgba(24,31,39,.94);backdrop-filter:blur(14px);border-top:1px solid var(--edge);
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
+}
+.barre .dedans{display:none;align-items:flex-end;gap:14px;max-width:1240px;margin:0 auto}
+.barre .choix.rot{flex:0 0 auto}
+.barre .choix.rot button{width:86px;flex:0 0 auto;padding:5px 4px;font-size:12px}
+.barre .choix.rot svg{height:26px}
+.barre .dedans[data-si=plan]>.f{flex:0 0 auto !important}
+.barre .dedans[data-si=plan]::after{content:"";flex:1 1 auto}
+body[data-etape=plan] .barre .dedans[data-si=plan]{display:flex}
+body[data-etape=fiche] .barre .dedans[data-si=fiche]{display:flex}
+.barre .quoi{flex:1 1 auto;min-width:0;color:var(--dim);font-size:13px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barre .sw{flex:0 0 auto;padding-bottom:9px}
+button.b.grand{font-size:16px;padding:12px 20px;flex:0 0 auto}
+@media (max-width:760px){
+  .barre .dedans{flex-wrap:wrap;gap:9px}
+  .barre .sw{order:2}
+  button.b.grand{order:3;margin-left:auto}
+  .barre .quoi{flex-basis:100%;order:1}
+}
+
+/* choix imagés : orientation, disposition, rotation */
+.choix{display:flex;gap:8px}
+.choix button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--jack);border:1px solid #0C1319;border-radius:11px;padding:8px 6px;cursor:pointer;
+  color:var(--dim);font:inherit;font-size:12.5px}
+.choix button:hover{border-color:var(--edge-2)}
+.choix button[aria-pressed=true]{border-color:var(--acc);background:#2A3138;color:var(--ink);
+  box-shadow:0 0 0 1px rgba(255,179,71,.45)}
+.choix svg{width:100%;height:30px;display:block}
+.choix .pg{fill:#F2F0EA;stroke:#8C99A4;stroke-width:1}
+.choix .gr rect{fill:none;stroke:#8C99A4;stroke-width:1}
+.choix button[aria-pressed=true] .pg{stroke:var(--acc)}
+.choix button[aria-pressed=true] .gr rect{stroke:var(--acc)}
+.choix.rot .pc{fill:#E9E9E9;stroke:#8C99A4;stroke-width:1}
+.choix.rot text{fill:#1A1A1A;font:600 11px "Barlow",sans-serif;text-anchor:middle}
+.choix button[aria-pressed=true] .pc{stroke:var(--acc)}
+
+/* pas à pas pour le nombre de cases */
+.pas{display:flex;gap:6px;align-items:stretch}
+.pas input{text-align:center;flex:1 1 auto;min-width:0}
+.pas button{flex:0 0 40px;font-size:19px;line-height:1;padding:0}
 
 /* ─────────────────────────── ossature ─────────────────────────── */
 .app{display:grid;grid-template-columns:365px minmax(0,1fr);align-items:start}
 .side{padding:14px;display:flex;flex-direction:column;gap:10px;
-  position:sticky;top:57px;max-height:calc(100dvh - 57px);overflow:auto;overscroll-behavior:contain}
+  position:sticky;top:57px;max-height:calc(100dvh - 57px - 92px);overflow:auto;overscroll-behavior:contain}
 .stagewrap{padding:20px 20px 60px;min-width:0}
 @media (max-width:1000px){
   .app{grid-template-columns:1fr}
-  .side{position:static;max-height:none;overflow:visible}
-  .stagewrap{padding:4px 12px 40px}
+  .side{position:static;max-height:none !important;overflow:visible;order:2}
+  .stagewrap{padding:10px 12px 4px;order:1}   /* la feuille d'abord, les réglages ensuite */
 }
 
 /* ─────────────────────────── cartes de réglages ─────────────────────────── */
@@ -191,7 +255,9 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
 /* ─────────────────────────── impression ─────────────────────────── */
 @media print{
   html,body{background:#fff}
-  .top,.side,.mbar,#planwrap{display:none !important}
+  body{padding-bottom:0}
+  .top,.side,.mbar,#planwrap,.barre{display:none !important}
+  .stage{display:block !important}
   .app{display:block}
   .stagewrap{padding:0}
   .modal{position:static;display:block;background:none}
@@ -210,19 +276,80 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
 <header class="top">
   <span class="mark" aria-hidden="true">🧩</span>
   <h1>Puzzle de calcul</h1>
-  <div class="acts">
-    <button class="b" id="bPreview">Aperçu</button>
-    <button class="b primary" id="bPrint">Imprimer</button>
-  </div>
+  <ol class="etapes" id="etapes">
+    <li data-e="plan"><b>1</b> Mise en page</li>
+    <li data-e="fiche"><b>2</b> La fiche</li>
+  </ol>
 </header>
 
-<div class="app">
+<div class="app" id="app" data-etape="plan">
 <aside class="side">
 
   <div id="msgs" style="display:flex;flex-direction:column;gap:9px"></div>
 
+  <details class="card" open data-key="feuille">
+    <summary>La feuille</summary>
+    <div class="body">
+      <div class="f">
+        <span class="lbl">Orientation</span>
+        <div class="choix" id="segOrient">
+          <button type="button" data-v="portrait">
+            <svg viewBox="0 0 44 34" aria-hidden="true"><rect class="pg" x="14" y="3" width="16" height="28" rx="1.5"/></svg>
+            <span>Portrait</span>
+          </button>
+          <button type="button" data-v="paysage">
+            <svg viewBox="0 0 44 34" aria-hidden="true"><rect class="pg" x="5" y="7" width="34" height="20" rx="1.5"/></svg>
+            <span>Paysage</span>
+          </button>
+        </div>
+      </div>
+      <div class="f">
+        <span class="lbl">Plateau et pièces</span>
+        <div class="choix" id="segSep">
+          <button type="button" data-v="ensemble">
+            <svg viewBox="0 0 44 34" aria-hidden="true">
+              <rect class="pg" x="14" y="2" width="16" height="30" rx="1.5"/>
+              <g class="gr"><rect x="17" y="6" width="10" height="10"/><rect x="17" y="18" width="10" height="10"/></g>
+            </svg>
+            <span>Une feuille</span>
+          </button>
+          <button type="button" data-v="separe">
+            <svg viewBox="0 0 44 34" aria-hidden="true">
+              <rect class="pg" x="3" y="2" width="16" height="30" rx="1.5"/>
+              <rect class="pg" x="25" y="2" width="16" height="30" rx="1.5"/>
+              <g class="gr"><rect x="6" y="12" width="10" height="10"/><rect x="28" y="12" width="10" height="10"/></g>
+            </svg>
+            <span>Deux feuilles</span>
+          </button>
+        </div>
+      </div>
+      <div class="f"><label for="fMarge">Marges <span class="val" id="vMarge"></span></label>
+        <input type="range" id="fMarge" min="0" max="25" step="1"></div>
+      <input type="checkbox" id="fSep" hidden>
+    </div>
+  </details>
+
+  <details class="card" open data-key="cases">
+    <summary>Les cases</summary>
+    <div class="body">
+      <div class="row">
+        <div class="f"><span class="lbl">Colonnes</span>
+          <div class="pas"><button class="b" type="button" data-pas="fCols" data-d="-1">−</button>
+            <input type="number" id="fCols" min="2" max="14">
+            <button class="b" type="button" data-pas="fCols" data-d="1">+</button></div></div>
+        <div class="f"><span class="lbl">Lignes</span>
+          <div class="pas"><button class="b" type="button" data-pas="fRows" data-d="-1">−</button>
+            <input type="number" id="fRows" min="2" max="14">
+            <button class="b" type="button" data-pas="fRows" data-d="1">+</button></div></div>
+      </div>
+      <p class="hint" id="infoGrille"></p>
+      <label class="sw"><input type="checkbox" id="fCarres"><span class="box"></span><span>Cases carrées</span></label>
+      <p class="hint">Décochée, les cases s'étirent pour remplir toute la feuille.</p>
+    </div>
+  </details>
+
   <details class="card" open data-key="image">
-    <summary>Silhouette</summary>
+    <summary>Le dessin</summary>
     <div class="body">
       <div class="gal" id="gal"></div>
       <div class="drop" id="drop">
@@ -243,29 +370,19 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
       <div class="f"><label for="fAngle">Rotation du dessin <span class="val" id="vAngle"></span></label>
         <input type="range" id="fAngle" min="-180" max="180" step="1"></div>
       <button class="b" type="button" id="bReplacer">Replacer au centre, d'aplomb</button>
-      <p class="hint">Sur le plan de travail : glisse le dessin, molette ou pincement pour
-        zoomer, poignée ronde pour tourner. Double-clic pour tout remettre en place.</p>
     </div>
   </details>
 
-  <details class="card" open data-key="decoupe">
-    <summary>Découpe</summary>
+  <details class="card" open data-key="calculs">
+    <summary>Les calculs</summary>
     <div class="body">
       <div class="row">
-        <div class="f"><label for="fCols">Colonnes</label><input type="number" id="fCols" min="2" max="14"></div>
-        <div class="f"><label for="fRows">Lignes</label><input type="number" id="fRows" min="2" max="14"></div>
+        <select id="fGen"></select>
+        <button class="b" type="button" id="bGen" style="flex:0 0 auto">Générer</button>
       </div>
-      <p class="hint" id="infoGrille"></p>
-      <div class="f">
-        <span class="lbl">Rotation des pièces</span>
-        <div class="seg" id="segRot">
-          <button type="button" data-v="none">Aucune</button>
-          <button type="button" data-v="half">½ tour</button>
-          <button type="button" data-v="quarter">¼ de tour</button>
-        </div>
-      </div>
-      <label class="sw"><input type="checkbox" id="fDroit"><span class="box"></span><span>Garder les nombres à l'endroit</span></label>
-      <label class="sw"><input type="checkbox" id="fCarres"><span class="box"></span><span>Cases carrées</span></label>
+      <div class="f"><label for="fLines">Une ligne par case</label>
+        <textarea id="fLines" spellcheck="false"></textarea></div>
+      <p class="hint">Le résultat est calculé tout seul. Pour l'imposer : <code>énoncé = réponse</code>.</p>
       <div class="f">
         <label for="fSeed">Mélange</label>
         <div class="row">
@@ -276,44 +393,15 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
     </div>
   </details>
 
-  <details class="card" open data-key="calculs">
-    <summary>Calculs</summary>
+  <details class="card" data-key="details">
+    <summary>Finitions</summary>
     <div class="body">
-      <div class="row">
-        <select id="fGen"></select>
-        <button class="b" type="button" id="bGen" style="flex:0 0 auto">Générer</button>
-      </div>
-      <div class="f"><label for="fLines">Une ligne par case</label>
-        <textarea id="fLines" spellcheck="false"></textarea></div>
-      <p class="hint">Le résultat est calculé tout seul. Pour l'imposer : <code>énoncé = réponse</code>.</p>
-    </div>
-  </details>
-
-  <details class="card" open data-key="page">
-    <summary>Page</summary>
-    <div class="body">
-      <div class="f">
-        <span class="lbl">Orientation</span>
-        <div class="seg" id="segOrient">
-          <button type="button" data-v="portrait">Portrait</button>
-          <button type="button" data-v="paysage">Paysage</button>
-        </div>
-      </div>
-      <div class="f"><label for="fMarge">Marges <span class="val" id="vMarge"></span></label>
-        <input type="range" id="fMarge" min="0" max="25" step="1"></div>
-      <label class="sw"><input type="checkbox" id="fSep"><span class="box"></span><span>Pièces sur une page à part</span></label>
       <label class="sw"><input type="checkbox" id="fSol"><span class="box"></span><span>Ajouter le corrigé</span></label>
       <label class="sw"><input type="checkbox" id="fCons"><span class="box"></span><span>Afficher la consigne</span></label>
       <div class="f" id="wrapCons"><input type="text" id="fConsigne"></div>
-      <label class="sw"><input type="checkbox" id="fTitres"><span class="box"></span><span>Afficher les titres de section</span></label>
-    </div>
-  </details>
-
-  <details class="card" data-key="pieces">
-    <summary>Nombres</summary>
-    <div class="body">
+      <label class="sw"><input type="checkbox" id="fTitres"><span class="box"></span><span>Titres de section</span></label>
       <div class="f">
-        <span class="lbl">Position sur la pièce</span>
+        <span class="lbl">Nombre sur la pièce</span>
         <div class="seg" id="segLab">
           <button type="button" data-v="random">Au hasard</button>
           <button type="button" data-v="corner">En bas</button>
@@ -348,6 +436,42 @@ button.b:disabled{opacity:.45;cursor:default;transform:none}
   </div>
   <div class="stage" id="stage"></div>
 </main>
+</div>
+
+<div class="barre">
+  <div class="dedans" data-si="plan">
+    <div class="f" style="flex:1 1 auto;min-width:0">
+      <span class="lbl">Rotation des pièces</span>
+      <div class="choix rot" id="segRot">
+        <button type="button" data-v="none">
+          <svg viewBox="0 0 40 34" aria-hidden="true"><rect class="pc" x="9" y="2" width="22" height="22" rx="2"/>
+            <text x="20" y="17" transform="rotate(0 20 13)">12</text></svg>
+          <span>Aucune</span>
+        </button>
+        <button type="button" data-v="half">
+          <svg viewBox="0 0 40 34" aria-hidden="true"><rect class="pc" x="9" y="2" width="22" height="22" rx="2"/>
+            <text x="20" y="17" transform="rotate(180 20 13)">12</text></svg>
+          <span>½ tour</span>
+        </button>
+        <button type="button" data-v="quarter">
+          <svg viewBox="0 0 40 34" aria-hidden="true"><rect class="pc" x="9" y="2" width="22" height="22" rx="2"/>
+            <text x="20" y="17" transform="rotate(90 20 13)">12</text></svg>
+          <span>¼ de tour</span>
+        </button>
+      </div>
+    </div>
+    <label class="sw" id="swDroit"><input type="checkbox" id="fDroit"><span class="box"></span>
+      <span>Nombres toujours à l'endroit</span></label>
+    <button class="b primary grand" type="button" id="bCreer">Créer le puzzle</button>
+  </div>
+
+  <div class="dedans" data-si="fiche">
+    <button class="b" type="button" id="bRetour">← Mise en page</button>
+    <span class="quoi" id="quoiFiche"></span>
+    <button class="b" type="button" id="bShuffle2">Remélanger</button>
+    <button class="b" type="button" id="bPreview">Plein écran</button>
+    <button class="b primary grand" type="button" id="bPrint">Imprimer</button>
+  </div>
 </div>
 
 <div class="modal" id="modal" hidden>
@@ -662,6 +786,7 @@ const CHAMPS = {
   marge:'#fMarge', sep:'#fSep', sol:'#fSol', cons:'#fCons', consigne:'#fConsigne',
   titres:'#fTitres', labSize:'#fLabSize', halo:'#fHalo', grey:'#fGrey',
 };
+/* les sélecteurs imagés : une valeur, des boutons, un état pressé */
 const SEGMENTS = { fit:'#segFit', rot:'#segRot', orient:'#segOrient', labPos:'#segLab' };
 const NOMBRES = new Set(['cols','rows','zoom','angle','marge','labSize']);
 
@@ -674,6 +799,10 @@ function versFormulaire(){
   }
   for (const [k, sel] of Object.entries(SEGMENTS)){
     for (const b of $(sel).children) b.setAttribute('aria-pressed', String(b.dataset.v === S[k]));
+  }
+  // « plateau et pièces » est une case à cocher déguisée en deux images
+  for (const b of $('#segSep').children){
+    b.setAttribute('aria-pressed', String((b.dataset.v === 'separe') === !!S.sep));
   }
 }
 function depuisFormulaire(){
@@ -1067,7 +1196,10 @@ function messages(items, total, n, g){
     add('err', `<b>${total} calcul${total > 1 ? 's' : ''}</b> pour <b>${n} case${n > 1 ? 's' : ''}</b>. `
       + (total < n ? 'Il en manque ' + (n - total) + '.' : 'Les ' + (total - n) + ' derniers sont ignorés.')
       + (total < n && genCourt > 0 ? ' Ce générateur n\'a pas assez de calculs à résultats tous '
-        + 'différents : complète à la main, change de générateur, ou réduis la grille.' : ''));
+        + 'différents : complète à la main, change de générateur, ou réduis la grille.' : '')
+      + `<div><button class="b" type="button" id="bGenMsg" style="margin-top:9px;padding:6px 11px;font-size:13px">`
+      + `Générer ${n} calculs</button></div>`);
+    $('#bGenMsg').addEventListener('click', () => { generer(); actualiser(); });
   }
   const flous = items.filter(i => !i.ok);
   if (flous.length){
@@ -1103,9 +1235,14 @@ function ajuster(){
   if (dansModale) s = Math.min(s, (innerHeight - 130) / (p.h * mmPx));
   $('#stage').style.setProperty('--s', Math.max(0.08, Math.min(s, dansModale ? 2 : 1)));
 
-  // le plan reste dans la page, à la taille qui tient dans la fenêtre
+  // la barre d'action est haute de deux ou trois rangs selon l'écran : on la mesure
+  const barre = $('.barre').offsetHeight;
+  document.body.style.paddingBottom = (barre + 14) + 'px';
+  $('.side').style.maxHeight = `calc(100dvh - 57px - ${barre + 10}px)`;
+
+  // le plan reste dans la page, à la taille qui tient entre l'en-tête et la barre
   const large = $('.stagewrap').clientWidth - 44;
-  const haut = innerHeight - 170;
+  const haut = innerHeight - 57 - barre - 58;
   $('#planwrap').style.setProperty('--s',
     Math.max(0.08, Math.min(1.6, large / (p.w * mmPx), haut / (p.h * mmPx))));
 }
@@ -1196,7 +1333,22 @@ function majAffichages(){
   $('#vLab').textContent = String(S.labSize).replace('.', ',') + ' mm';
   $('#fCarres').disabled = S.rot === 'quarter';
   $('#fDroit').disabled = S.rot === 'none';
+  $('#swDroit').style.opacity = S.rot === 'none' ? '.45' : '';
   $('#wrapCons').style.display = S.cons ? '' : 'none';
+  $('#bCreer').textContent = 'Créer le puzzle · ' + (S.cols * S.rows) + ' pièces';
+}
+
+/** Étape 1 : on met la feuille en page. Étape 2 : la fiche est faite. */
+function etape(e){
+  document.body.dataset.etape = e;
+  if (e === 'fiche'){
+    const p = $('#stage').children.length;
+    $('#quoiFiche').textContent = p + ' page' + (p > 1 ? 's' : '') + ' · A4 ' + S.orient
+      + ' · ' + S.cols * S.rows + ' pièces'
+      + (S.rot === 'none' ? '' : S.rot === 'half' ? ' · demi-tours' : ' · quarts de tour');
+    scrollTo({ top:0, behavior:'smooth' });
+  }
+  ajuster();
 }
 
 function actualiser(){
@@ -1233,6 +1385,7 @@ function init(){
   versFormulaire();
   majAffichages();
   rendre();
+  etape('plan');
 
   for (const s of Object.values(CHAMPS)){
     const n = $(s);
@@ -1248,6 +1401,27 @@ function init(){
       actualiser();
     });
   }
+  $('#segSep').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    $('#fSep').checked = b.dataset.v === 'separe';
+    actualiser();
+  });
+  for (const b of document.querySelectorAll('[data-pas]')){
+    b.addEventListener('click', () => {
+      const champ = $('#' + b.dataset.pas);
+      champ.value = Math.min(+champ.max, Math.max(+champ.min, (+champ.value || 0) + +b.dataset.d));
+      actualiser();
+    });
+  }
+
+  $('#bCreer').addEventListener('click', () => etape('fiche'));
+  $('#bRetour').addEventListener('click', () => etape('plan'));
+  $('#bShuffle2').addEventListener('click', () => {
+    $('#fSeed').value = String(Math.floor(Math.random() * 100000));
+    actualiser();
+    etape('fiche');
+  });
 
   $('#bGen').addEventListener('click', () => { depuisFormulaire(); generer(); actualiser(); });
   $('#bShuffle').addEventListener('click', () => {
