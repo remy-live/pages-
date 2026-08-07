@@ -123,6 +123,23 @@ fichier téléchargé est exploitable : la correction s'y trouve, la référence
 rangée près de la règle, la date est portée, **rien d'autre n'a bougé**, et
 `verifie_contre_les_ldg` ne passe à `true` que si tout a été coché.
 
+## `tablette-et-filtres.mjs` — la place de la carte, et les filtres
+
+```sh
+node tests/tablette-et-filtres.mjs
+```
+
+Deux panneaux ancrés de 380 px ne laissaient que **260 px de carte sur une
+tablette de 1024 px**, et 48 % de l'écran sur un portable de 1280. Le test
+contrôle de 834 à 1440 px que la carte occupe l'essentiel de la largeur et
+qu'aucun débordement n'apparaît.
+
+Il vérifie aussi que les filtres d'éducation prioritaire retirent exactement les
+établissements visés — 13 REP+ et 30 REP dans l'académie — que tout décocher ne
+laisse rien et que le compteur le dit, que le choix survit au rechargement, et
+que l'avertissement contre le malentendu est bien présent : masquer un
+établissement de la carte ne l'exclut pas d'un vœu large.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien

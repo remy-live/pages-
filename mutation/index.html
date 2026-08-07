@@ -480,7 +480,7 @@
         .sidebar-close { display: none; }
 
         /* ==================== TÉLÉPHONE ET TABLETTE ==================== */
-        @media (max-width: 900px) {
+        @media (max-width: 1280px) {
             header {
                 height: auto; flex-wrap: wrap; padding: 8px 10px; gap: 8px;
                 justify-content: flex-start;
@@ -526,6 +526,13 @@
             /* Cinq boutons libellés tenaient sur deux rangées : on ne garde que l'icône. */
             .header-controls .lbl { display: none; }
             .header-controls button { font-size: 1.05rem; padding: 6px 10px; }
+        }
+
+        @media (min-width: 1281px) {
+            /* 2 × 380 px laissaient encore la carte minoritaire jusqu'à 1500 px. */
+            .sidebar { width: 330px; }
+            .sidebar-left.collapsed { margin-left: -330px; }
+            .sidebar-right.collapsed { margin-right: -330px; }
         }
 
         /* Cibles tactiles un peu plus généreuses */
@@ -723,6 +730,14 @@
         .btn-eviter { background: #c0392b; color: #fff; border: 0; border-radius: 4px;
             padding: 6px 10px; cursor: pointer; font-size: .82rem; margin-top: 5px; width: 100%; }
         .btn-eviter.actif { background: #7f8c8d; }
+        /* ==================== FILTRES ÉDUCATION PRIORITAIRE ==================== */
+        .filtres-ep { margin: 12px 0 6px; padding: 10px 12px; background: #f7f9fa;
+            border: 1px solid #e4e9ec; border-radius: 5px; }
+        .filtres-ep > b { display: block; font-size: .86rem; color: #2c3e50; margin-bottom: 7px; }
+        .filtres-ep .checkbox-label { margin-bottom: 4px; }
+        .filtres-ep .ex-nom { color: #7f8c8d; font-size: .85em; }
+        .avertissement-filtre { margin: 9px 0 0; font-size: .78rem; line-height: 1.45; color: #8a6d3b;
+            background: #fdf6e3; border-left: 3px solid #e0b84c; padding: 7px 9px; border-radius: 4px; }
 </style>
 </head>
 
@@ -785,7 +800,16 @@
                         <div class="type-filters">
                             <label class="type-chk type-col"><input type="checkbox" id="chk_type_col" checked onchange="applyGlobalFilters()"> Collège</label>
                             <label class="type-chk type-lyc"><input type="checkbox" id="chk_type_lyc" checked onchange="applyGlobalFilters()"> Lycée</label>
-                            <label class="type-chk type-lp"><input type="checkbox" id="chk_type_lp" checked onchange="applyGlobalFilters()"> LP</label>
+                            <label class="type-chk type-lp"><input type="checkbox" id="chk_type_lp" checked onchange="applyGlobalFilters()"> Lycée pro</label>
+                        </div>
+
+                        <div class="filtres-ep">
+                            <b>Éducation prioritaire</b>
+                            <label class="checkbox-label"><input type="checkbox" id="chk_ep_repplus" checked onchange="applyGlobalFilters()"> REP+</label>
+                            <label class="checkbox-label"><input type="checkbox" id="chk_ep_rep" checked onchange="applyGlobalFilters()"> REP&nbsp;<span class="ex-nom">(ex-ZEP)</span></label>
+                            <label class="checkbox-label"><input type="checkbox" id="chk_ep_hors" checked onchange="applyGlobalFilters()"> Hors éducation prioritaire</label>
+                            <p class="avertissement-filtre">Décocher <b>masque ces établissements de la carte</b>, rien de plus.
+                            Un vœu large continuera de vous y exposer : pour cela, voyez le guide 🎯 Stratégie.</p>
                         </div>
                         <div class="avance">
                         <h3>Mode d'affichage</h3>
@@ -1636,6 +1660,8 @@
             const showLyc = lycElem ? lycElem.checked : true;
             const lpElem = document.getElementById('chk_type_lp');
             const showLP = lpElem ? lpElem.checked : true;
+            const coche = (id) => { const el = document.getElementById(id); return el ? el.checked : true; };
+            const voirRepPlus = coche('chk_ep_repplus'), voirRep = coche('chk_ep_rep'), voirHorsEp = coche('chk_ep_hors');
             const maskElem = document.getElementById('chk-mask-outside');
             const maskOutside = maskElem ? maskElem.checked : false;
             const sliderElem = document.getElementById('radius-slider');
@@ -1652,13 +1678,19 @@
                 if (etab.category === 'LP' && showLP) visibleType = true;
                 if (etab.category === 'AUTRE' && (showCol || showLyc || showLP)) visibleType = true;
 
+                /* REP+ et REP se lisent dans le même champ : « REP+ » contient « REP ». */
+                const ep = etab.educationPrioritaire || '';
+                const estRepPlus = ep.includes('REP+');
+                const estRep = !estRepPlus && ep.includes('REP');
+                let visibleEp = estRepPlus ? voirRepPlus : (estRep ? voirRep : voirHorsEp);
+
                 let visibleRadius = true;
                 if (maskOutside && AppState.radiusCenter) {
                     const dist = AppState.map.distance([etab.lat, etab.lon], AppState.radiusCenter);
                     if (dist > radiusKm * 1000) visibleRadius = false;
                 }
 
-                if (visibleZone && visibleType && visibleRadius) { if (!AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.addLayer(etab.marker); visibles++; }
+                if (visibleZone && visibleType && visibleEp && visibleRadius) { if (!AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.addLayer(etab.marker); visibles++; }
                 else { if (AppState.layers.etablissements.hasLayer(etab.marker)) AppState.layers.etablissements.removeLayer(etab.marker); }
             });
 
@@ -2419,7 +2451,7 @@
             AppState.map.on('popupclose', () => { AppState.selectedEtab = null; updateHeaderScore(); });
         }
 
-        const isNarrow = () => window.matchMedia('(max-width: 900px)').matches;
+        const isNarrow = () => window.matchMedia('(max-width: 1280px)').matches;
 
         function toggleSidebar(s) {
             const sb = document.getElementById(`sidebar-${s}`);
@@ -3347,6 +3379,9 @@
                 col: document.getElementById('chk_type_col').checked,
                 lyc: document.getElementById('chk_type_lyc').checked,
                 lp: document.getElementById('chk_type_lp').checked,
+                repPlus: document.getElementById('chk_ep_repplus').checked,
+                rep: document.getElementById('chk_ep_rep').checked,
+                horsEp: document.getElementById('chk_ep_hors').checked,
                 rayon: document.getElementById('radius-slider').value,
                 masquer: document.getElementById('chk-mask-outside').checked,
                 domicile: AppState.radiusCenter ? [AppState.radiusCenter.lat, AppState.radiusCenter.lng] : null
@@ -3364,6 +3399,9 @@
             if (typeof vue.col === 'boolean') document.getElementById('chk_type_col').checked = vue.col;
             if (typeof vue.lyc === 'boolean') document.getElementById('chk_type_lyc').checked = vue.lyc;
             if (typeof vue.lp === 'boolean') document.getElementById('chk_type_lp').checked = vue.lp;
+            if (typeof vue.repPlus === 'boolean') document.getElementById('chk_ep_repplus').checked = vue.repPlus;
+            if (typeof vue.rep === 'boolean') document.getElementById('chk_ep_rep').checked = vue.rep;
+            if (typeof vue.horsEp === 'boolean') document.getElementById('chk_ep_hors').checked = vue.horsEp;
             if (vue.rayon) {
                 document.getElementById('radius-slider').value = vue.rayon;
                 document.getElementById('radius-display').textContent = vue.rayon + " km";

@@ -39,8 +39,9 @@ pré-rempli.
 - **Chercher** un établissement ou une commune, au clavier comme au doigt.
 - **Simuler son barème** — carrière, situation familiale, bonifications — avec le
   détail réglementaire de chaque vœu et la liste des justificatifs à fournir.
-- **Filtrer la carte** par type d'établissement, par groupement, par commune, par
-  zone de remplacement, ou par distance autour de chez soi.
+- **Filtrer la carte** par type d'établissement (collège, lycée, lycée pro), par
+  classement en éducation prioritaire (REP+, REP, hors EP), par groupement, par
+  commune, par zone de remplacement, ou par distance autour de chez soi.
 - **Construire sa liste de vœux**, la réordonner, l'exporter en PDF ou en CSV.
 - **Se fixer un objectif** : la commune dont on veut se rapprocher, la mutation
   simultanée avec son conjoint, et la liste des établissements où l'on ne veut
@@ -60,7 +61,7 @@ pré-rempli.
 | Distribution | fichier de 13 Mo à télécharger | une adresse web, installable |
 | Poids au démarrage | 13 Mo | ~500 Ko (le reste à la demande) |
 | Sans réseau | dépendait de trois CDN | tout en cache, utilisable hors ligne |
-| Téléphone | deux panneaux de 380 px masquaient la carte | panneaux coulissants, en-tête compact |
+| Téléphone et tablette | deux panneaux de 380 px masquaient la carte — 260 px de carte sur une tablette de 1024 px | panneaux coulissants jusqu'à 1280 px, la carte garde toute la largeur |
 | Barème saisi | perdu à chaque rechargement | conservé sur l'appareil |
 | Liste de vœux | écrite mais jamais relue | retrouvée au retour |
 | Ordre des vœux | glisser-déposer, sans effet au doigt | flèches ▲▼ |
