@@ -158,6 +158,28 @@ ne déborde, que les libellés sont écrits correctement — « Établissement �
 visibles sans faire défiler, que les flèches font au moins 32 px de côté, et
 qu'elles réordonnent toujours.
 
+## `detail-voeu.mjs` — le dépliage, et la fenêtre qui ripait
+
+```sh
+node tests/detail-voeu.mjs
+```
+
+Deux choses à la fois.
+
+Le détail d'un vœu s'ouvrait dans une **fenêtre par-dessus la fenêtre** : il
+fallait sortir de sa liste pour comprendre une ligne, puis y revenir. Il se
+déplie maintenant dans la carte, sous un chevron. Le test vérifie qu'il s'ouvre
+au bon endroit sans seconde fenêtre, qu'il explique bien les points *et* ce qui
+est refusé sur ce type de vœu, que l'état est annoncé aux lecteurs d'écran, et
+que l'ouverture **suit le vœu quand on le réordonne** plutôt que de rester
+accrochée à un rang.
+
+Et la fenêtre **ripait latéralement** : le titre se retrouvait coupé à gauche.
+`overflow-y: auto` était déclaré seul, ce qui, d'après la spec CSS, force
+`overflow-x` à `auto` — le moindre dépassement rendait donc toute la fenêtre
+baladeuse au doigt. Le test essaie de la faire riper, détail replié puis
+déplié, et contrôle qu'elle ne bouge pas.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
