@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Fabrique automatiquement un puzzle de calcul : une image vectorielle découpée en pièces, un plateau d'énoncés, la banque de pièces mélangées et le corrigé, prêts à imprimer.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23212A33'/%3E%3Cpath d='M7 7h8v8H7zM17 17h8v8h-8z' fill='%23FFB347'/%3E%3Cpath d='M17 7h8v8h-8zM7 17h8v8H7z' fill='%235B6B78'/%3E%3C/svg%3E">
+<title>Puzzle de calcul</title>
+<style>
+:root{
+  --bg:#1A222A; --panel:#242E37; --panel-2:#2C3843; --edge:#3E4C57;
+  --ink:#E6E1D4; --dim:#94A1AB; --acc:#FFB347; --jack:#151C22;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:radial-gradient(120% 80% at 50% -10%,#33414D 0%,var(--bg) 62%,#141A20 100%);
+  color:var(--ink);
+  font:400 15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+}
+
+/* ============================ écran : mise en page ============================ */
+.app{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:0;min-height:100dvh}
+@media (max-width:900px){.app{grid-template-columns:1fr}}
+
+.side{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border-right:1px solid var(--edge);
+  padding:18px 16px 40px;
+  align-self:start;position:sticky;top:0;max-height:100dvh;overflow:auto;
+}
+@media (max-width:900px){.side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--edge)}}
+
+.side h1{font-size:20px;margin:0 0 2px;letter-spacing:.01em}
+.side .sub{color:var(--dim);font-size:13px;margin:0 0 16px}
+
+fieldset{border:1px solid var(--edge);border-radius:12px;margin:0 0 14px;padding:12px 12px 14px;background:rgba(0,0,0,.12)}
+legend{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:0 6px}
+label{display:block;font-size:12px;color:var(--dim);margin:10px 0 4px}
+label:first-of-type{margin-top:0}
+input[type=text],input[type=number],select,textarea{
+  width:100%;background:var(--jack);border:1px solid #0D1216;border-radius:9px;
+  color:var(--ink);font:inherit;font-size:14px;padding:8px 10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.4) inset}
+textarea{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px;line-height:1.6;resize:vertical;min-height:190px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+.check{display:flex;align-items:center;gap:8px;margin:9px 0 0;font-size:13px;color:var(--ink)}
+.check input{accent-color:var(--acc);width:16px;height:16px;flex:0 0 auto}
+.check label{margin:0;color:inherit;font-size:13px}
+button{
+  font:inherit;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer;
+  background:linear-gradient(180deg,#3A4751,#2B353D);border:1px solid #47555F;border-radius:9px;padding:9px 12px}
+button:hover{border-color:#5E6E7A}
+button.primary{color:#1D242A;background:linear-gradient(180deg,#FFC163,var(--acc));border-color:#C98A2E;font-weight:600}
+button:active{transform:translateY(1px)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hint{font-size:12px;color:var(--dim);margin:8px 0 0}
+.hint code{background:rgba(0,0,0,.35);padding:1px 4px;border-radius:4px}
+
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.thumb{background:#EDEDEA;border:1px solid #47555F;border-radius:8px;padding:4px;cursor:pointer;aspect-ratio:1}
+.thumb[aria-pressed=true]{border-color:var(--acc);box-shadow:0 0 0 2px rgba(255,179,71,.35)}
+.thumb img,.thumb svg{width:100%;height:100%;object-fit:contain;display:block}
+.drop{border:1px dashed #5E6E7A;border-radius:10px;padding:12px;text-align:center;color:var(--dim);font-size:13px;margin-top:8px}
+.drop.over{border-color:var(--acc);color:var(--ink)}
+
+.warn{border-radius:10px;padding:9px 11px;font-size:13px;margin:0 0 12px;line-height:1.4}
+.warn.err{background:#4A2226;border:1px solid #7C3A40;color:#FFD9DC}
+.warn.tip{background:#43381C;border:1px solid #7A6630;color:#FFE9C2}
+.warn b{font-weight:600}
+.warn ul{margin:5px 0 0;padding-left:18px}
+
+.stagewrap{padding:22px;overflow:auto}
+.stage{display:flex;flex-direction:column;align-items:center;gap:22px}
+.holder{width:calc(210mm * var(--s,1));height:calc(297mm * var(--s,1));overflow:hidden}
+.sheet{transform:scale(var(--s,1));transform-origin:top left}
+
+/* ============================ la feuille imprimée ============================ */
+.sheet{
+  width:210mm;height:297mm;background:#fff;color:#111;
+  padding:12mm;display:flex;flex-direction:column;
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  box-shadow:0 18px 40px rgba(0,0,0,.45);
+}
+.band{display:flex;height:8mm;flex:0 0 auto;margin-bottom:5mm;color:#fff;font-size:3.6mm;align-items:center}
+.band .b1{background:#2E4374;padding:0 4mm;display:flex;align-items:center;height:100%;flex:0 0 48%}
+.band .b2{background:#6480B8;padding:0 4mm;display:flex;align-items:center;justify-content:flex-end;height:100%;flex:1}
+.sheet h2{font-size:3.4mm;letter-spacing:.12em;text-transform:uppercase;color:#5A6472;margin:0 0 1.6mm;font-weight:600}
+.consigne{font-size:3.3mm;line-height:1.35;color:#333;margin:0 0 3.5mm}
+.grid{display:grid;flex:0 0 auto}
+.cell{border:.22mm solid #9AA3AE;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:1mm;overflow:hidden;position:relative}
+.cell .q{font-size:3.5mm;line-height:1.2}
+.piece{border:.22mm solid #9AA3AE;position:relative;overflow:hidden}
+.piece.grey{background:#E8E8E8}
+.piece>img{position:absolute;max-width:none;display:block}
+.lab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
+  font-weight:600;color:#111;letter-spacing:.01em}
+.lab.halo{text-shadow:0 0 .7mm #fff,0 0 .7mm #fff,0 0 .7mm #fff,0 0 1.2mm #fff}
+.sol .piece{border-color:#C3C9D1}
+.sol .tag{position:absolute;left:0;top:0;right:0;background:rgba(255,255,255,.86);
+  font-size:2.5mm;line-height:1.25;padding:.6mm .5mm;text-align:center;color:#1a1a1a}
+.spacer{flex:1 1 auto;min-height:3mm}
+.foot{font-size:2.7mm;color:#7A828C;margin:0;flex:0 0 auto;text-align:right}
+
+/* ============================ impression ============================ */
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff}
+  .app{display:block}
+  .side,.stagewrap>.tools{display:none !important}
+  .stagewrap{padding:0;overflow:visible}
+  .stage{gap:0;display:block;--s:1 !important}
+  .holder{width:auto;height:auto;overflow:visible}
+  .sheet{transform:none;box-shadow:none;break-after:page;page-break-after:always}
+  .stage .holder:last-child .sheet{break-after:auto;page-break-after:auto}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="side">
+  <h1>Puzzle de calcul</h1>
+  <p class="sub">Une image découpée en pièces, un plateau d'énoncés, la banque mélangée et le corrigé. Prêt à imprimer.</p>
+
+  <div id="alerts"></div>
+
+  <fieldset>
+    <legend>En-tête</legend>
+    <label for="fTitle">Bandeau de gauche</label>
+    <input type="text" id="fTitle" value="Mathématiques – M. DEVODDERE">
+    <label for="fTheme">Bandeau de droite</label>
+    <input type="text" id="fTheme" value="Divisions">
+    <label for="fConsigne">Consigne</label>
+    <input type="text" id="fConsigne" value="Calcule, découpe les pièces et colle chacune sur la case dont le résultat correspond. Si tout est juste, l'image se reconstitue.">
+  </fieldset>
+
+  <fieldset>
+    <legend>Image</legend>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="drop" id="drop">
+      Glisse un fichier ici, ou <button type="button" id="pick" style="padding:4px 8px">choisis un fichier</button><br>
+      <span style="font-size:11.5px">SVG (net à toutes les tailles), sinon PNG ou JPEG</span>
+      <input type="file" id="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp" hidden>
+    </div>
+    <label for="fFit">Cadrage</label>
+    <select id="fFit">
+      <option value="cover">Remplir la grille (recadre les bords)</option>
+      <option value="contain">Tout montrer (marges possibles)</option>
+    </select>
+    <label for="fZoom">Zoom <span id="vZoom" style="color:var(--ink)">100 %</span></label>
+    <input type="range" id="fZoom" min="50" max="300" step="1" value="100">
+    <label for="fPanX">Décalage horizontal</label>
+    <input type="range" id="fPanX" min="0" max="100" step="1" value="50">
+    <label for="fPanY">Décalage vertical</label>
+    <input type="range" id="fPanY" min="0" max="100" step="1" value="50">
+  </fieldset>
+
+  <fieldset>
+    <legend>Découpe</legend>
+    <div class="row">
+      <div><label for="fCols">Colonnes</label><input type="number" id="fCols" min="2" max="12" value="6"></div>
+      <div><label for="fRows">Lignes</label><input type="number" id="fRows" min="2" max="12" value="4"></div>
+    </div>
+    <p class="hint" id="nPieces">24 pièces</p>
+    <label for="fRot">Rotation des pièces</label>
+    <select id="fRot">
+      <option value="none">Aucune — les pièces restent à l'endroit</option>
+      <option value="half">Demi-tours (0° ou 180°)</option>
+      <option value="quarter">Quarts de tour (0°, 90°, 180°, 270°)</option>
+    </select>
+    <label for="fSeed">Mélange (graine)</label>
+    <div class="row">
+      <input type="text" id="fSeed" value="1">
+      <button type="button" id="reshuffle" style="flex:0 0 auto">Remélanger</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Calculs</legend>
+    <label for="fGen">Générateur</label>
+    <select id="fGen"></select>
+    <button type="button" id="gen" style="width:100%;margin-top:8px">Générer les calculs</button>
+    <label for="fLines">Une ligne par case</label>
+    <textarea id="fLines" spellcheck="false"></textarea>
+    <p class="hint">Le résultat est calculé tout seul. Pour l'imposer, écris <code>énoncé = réponse</code>. Une ligne vide est ignorée.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Étiquettes et pages</legend>
+    <label for="fLabPos">Position du nombre sur la pièce</label>
+    <select id="fLabPos">
+      <option value="random">Au hasard sur la pièce</option>
+      <option value="corner">En bas à gauche</option>
+      <option value="center">Au centre</option>
+    </select>
+    <label for="fLabSize">Taille <span id="vLab" style="color:var(--ink)">3,2 mm</span></label>
+    <input type="range" id="fLabSize" min="2" max="6" step="0.1" value="3.2">
+    <div class="check"><input type="checkbox" id="fHalo" checked><label for="fHalo">Halo blanc derrière le nombre</label></div>
+    <div class="check"><input type="checkbox" id="fGrey" checked><label for="fGrey">Fond gris sur les pièces</label></div>
+    <div class="check"><input type="checkbox" id="fSep"><label for="fSep">Banque sur une page séparée</label></div>
+    <div class="check"><input type="checkbox" id="fSol" checked><label for="fSol">Ajouter le corrigé</label></div>
+  </fieldset>
+
+  <button class="primary" id="print" style="width:100%">Imprimer / enregistrer en PDF</button>
+  <p class="hint">Dans la boîte d'impression : format A4, marges « aucune », et coche « Graphiques d'arrière-plan » si les fonds gris manquent.</p>
+  <button type="button" id="reset" style="width:100%;margin-top:10px">Tout réinitialiser</button>
+</aside>
+
+<main class="stagewrap">
+  <div class="stage" id="stage"></div>
+</main>
+</div>
+
+<script>
+/* ===========================================================================
+   Puzzle de calcul — fabrique la fiche entière à partir d'une image et d'une
+   liste de calculs. Aucune dépendance, aucun réseau : tout se passe ici.
+   =========================================================================== */
+
+const $ = s => document.querySelector(s);
+
+/* ------------------------------- hasard reproductible ------------------------------- */
+function seedFrom(str){
+  let h = 2166136261;
+  for (const ch of String(str)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rngFrom(seed){
+  let a = seedFrom(seed);
+  return function(){
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function shuffled(arr, rnd){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ------------------------------- nombres ------------------------------- */
+const SPACES = /[\s  ]/g;
+
+function toNumber(txt){
+  return parseFloat(String(txt).replace(SPACES, '').replace(',', '.'));
+}
+
+/** Arrondi qui efface le bruit des flottants (2,2 × 100 = 220 et non 220,000000000003). */
+function clean(n){
+  if (!isFinite(n)) return n;
+  return Math.abs(n) < 1e15 ? Math.round(n * 1e12) / 1e12 : n;
+}
+
+/** Écriture française : virgule décimale, espace fine à partir de 5 chiffres. */
+function fmt(n, sepFrom = 5){
+  if (!isFinite(n)) return '?';
+  const v = clean(n);
+  let s = String(v);
+  if (s.includes('e')) s = v.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
+  let [ip, dp] = s.split('.');
+  const neg = ip.startsWith('-');
+  if (neg) ip = ip.slice(1);
+  if (ip.length >= sepFrom) ip = ip.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return (neg ? '-' : '') + ip + (dp ? ',' + dp : '');
+}
+
+/* --------------------- évaluation d'un énoncé « 12 ÷ 10 » --------------------- */
+const NUM_RE = /^[0-9]+(?:[   ][0-9]{3})*(?:[.,][0-9]+)?/;
+
+function tokenize(src){
+  const s = src.replace(/[×x✕⋅]/g, '*').replace(/[÷:]/g, '/').replace(/[−–—]/g, '-');
+  const out = [];
+  let i = 0;
+  while (i < s.length){
+    const ch = s[i];
+    if (/[\s  ]/.test(ch)) { i++; continue; }
+    if (/[0-9]/.test(ch) || (ch === '.' || ch === ',') && /[0-9]/.test(s[i+1] || '')){
+      const m = s.slice(i).match(NUM_RE) || s.slice(i).match(/^[.,][0-9]+/);
+      if (!m) return null;
+      out.push({ t: 'n', v: toNumber(m[0]) });
+      i += m[0].length;
+      continue;
+    }
+    if ('+-*/^()'.includes(ch)) { out.push({ t: 'o', v: ch }); i++; continue; }
+    return null;                       // caractère inconnu : ce n'est pas un calcul
+  }
+  return out.length ? out : null;
+}
+
+const PREC = { '+':1, '-':1, '*':2, '/':2, '^':3 };
+
+/** Renvoie le nombre calculé, ou null si l'énoncé n'est pas une expression valide. */
+function evaluate(src){
+  const tk = tokenize(src);
+  if (!tk) return null;
+  const out = [], ops = [];
+  let prev = null;
+  for (const t of tk){
+    if (t.t === 'n') { out.push(t.v); prev = t; continue; }
+    const o = t.v;
+    if (o === '('){ ops.push(o); prev = t; continue; }
+    if (o === ')'){
+      while (ops.length && ops[ops.length-1] !== '(') out.push({ op: ops.pop() });
+      if (!ops.length) return null;
+      ops.pop();
+      prev = t;
+      continue;
+    }
+    // moins unaire : « -3 » ou « (-3) »
+    if ((o === '-' || o === '+') && (prev === null || prev.t === 'o' && prev.v !== ')')){
+      out.push(0);
+    }
+    while (ops.length){
+      const top = ops[ops.length-1];
+      if (top === '(') break;
+      if (PREC[top] > PREC[o] || PREC[top] === PREC[o] && o !== '^') out.push({ op: ops.pop() });
+      else break;
+    }
+    ops.push(o);
+    prev = t;
+  }
+  while (ops.length){
+    const o = ops.pop();
+    if (o === '(') return null;
+    out.push({ op: o });
+  }
+  const st = [];
+  for (const x of out){
+    if (typeof x === 'number') { st.push(x); continue; }
+    const b = st.pop(), a = st.pop();
+    if (a === undefined || b === undefined) return null;
+    st.push(x.op === '+' ? a + b : x.op === '-' ? a - b : x.op === '*' ? a * b
+          : x.op === '/' ? (b === 0 ? NaN : a / b) : Math.pow(a, b));
+  }
+  if (st.length !== 1 || !isFinite(st[0])) return null;
+  return clean(st[0]);
+}
+
+/* ------------------------------- générateurs ------------------------------- */
+const P10 = [['10', 10], ['100', 100], ['1 000', 1000], ['10 000', 10000]];
+
+/** Tire des énoncés jusqu'à en avoir n dont les résultats sont tous différents. */
+function collect(n, rnd, draw){
+  const lines = [], vus = new Set(), enonces = new Set();
+  for (let essai = 0; essai < 6000 && lines.length < n; essai++){
+    const q = draw(rnd);
+    if (!q || enonces.has(q)) continue;
+    const r = evaluate(q);
+    if (r === null) continue;
+    const cle = fmt(r);
+    if (vus.has(cle)) continue;        // deux pièces au même nombre = puzzle ambigu
+    vus.add(cle); enonces.add(q);
+    lines.push(q);
+  }
+  return lines;
+}
+const pick = (rnd, a) => a[Math.floor(rnd() * a.length)];
+
+const GENERATEURS = [
+  { id:'p10', nom:'Multiplier / diviser par 10, 100, 1 000',
+    draw(rnd){
+      const base = pick(rnd, ['2','12','22','202','1,2','2,2','0,2','0,22','1 200','35','4,5','0,45']);
+      const [txt] = pick(rnd, P10);
+      return base + ' ' + pick(rnd, ['×','÷']) + ' ' + txt;
+    } },
+  { id:'p10d', nom:'Multiplier par 0,1 / 0,01 / 0,001',
+    draw(rnd){
+      const base = pick(rnd, ['2','12','22','202','120','1 200','35','450','7','78']);
+      return base + ' × ' + pick(rnd, ['0,1','0,01','0,001']);
+    } },
+  { id:'tables', nom:'Tables de multiplication',
+    draw(rnd){
+      const a = 2 + Math.floor(rnd() * 8), b = 2 + Math.floor(rnd() * 11);
+      return a + ' × ' + b;
+    } },
+  { id:'quot', nom:'Divisions exactes',
+    draw(rnd){
+      const b = 2 + Math.floor(rnd() * 8), q = 2 + Math.floor(rnd() * 20);
+      return fmt(b * q) + ' ÷ ' + b;
+    } },
+  { id:'dec', nom:'Sommes et différences décimales',
+    draw(rnd){
+      const a = Math.round(rnd() * 200) / 10, b = Math.round(rnd() * 200) / 10;
+      const op = pick(rnd, ['+','−']);
+      if (op === '−' && b > a) return null;
+      return fmt(a).replace('.', ',') + ' ' + op + ' ' + fmt(b);
+    } },
+];
+
+/* ------------------------------- images fournies ------------------------------- */
+const ART = {
+  poisson: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+<path d="M212 100c0-31-40-62-91-62S32 69 32 100s38 62 89 62 91-31 91-62z"/>
+<path d="M212 100l52-38v76z"/>
+<circle cx="72" cy="86" r="6.5"/>
+<path d="M104 46c-9 20-9 88 0 108"/>
+<path d="M132 40c17-19 45-25 61-18-7 15-22 24-38 28"/>
+<path d="M132 160c17 19 45 25 61 18-7-15-22-24-38-28"/>
+<path d="M140 96q22 13 44 0"/><path d="M148 118q20 11 40 0"/><path d="M146 74q20-11 40 0"/>
+<path d="M52 118q14 10 30 6"/>
+</svg>`,
+  chat: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 260" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+<path d="M46 92 36 26l52 30"/><path d="M174 92l10-66-52 30"/>
+<path d="M46 92c0-34 28-56 64-56s64 22 64 56c0 36-28 62-64 62S46 128 46 92z"/>
+<circle cx="86" cy="88" r="8"/><circle cx="134" cy="88" r="8"/>
+<path d="M104 110h12l-6 9z"/><path d="M110 119v9"/>
+<path d="M110 128q-9 9-17 0"/><path d="M110 128q9 9 17 0"/>
+<path d="M84 112 40 104"/><path d="M84 120 42 124"/><path d="M136 112l44-8"/><path d="M136 120l42 4"/>
+<path d="M78 152c-22 12-34 34-34 60v36h132v-36c0-26-12-48-34-60"/>
+<path d="M44 212q34 18 66 0"/><path d="M176 212q-34 18-66 0"/>
+<path d="M110 212v36"/>
+</svg>`,
+  fusee: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 300" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 14c26 30 40 70 40 112v66H50v-66c0-42 14-82 40-112z"/>
+<circle cx="90" cy="102" r="20"/><circle cx="90" cy="102" r="11"/>
+<path d="M50 150 18 196l14 34 18-28"/><path d="M130 150l32 46-14 34-18-28"/>
+<path d="M50 192h80"/><path d="M62 192v58h56v-58"/><path d="M62 220h56"/>
+<path d="M74 250c0 20 6 34 16 46 10-12 16-26 16-46"/>
+<path d="M90 262v34"/>
+</svg>`,
+  arbre: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 260" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+<path d="M120 18c34 0 58 22 58 48 22 6 36 24 36 46s-16 40-40 44c-4 24-26 40-54 40s-50-16-54-40c-24-4-40-22-40-44s14-40 36-46c0-26 24-48 58-48z"/>
+<path d="M120 66v190"/><path d="M120 118 78 88"/><path d="M120 150l44-32"/><path d="M120 190l-34-26"/>
+<path d="M96 256h48"/>
+<path d="M62 112q22-14 44-2"/><path d="M178 112q-22-14-44-2"/>
+</svg>`,
+};
+
+/* ------------------------------- état ------------------------------- */
+const DEFAUTS = {
+  title:'Mathématiques – M. DEVODDERE', theme:'Divisions',
+  consigne:"Calcule, découpe les pièces et colle chacune sur la case dont le résultat correspond. Si tout est juste, l'image se reconstitue.",
+  cols:6, rows:4, fit:'cover', zoom:100, panX:50, panY:50,
+  rot:'none', seed:'1', gen:'p10', lines:'',
+  labPos:'random', labSize:3.2, halo:true, grey:true, sep:false, sol:true,
+  art:'poisson', src:'', iw:300, ih:200,
+};
+let S = { ...DEFAUTS };
+
+const CHAMPS = {
+  title:'#fTitle', theme:'#fTheme', consigne:'#fConsigne', cols:'#fCols', rows:'#fRows',
+  fit:'#fFit', zoom:'#fZoom', panX:'#fPanX', panY:'#fPanY', rot:'#fRot', seed:'#fSeed',
+  gen:'#fGen', lines:'#fLines', labPos:'#fLabPos', labSize:'#fLabSize',
+  halo:'#fHalo', grey:'#fGrey', sep:'#fSep', sol:'#fSol',
+};
+const NOMBRES = new Set(['cols','rows','zoom','panX','panY','labSize']);
+
+function versFormulaire(){
+  for (const [k, sel] of Object.entries(CHAMPS)){
+    const el = $(sel);
+    if (!el) continue;
+    if (el.type === 'checkbox') el.checked = !!S[k];
+    else el.value = S[k];
+  }
+}
+function depuisFormulaire(){
+  for (const [k, sel] of Object.entries(CHAMPS)){
+    const el = $(sel);
+    if (!el) continue;
+    S[k] = el.type === 'checkbox' ? el.checked : NOMBRES.has(k) ? Number(el.value) : el.value;
+  }
+  S.cols = Math.min(12, Math.max(2, Math.round(S.cols) || 6));
+  S.rows = Math.min(12, Math.max(2, Math.round(S.rows) || 4));
+}
+
+const STORE = 'puzzle:v1';
+function sauver(){
+  try {
+    localStorage.setItem(STORE, JSON.stringify(S));
+  } catch {
+    // image trop lourde pour le stockage : on garde au moins les réglages
+    try { localStorage.setItem(STORE, JSON.stringify({ ...S, src:'', art:'' })); } catch {}
+  }
+}
+function charger(){
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) S = { ...DEFAUTS, ...JSON.parse(raw) };
+  } catch {}
+}
+
+/* ------------------------------- lecture des lignes ------------------------------- */
+function lireLignes(txt, n){
+  const brutes = txt.split('\n').map(l => l.trim()).filter(Boolean);
+  const items = brutes.map(l => {
+    const i = l.lastIndexOf('=');
+    const j = l.lastIndexOf('|');
+    const c = Math.max(i, j);
+    if (c > 0){
+      const q = l.slice(0, c).trim(), a = l.slice(c + 1).trim();
+      if (a) return { q, a, ok: true };
+      return { q, a: '?', ok: false };
+    }
+    const v = evaluate(l);
+    return v === null ? { q: l, a: '?', ok: false } : { q: l, a: fmt(v), ok: true };
+  });
+  return { items: items.slice(0, n), total: brutes.length };
+}
+
+/* ------------------------------- géométrie de la feuille ------------------------------- */
+const PAGE_W = 210, PAGE_H = 297, MARGE = 12;
+const H_BANDEAU = 8 + 5, H_TITRE = 3.4 + 1.6, H_CONSIGNE = 6, H_PIED = 5;
+
+function geometrie(){
+  const dispoW = PAGE_W - 2 * MARGE;
+  const dispoH = PAGE_H - 2 * MARGE - H_BANDEAU - H_PIED;
+  let cell;
+  if (S.sep){
+    cell = Math.min(dispoW / S.cols, (dispoH - H_TITRE - H_CONSIGNE - 4) / S.rows);
+  } else {
+    // deux grilles sur la même page : titres, consigne et l'espace entre les deux
+    cell = Math.min(dispoW / S.cols, (dispoH - 2 * H_TITRE - H_CONSIGNE - 10) / (2 * S.rows));
+  }
+  cell = Math.max(6, cell);
+  const bw = cell * S.cols, bh = cell * S.rows;
+  const base = S.fit === 'cover'
+    ? Math.max(bw / S.iw, bh / S.ih)
+    : Math.min(bw / S.iw, bh / S.ih);
+  const k = base * S.zoom / 100;
+  const dw = S.iw * k, dh = S.ih * k;
+  return { cell, bw, bh, dw, dh, ox: (bw - dw) * S.panX / 100, oy: (bh - dh) * S.panY / 100 };
+}
+
+/* ------------------------------- construction ------------------------------- */
+function el(tag, cls, style){
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (style) n.setAttribute('style', style);
+  return n;
+}
+
+function grille(g){
+  const d = el('div', 'grid');
+  d.style.gridTemplateColumns = `repeat(${S.cols}, ${g.cell}mm)`;
+  d.style.gridAutoRows = g.cell + 'mm';
+  d.style.width = g.bw + 'mm';
+  d.style.margin = '0 auto';
+  return d;
+}
+
+/** Une pièce : la fenêtre carrée (c, r) découpée dans l'image. */
+function piece(idx, g, rot, sol){
+  const c = idx % S.cols, r = Math.floor(idx / S.cols);
+  const p = el('div', 'piece' + (S.grey && !sol ? ' grey' : ''));
+  if (rot) p.style.transform = `rotate(${rot}deg)`;
+  if (S.src){
+    const img = new Image();
+    img.src = S.src;
+    img.alt = '';
+    img.style.width = g.dw + 'mm';
+    img.style.height = g.dh + 'mm';
+    img.style.left = (g.ox - c * g.cell) + 'mm';
+    img.style.top = (g.oy - r * g.cell) + 'mm';
+    p.appendChild(img);
+  }
+  return p;
+}
+
+function etiquette(texte, rnd){
+  const s = el('span', 'lab' + (S.halo ? ' halo' : ''));
+  s.textContent = texte;
+  s.style.fontSize = S.labSize + 'mm';
+  let x = 50, y = 50;
+  if (S.labPos === 'random'){ x = 22 + rnd() * 56; y = 20 + rnd() * 60; }
+  else if (S.labPos === 'corner'){ x = 34; y = 80; }
+  s.style.left = x + '%';
+  s.style.top = y + '%';
+  return s;
+}
+
+function feuille(){
+  const s = el('section', 'sheet');
+  const b = el('div', 'band');
+  const b1 = el('div', 'b1'); b1.textContent = S.title;
+  const b2 = el('div', 'b2'); b2.textContent = S.theme;
+  b.append(b1, b2);
+  s.appendChild(b);
+  return s;
+}
+function pied(s, texte){
+  s.appendChild(el('div', 'spacer'));
+  const f = el('p', 'foot');
+  f.textContent = texte;
+  s.appendChild(f);
+}
+function poser(s){
+  const h = el('div', 'holder');
+  h.appendChild(s);
+  $('#stage').appendChild(h);
+}
+
+function titre(txt){
+  const h = el('h2');
+  h.textContent = txt;
+  return h;
+}
+
+function rendre(){
+  const n = S.cols * S.rows;
+  const { items, total } = lireLignes(S.lines, n);
+  const g = geometrie();
+  const rnd = rngFrom(S.seed + '|' + S.cols + 'x' + S.rows);
+
+  // ordre des pièces dans la banque, rotations et places des étiquettes
+  const ordre = shuffled([...Array(n).keys()], rnd);
+  const angles = { none: [0], half: [0, 180], quarter: [0, 90, 180, 270] }[S.rot];
+  const rots = Array.from({ length: n }, () => angles[Math.floor(rnd() * angles.length)]);
+  const posRnd = rngFrom('lab|' + S.seed);
+
+  const stage = $('#stage');
+  stage.textContent = '';
+
+  /* --- page 1 : plateau (+ banque si elle tient) --- */
+  const p1 = feuille();
+  const cons = el('p', 'consigne');
+  cons.textContent = S.consigne;
+  p1.append(titre('Plateau'), cons);
+
+  const plateau = grille(g);
+  for (let i = 0; i < n; i++){
+    const c = el('div', 'cell');
+    const q = el('span', 'q');
+    q.textContent = items[i] ? items[i].q : '';
+    q.style.fontSize = Math.min(3.6, g.cell * 0.135) + 'mm';
+    c.appendChild(q);
+    plateau.appendChild(c);
+  }
+  p1.appendChild(plateau);
+
+  const banque = grille(g);
+  for (let slot = 0; slot < n; slot++){
+    const idx = ordre[slot];
+    const p = piece(idx, g, rots[idx], false);
+    p.appendChild(etiquette(items[idx] ? items[idx].a : '', posRnd));
+    banque.appendChild(p);
+  }
+
+  if (S.sep){
+    pied(p1, S.title);
+    poser(p1);
+    const p2 = feuille();
+    const c2 = el('p', 'consigne');
+    c2.textContent = 'Découpe les pièces le long des traits.';
+    p2.append(titre('Pièces à découper'), c2, banque);
+    pied(p2, S.title);
+    poser(p2);
+  } else {
+    const gap = el('div', null, 'height:6mm;flex:0 0 auto');
+    p1.append(gap, titre('Pièces à découper'), banque);
+    pied(p1, S.title);
+    poser(p1);
+  }
+
+  /* --- corrigé --- */
+  if (S.sol){
+    const ps = feuille();
+    const c3 = el('p', 'consigne');
+    c3.textContent = 'Image reconstituée' + (S.rot !== 'none' ? ' — les pièces de la banque sont à remettre d\'aplomb.' : '.');
+    ps.append(titre('Corrigé'), c3);
+    const sol = grille(g);
+    sol.classList.add('sol');
+    for (let i = 0; i < n; i++){
+      const p = piece(i, g, 0, true);
+      const t = el('div', 'tag');
+      t.textContent = items[i] ? items[i].q + ' = ' + items[i].a : '';
+      p.appendChild(t);
+      sol.appendChild(p);
+    }
+    ps.appendChild(sol);
+    pied(ps, S.title);
+    poser(ps);
+  }
+
+  alertes(items, total, n);
+  ajuster();
+}
+
+/* ------------------------------- avertissements ------------------------------- */
+function alertes(items, total, n){
+  const box = $('#alerts');
+  box.textContent = '';
+  const add = (cls, html) => { const d = el('div', 'warn ' + cls); d.innerHTML = html; box.appendChild(d); };
+
+  if (total !== n){
+    add('err', `<b>${total} calcul${total > 1 ? 's' : ''}</b> pour <b>${n} case${n > 1 ? 's' : ''}</b>. `
+      + (total < n ? 'Il en manque ' + (n - total) + '.' : 'Les ' + (total - n) + ' derniers sont ignorés.')
+      + (total < n && genCourt > 0
+          ? ' Ce générateur n\'a pas assez de calculs à résultats tous différents : complète à la main, change de générateur, ou réduis la grille.'
+          : ''));
+  }
+  const mauvais = items.filter(i => !i.ok);
+  if (mauvais.length){
+    add('err', '<b>Résultat introuvable</b> pour :<ul>'
+      + mauvais.slice(0, 5).map(i => '<li>' + i.q.replace(/[<&]/g, '') + '</li>').join('')
+      + '</ul>Écris <code>énoncé = réponse</code> sur ces lignes.');
+  }
+  const cpt = new Map();
+  items.forEach(i => cpt.set(i.a, (cpt.get(i.a) || 0) + 1));
+  const doubles = [...cpt].filter(([, v]) => v > 1).map(([k]) => k);
+  if (doubles.length){
+    add('tip', '<b>Résultats en double :</b> ' + doubles.join(', ')
+      + '. Ces pièces sont interchangeables : un élève qui calcule juste peut quand même mal placer l\'image. '
+      + 'Le générateur, lui, ne produit que des résultats différents.');
+  }
+}
+
+/* ------------------------------- mise à l'échelle de l'aperçu ------------------------------- */
+let mmPx = 3.78;
+function mesurer(){
+  const d = el('div', null, 'width:100mm;position:absolute;visibility:hidden');
+  document.body.appendChild(d);
+  mmPx = d.getBoundingClientRect().width / 100;
+  d.remove();
+}
+function ajuster(){
+  const dispo = $('.stagewrap').clientWidth - 44;
+  const s = Math.min(1, dispo / (210 * mmPx));
+  $('#stage').style.setProperty('--s', s > 0 ? s : 1);
+}
+
+/* ------------------------------- image ------------------------------- */
+function tailleSvg(txt){
+  const doc = new DOMParser().parseFromString(txt, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (!root || root.nodeName === 'parsererror') return null;
+  const vb = (root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+  if (vb.length === 4 && vb.every(v => isFinite(v)) && vb[2] > 0 && vb[3] > 0){
+    return { w: vb[2], h: vb[3] };
+  }
+  const w = parseFloat(root.getAttribute('width')), h = parseFloat(root.getAttribute('height'));
+  if (w > 0 && h > 0) return { w, h };
+  return { w: 300, h: 200 };
+}
+
+function poserSvg(txt, nom){
+  const t = tailleSvg(txt);
+  if (!t){ alert("Ce fichier SVG n'a pas pu être lu."); return; }
+  S.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(txt);
+  S.iw = t.w; S.ih = t.h; S.art = nom || '';
+  majVignettes();
+  sauver(); rendre();
+}
+
+function poserRaster(dataUrl){
+  const img = new Image();
+  img.onload = () => {
+    S.src = dataUrl; S.iw = img.naturalWidth; S.ih = img.naturalHeight; S.art = '';
+    majVignettes();
+    sauver(); rendre();
+  };
+  img.onerror = () => alert("Cette image n'a pas pu être lue.");
+  img.src = dataUrl;
+}
+
+function lireFichier(f){
+  if (!f) return;
+  const r = new FileReader();
+  if (/svg/.test(f.type) || /\.svg$/i.test(f.name)){
+    r.onload = () => poserSvg(r.result, '');
+    r.readAsText(f);
+  } else {
+    r.onload = () => poserRaster(r.result);
+    r.readAsDataURL(f);
+  }
+}
+
+function majVignettes(){
+  const box = $('#thumbs');
+  box.textContent = '';
+  for (const [nom, svg] of Object.entries(ART)){
+    const b = el('button', 'thumb');
+    b.type = 'button';
+    b.title = nom;
+    b.setAttribute('aria-pressed', String(S.art === nom));
+    b.innerHTML = svg;
+    b.addEventListener('click', () => poserSvg(ART[nom], nom));
+    box.appendChild(b);
+  }
+}
+
+/* ------------------------------- démarrage ------------------------------- */
+function remplirGenerateurs(){
+  const sel = $('#fGen');
+  sel.textContent = '';
+  for (const g of GENERATEURS){
+    const o = document.createElement('option');
+    o.value = g.id; o.textContent = g.nom;
+    sel.appendChild(o);
+  }
+}
+
+let genCourt = 0;   // nombre de calculs manquants au dernier tirage
+
+function generer(){
+  const g = GENERATEURS.find(x => x.id === S.gen) || GENERATEURS[0];
+  const n = S.cols * S.rows;
+  const lignes = collect(n, rngFrom('gen|' + S.seed + '|' + S.gen), g.draw);
+  genCourt = n - lignes.length;
+  S.lines = lignes.join('\n');
+  $('#fLines').value = S.lines;
+}
+
+function majEtiquettes(){
+  $('#vZoom').textContent = S.zoom + ' %';
+  $('#vLab').textContent = String(S.labSize).replace('.', ',') + ' mm';
+  const n = S.cols * S.rows;
+  $('#nPieces').textContent = n + ' pièces (' + S.cols + ' × ' + S.rows + ')';
+}
+
+function actualiser(){
+  depuisFormulaire();
+  majEtiquettes();
+  sauver();
+  rendre();
+}
+
+function init(){
+  mesurer();
+  charger();
+  remplirGenerateurs();
+  versFormulaire();
+
+  if (!S.src){
+    if (!ART[S.art]) S.art = DEFAUTS.art;
+    const t = tailleSvg(ART[S.art]);
+    S.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ART[S.art]);
+    S.iw = t.w; S.ih = t.h;
+  }
+  majVignettes();
+  if (!S.lines.trim()) generer();
+  versFormulaire();
+  majEtiquettes();
+  rendre();
+
+  for (const sel of Object.values(CHAMPS)){
+    const champ = $(sel);
+    if (!champ) continue;
+    champ.addEventListener('input', actualiser);
+    champ.addEventListener('change', actualiser);
+  }
+  $('#gen').addEventListener('click', () => { depuisFormulaire(); generer(); actualiser(); });
+  $('#reshuffle').addEventListener('click', () => {
+    $('#fSeed').value = String(Math.floor(Math.random() * 100000));
+    actualiser();
+  });
+  $('#print').addEventListener('click', () => window.print());
+  $('#reset').addEventListener('click', () => {
+    if (!confirm('Revenir aux réglages de départ ?')) return;
+    try { localStorage.removeItem(STORE); } catch {}
+    location.reload();
+  });
+
+  $('#pick').addEventListener('click', () => $('#file').click());
+  $('#file').addEventListener('change', e => lireFichier(e.target.files[0]));
+  const drop = $('#drop');
+  ['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => {
+    e.preventDefault(); drop.classList.add('over');
+  }));
+  ['dragleave','drop'].forEach(t => drop.addEventListener(t, e => {
+    e.preventDefault(); drop.classList.remove('over');
+  }));
+  drop.addEventListener('drop', e => lireFichier(e.dataTransfer.files[0]));
+
+  addEventListener('resize', ajuster);
+}
+
+init();
+</script>
+</body>
+</html>

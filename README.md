@@ -9,6 +9,9 @@ Une page unique qui liste mes dépôts GitHub et pointe vers ceux qui ont un sit
 - [`mutation/`](mutation/) — **Aide Mutation**, carte et simulateur de barème pour
   le mouvement intra 2026 de l'académie d'Amiens :
   https://remy-live.github.io/pages-/mutation/
+- [`puzzle/`](puzzle/) — **Puzzle de calcul**, fabrique une fiche où une image
+  découpée en pièces se reconstitue si les calculs sont justes :
+  https://remy-live.github.io/pages-/puzzle/
 
 ## Publication
 
