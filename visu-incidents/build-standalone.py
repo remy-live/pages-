@@ -60,9 +60,13 @@ def main() -> int:
 
     def js_tag(match: "re.Match[str]") -> str:
         src = match.group(1)
-        if not src.startswith("vendor/"):
+        # `annuaire.js` est incorporé comme les bibliothèques : le fichier
+        # autonome doit rester utilisable sans aucun fichier voisin.
+        if not (src.startswith("vendor/") or src == "annuaire.js"):
             return match.group(0)
         path = HERE / src
+        if not path.is_file():
+            return match.group(0)
         inlined.append(src)
         code = path.read_text(encoding="utf-8")
         # Une occurrence littérale de </script> couperait la balise englobante.

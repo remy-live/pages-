@@ -6,19 +6,45 @@ au travail (RSST), rapprochés de l'annuaire des établissements scolaires.
 **En ligne :** https://remy-live.github.io/pages-/visu-incidents/
 
 Tout se passe dans le navigateur. Aucune donnée n'est envoyée sur un serveur :
-les deux fichiers CSV sont lus sur place et restent sur l'appareil.
+les fichiers CSV sont lus sur place et restent sur l'appareil.
 
 ## Utilisation
 
-1. Déposer l'**annuaire des établissements** (colonnes `Numéro d'UAI`,
-   `Latitude WGS84`, `Longitude WGS84`, …).
-2. Déposer l'**export du registre** (colonnes `UAI`, `Risque`, `Observé le`,
-   `Etat`, …).
-3. Les deux fichiers sont mémorisés : à la prochaine ouverture, ils sont déjà là.
+Déposer l'**export du registre** (colonnes `UAI`, `Risque`, `Observé le`,
+`Etat`, …). C'est tout : l'annuaire des établissements est intégré à la page.
 
 Les colonnes sont reconnues sans tenir compte des accents, de la casse ni des
 espaces, et le séparateur (`;`, `,` ou tabulation) est détecté automatiquement.
 Un intitulé qui change légèrement d'un export à l'autre ne casse donc rien.
+
+Le fichier déposé est mémorisé : à la prochaine ouverture, il est déjà là.
+
+## L'annuaire intégré
+
+L'annuaire ne bouge quasiment jamais, alors que l'export du registre change
+souvent — il est donc embarqué dans la page, et il ne reste qu'un fichier à
+déposer à l'usage.
+
+`build-annuaire.py` prépare cet annuaire : il ne garde que les onze colonnes
+réellement lues, écarte les établissements sans coordonnées, compresse en gzip
+et encode en base64 dans `annuaire.js`. Sur un fichier de 635 Ko à 37 colonnes,
+le résultat pèse 61 Ko, soit 10 % de l'original. La page le décompresse au
+démarrage avec `DecompressionStream`, natif au navigateur — aucune bibliothèque
+supplémentaire, et 0,2 à 0,7 s au chargement.
+
+```sh
+python3 build-annuaire.py Etablissement.csv   # produit annuaire.js
+python3 build-standalone.py                   # répercute dans le fichier autonome
+```
+
+Le dépôt de la section **Annuaire des établissements** permet d'en charger un
+autre ponctuellement, sans reconstruire quoi que ce soit ; un bouton ramène à
+l'annuaire intégré. Sans argument, `build-annuaire.py` vide `annuaire.js` et
+l'outil redemande les deux fichiers, comme avant.
+
+`DecompressionStream` demande Chrome 80+, Safari 16.4+ ou Firefox 113+. Sur un
+navigateur plus ancien, la page le dit et propose de déposer l'annuaire à la
+main.
 
 ## Ce que fait l'outil
 
@@ -50,7 +76,7 @@ strictement limités à ce qui est affiché, avec le rappel des filtres appliqu�
 
 ## Version autonome (Drive, clé USB, poste hors ligne)
 
-`visu-incidents-autonome.html` est un fichier unique d'environ 900 Ko : toutes
+`visu-incidents-autonome.html` est un fichier unique (environ 900 Ko, plus la taille de l'annuaire intégré) : toutes
 les bibliothèques y sont incorporées. Il s'ouvre par double-clic, sans serveur
 et sans accès aux CDN — souvent bloqués sur les réseaux d'établissement.
 
