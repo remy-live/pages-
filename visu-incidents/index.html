@@ -304,6 +304,7 @@ body.tiles-dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness
 .prio .why li::before{content:""; width:6px; height:6px; border-radius:50%; margin-top:5px; flex:0 0 auto; background:currentColor}
 .prio .why li.w-retard{color:var(--critical)}
 .prio .why li.w-collectif{color:var(--critical)}
+.prio .why li.w-recidive{color:var(--serious)}
 .prio .why li.w-lent{color:var(--serious)}
 .prio .why li span{color:var(--ink-2)}
 
@@ -606,6 +607,8 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
         <div class="kpis">
           <div class="kpi"><div class="v" id="uRetard">—</div><div class="l">Sans réponse</div><div class="h" id="uRetardH">&nbsp;</div></div>
           <div class="kpi"><div class="v" id="uCollectif">—</div><div class="l">Situations collectives</div><div class="h" id="uCollectifH">&nbsp;</div></div>
+          <div class="kpi"><div class="v" id="uRecidive">—</div><div class="l">Récidives</div><div class="h" id="uRecidiveH">&nbsp;</div></div>
+          <div class="kpi"><div class="v" id="uEtabs">—</div><div class="l">Établissements</div><div class="h" id="uEtabsH">&nbsp;</div></div>
         </div>
 
         <p class="notice" id="prioAsOf" style="margin-top:10px"></p>
@@ -618,7 +621,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
         </div>
 
         <details class="facet" style="margin-top:14px">
-          <summary>Régler les seuils<span class="badge" id="urgBadge">4</span></summary>
+          <summary>Régler les seuils<span class="badge" id="urgBadge">6</span></summary>
           <div class="facet-body">
             <div class="urgset">
               <label for="uSansReponse">Sans réponse au-delà de (jours)</label>
@@ -629,6 +632,13 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
               <input type="number" id="uFenetre" min="1" max="365" step="1">
               <label for="uDeclarants">Déclarants distincts pour un collectif</label>
               <input type="number" id="uDeclarants" min="2" max="50" step="1">
+              <label for="uRecidiveJours">Récidive : délai après clôture (jours)</label>
+              <input type="number" id="uRecidiveJours" min="1" max="3650" step="1">
+              <label for="uRecidivePortee">Récidive : sujet comparé</label>
+              <select id="uRecidivePortee" style="width:auto">
+                <option value="risque">Risque exact</option>
+                <option value="famille">Famille de risque</option>
+              </select>
               <button class="btn sm" id="btnUrgReset" style="grid-column:1/-1">Revenir aux valeurs par défaut</button>
             </div>
           </div>
@@ -1612,7 +1622,10 @@ function renderBars(sel, entries, { color, colorFor, onPick, limit = 9 } = {}) {
      3. la lenteur  : une réponse arrivée bien après le signalement.
    Les seuils appartiennent à l'utilisateur : ils sont affichés et modifiables. */
 
-const URGENCE_DEFAUT = { sansReponse: 60, delaiLong: 60, fenetre: 30, declarants: 3 };
+const URGENCE_DEFAUT = {
+  sansReponse: 60, delaiLong: 60, fenetre: 30, declarants: 3,
+  recidiveJours: 365, recidivePortee: 'risque',   // 'risque' (exact) ou 'famille'
+};
 const NIVEAUX = {
   critique:  { rang: 3, label: 'Critique',    couleur: '--critical' },
   serieux:   { rang: 2, label: 'Sérieux',     couleur: '--serious' },
@@ -1661,6 +1674,38 @@ function plusGrosRegroupement(incidents, fenetreJours) {
   return best;
 }
 
+/**
+ * Récidives : un même sujet re-signalé peu après la clôture du précédent.
+ * Le signal ne porte pas sur la gravité mais sur le traitement — il dit que la
+ * mesure prise n'a pas tenu. On compare donc des couples successifs, et on part
+ * de la date de clôture, pas de celle du signalement.
+ */
+function recidives(incidents, s) {
+  const cle = (i) => (s.recidivePortee === 'famille' ? i.family : i.risk);
+  const groupes = new Map();
+  for (const inc of incidents) {
+    const k = cle(inc);
+    if (!groupes.has(k)) groupes.set(k, []);
+    groupes.get(k).push(inc);
+  }
+
+  const trouvees = [];
+  for (const [k, liste] of groupes) {
+    const tri = [...liste].sort((a, b) => a.date - b.date);
+    for (let i = 1; i < tri.length; i++) {
+      const precedent = tri[i - 1];
+      if (precedent.open) continue;                     // jamais clos : c'est un retard, pas une récidive
+      const cloture = precedent.lastReply || precedent.date;
+      const suivant = tri[i];
+      if (suivant.date <= cloture) continue;            // saisi avant la clôture : même épisode
+      const ecart = Math.round((suivant.date - cloture) / DAY);
+      if (ecart > s.recidiveJours) continue;
+      trouvees.push({ sujet: k, precedent, suivant, ecart, rang: i });
+    }
+  }
+  return trouvees.sort((a, b) => a.ecart - b.ecart);
+}
+
 /** Établit, pour chaque établissement affiché, son niveau et ses motifs. */
 function computeUrgency(places, now) {
   const s = seuils();
@@ -1685,6 +1730,9 @@ function computeUrgency(places, now) {
     const groupe = plusGrosRegroupement(p.incidents, s.fenetre);
     const collectif = groupe.declarants >= s.declarants;
 
+    // 4. Récidives.
+    const repetitions = recidives(p.incidents, s);
+
     const motifs = [];
     if (collectif) {
       const jours = Math.max(1, daysSince(groupe.debut, groupe.fin) || 1);
@@ -1703,6 +1751,19 @@ function computeUrgency(places, now) {
           : `${fmtInt(enAttente.length)} signalements sans réponse, le plus ancien depuis ${fmtInt(pire.age)} jours`,
       });
     }
+    if (repetitions.length) {
+      const r = repetitions[0];
+      // Sans le numéro de nomenclature : ce libellé va dans une phrase.
+      const sujet = s.recidivePortee === 'famille' ? r.sujet
+        : r.suivant.riskDetail ? `${r.suivant.family} : ${r.suivant.riskDetail}`
+        : r.suivant.family;
+      motifs.push({
+        type: 'recidive',
+        texte: repetitions.length === 1
+          ? `« ${sujet} » de nouveau signalé ${fmtInt(r.ecart)} jours après la clôture du précédent`
+          : `${fmtInt(repetitions.length)} récidives, la plus rapprochée ${fmtInt(r.ecart)} jours après clôture (« ${sujet} »)`,
+      });
+    }
     if (lents.length) {
       motifs.push({
         type: 'lent',
@@ -1715,12 +1776,16 @@ function computeUrgency(places, now) {
 
     const pireAge = enAttente.length ? enAttente[0].age : 0;
     let niveau = 'attention';
-    if (collectif || pireAge >= 2 * s.sansReponse) niveau = 'critique';
-    else if (enAttente.length || lents.length >= 2) niveau = 'serieux';
+    // Une récidive seule ne suffit pas à être « critique » : un établissement qui
+    // répond en quatre jours mais voit le sujet revenir n'est pas au même rang
+    // qu'un signalement resté sans réponse deux ans. Il faut que ce soit chronique.
+    if (collectif || pireAge >= 2 * s.sansReponse || repetitions.length >= 3) niveau = 'critique';
+    else if (enAttente.length || lents.length >= 2 || repetitions.length) niveau = 'serieux';
 
     out.push({
-      place: p, niveau, motifs, enAttente, lents, collectif, groupe,
+      place: p, niveau, motifs, enAttente, lents, collectif, groupe, repetitions,
       score: (collectif ? 10000 + groupe.declarants * 100 : 0)
+           + repetitions.length * 400
            + enAttente.length * 200 + pireAge
            + lents.length * 20,
     });
@@ -1744,10 +1809,16 @@ function renderPriorities(now) {
 
   const retards = priorites.reduce((n, p) => n + p.enAttente.length, 0);
   const collectifs = priorites.filter((p) => p.collectif).length;
+  const repets = priorites.reduce((n, p) => n + p.repetitions.length, 0);
   $('#uRetard').textContent = fmtInt(retards);
   $('#uRetardH').textContent = `au-delà de ${fmtInt(s.sansReponse)} jours`;
   $('#uCollectif').textContent = fmtInt(collectifs);
   $('#uCollectifH').textContent = `${fmtInt(s.declarants)} agents en ${fmtInt(s.fenetre)} jours`;
+  $('#uRecidive').textContent = fmtInt(repets);
+  $('#uRecidiveH').textContent = `${s.recidivePortee === 'famille' ? 'même famille' : 'même risque'}`
+    + `, sous ${fmtInt(s.recidiveJours)} j`;
+  $('#uEtabs').textContent = fmtInt(priorites.length);
+  $('#uEtabsH').textContent = `sur ${fmtInt(current.places.filter((x) => x.count).length)} concernés`;
 
   // Un export ancien fait paraître tout en retard : on le dit.
   const dernier = current.incidents.reduce((d, i) => (i.date > d ? i.date : d), current.incidents[0].date);
@@ -1800,6 +1871,11 @@ function lignesRelance() {
     for (const inc of p.lents) {
       rows.push({ p, inc, motif: `Réponse après ${fmtInt(inc.delay)} jours`, age: inc.delay });
     }
+    for (const r of p.repetitions) {
+      rows.push({ p, inc: r.suivant, age: r.ecart,
+        motif: `Récidive ${fmtInt(r.ecart)} jours après la clôture du signalement `
+             + `${r.precedent.number ? 'n° ' + r.precedent.number : `du ${DATE_FMT.format(r.precedent.date)}`}` });
+    }
   }
   return rows;
 }
@@ -1829,12 +1905,13 @@ function exportRelancePdf() {
   const s = seuils();
 
   doc.setFontSize(16); doc.setTextColor(20);
-  doc.text('Signalements en attente de traitement', 14, 16);
+  doc.text('Signalements appelant un suivi', 14, 16);
   doc.setFontSize(9); doc.setTextColor(110);
   doc.text(`Édité le ${new Date().toLocaleString('fr-FR')}`, 14, 22);
   doc.text(doc.splitTextToSize(
     `Seuils retenus : sans réponse au-delà de ${s.sansReponse} jours, réponse jugée tardive `
-    + `au-delà de ${s.delaiLong} jours. Filtres : ${filterSummary()}.`, 265), 14, 27);
+    + `au-delà de ${s.delaiLong} jours, récidive sur le ${s.recidivePortee === 'famille' ? 'même type' : 'même risque'} `
+    + `sous ${s.recidiveJours} jours. Filtres : ${filterSummary()}.`, 265), 14, 27);
   doc.text(doc.splitTextToSize(
     "Ce relevé porte sur le traitement des registres — délais et regroupements — et non sur "
     + "la sécurité des lieux : l'absence d'un établissement n'y vaut pas quitus.", 265), 14, 36);
@@ -2449,10 +2526,12 @@ function wireEvents() {
 
   // Priorités : seuils, exports, ouverture d'une fiche.
   const champs = { sansReponse: '#uSansReponse', delaiLong: '#uDelaiLong',
-                   fenetre: '#uFenetre', declarants: '#uDeclarants' };
+                   fenetre: '#uFenetre', declarants: '#uDeclarants',
+                   recidiveJours: '#uRecidiveJours' };
   const ecrireSeuils = () => {
     const s = seuils();
     for (const [cle, sel] of Object.entries(champs)) $(sel).value = s[cle];
+    $('#uRecidivePortee').value = s.recidivePortee;
   };
   for (const [cle, sel] of Object.entries(champs)) {
     $(sel).addEventListener('change', (e) => {
@@ -2462,6 +2541,10 @@ function wireEvents() {
       refresh();
     });
   }
+  $('#uRecidivePortee').addEventListener('change', (e) => {
+    Prefs.set('urgence', { ...seuils(), recidivePortee: e.target.value });
+    refresh();
+  });
   $('#btnUrgReset').addEventListener('click', () => {
     Prefs.set('urgence', {}); ecrireSeuils(); refresh();
   });

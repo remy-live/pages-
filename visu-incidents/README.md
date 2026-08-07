@@ -92,14 +92,27 @@ tirés de dates et de noms de déclarants, sans rien d'interprété :
   risque quand il est commun à tous.
 - **Réponse tardive** — une réponse arrivée bien après le signalement, que la
   médiane de la synthèse masque par construction.
+- **Récidive** — le même sujet re-signalé peu après la clôture du précédent : la
+  mesure prise n'a pas tenu. Le délai se compte à partir de la **clôture**, pas
+  du signalement. Par défaut, le sujet comparé est le **risque exact** et non la
+  famille — « Risques psychosociaux » couvre sept situations distinctes, et deux
+  signalements RPS à six mois d'écart ne sont pas forcément le même problème.
+  Réglable sur la famille si vous voulez ratisser plus large.
 
 Chaque établissement porte un niveau (critique, sérieux, à surveiller) **et une
 phrase qui dit pourquoi** : « 5 agents différents ont signalé en 5 jours, tous
 sur Risques psychosociaux : Exigences émotionnelles ». Aucun score opaque.
 
-Les quatre seuils sont affichés, modifiables et mémorisés — ils appartiennent à
-qui se sert de l'outil, pas au code. Deux exports en découlent : la liste à
-relancer (CSV) et un relevé imprimable (PDF).
+Les six seuils sont affichés, modifiables et mémorisés — ils appartiennent à qui
+se sert de l'outil, pas au code. Deux exports en découlent : la liste à relancer
+(CSV) et un relevé imprimable (PDF).
+
+Le niveau « critique » est réservé : situation collective, signalement resté
+sans réponse au-delà du double du seuil, ou récidive chronique (le sujet revient
+une quatrième fois). Une récidive isolée reste « sérieux », même répétée deux
+fois — un établissement qui répond en quatre jours mais voit le sujet revenir
+n'est pas au même rang qu'un signalement laissé deux ans sans réponse, et les
+confondre viderait le mot « critique » de son sens.
 
 La carte a un mode **Urgence** correspondant, où la couleur suit le niveau au
 lieu du nombre de signalements.
