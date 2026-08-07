@@ -1,0 +1,94 @@
+{
+  "_lisez_moi": "Toutes les valeurs du barème intra, sorties du code pour que la mise à jour annuelle se fasse ici et nulle part ailleurs. Les valeurs reprennent à l'identique celles qui étaient écrites en dur dans calculateBreakdown() : ce fichier a été introduit sans changer un seul résultat, vérifié sur 4000 combinaisons. Elles restent à recouper avec les lignes directrices de gestion académiques de la campagne en cours.",
+  "mouvement": "intra-académique",
+  "academie": "Amiens",
+  "annee": 2026,
+  "verifie_contre_les_ldg": false,
+
+  "_note_types_voeu": "ETB = un établissement précis. COM = une commune. GEO = un groupement de communes. ZR = une zone de remplacement. DPT = un département. ZRD = toutes les ZR d'un département. ACA = toute l'académie.",
+
+  "echelon": {
+    "_note": "Points d'échelon = base + pas × (échelon − 1), plafonnés le cas échéant.",
+    "classe_normale": { "base": 14, "pas": 7, "plafond": 98 },
+    "hors_classe": { "base": 56, "pas": 7, "plafond": null },
+    "classe_exceptionnelle": { "base": 77, "pas": 7, "plafond": null }
+  },
+
+  "anciennete_de_poste": {
+    "_note": "Cumul : tant de points par année, plus un bonus par tranche de quatre ans révolues.",
+    "par_an": 20,
+    "bonus_par_tranche_de_4_ans": 50
+  },
+
+  "situation_familiale": {
+    "_note": "Aucune bonification familiale sur un vœu portant sur un établissement précis : la circulaire les réserve aux vœux larges.",
+    "types_voeu_exclus": ["ETB"],
+    "rapprochement_conjoint_ou_apc": {
+      "points": 90.2,
+      "types_voeu_majores": ["DPT", "ZRD", "ACA"],
+      "points_majores": 150.2
+    },
+    "enfant_a_charge": { "points_par_enfant": 100 },
+    "separation": {
+      "_note": "Paliers cumulatifs non : on retient le palier le plus élevé atteint.",
+      "paliers": [
+        { "a_partir_de": 1, "points": 50 },
+        { "a_partir_de": 2, "points": 280 },
+        { "a_partir_de": 3, "points": 400 },
+        { "a_partir_de": 4, "points": 600 }
+      ]
+    },
+    "parent_isole": { "points": 30 }
+  },
+
+  "voeu_preferentiel": {
+    "_note": "Le champ du formulaire vaut 0 pour la première année, 1 pour la deuxième, et ainsi de suite.",
+    "types_voeu_exclus": ["ETB"],
+    "points_par_annee": 15
+  },
+
+  "rqth": {
+    "_note": "Attribution automatique sur les vœux larges. Sur un établissement précis, il faut passer par une dérogation médicale, que cet outil ne sait pas simuler.",
+    "types_voeu_exclus": ["ETB"],
+    "points": 100
+  },
+
+  "stagiaires": {
+    "classique": { "points": 19 },
+    "ex_contractuel": {
+      "_note": "Dépend de l'échelon de reclassement.",
+      "base": 50,
+      "paliers_echelon": [
+        { "a_partir_de": 4, "points": 60 },
+        { "a_partir_de": 5, "points": 65 }
+      ]
+    },
+    "ex_fonctionnaire": {
+      "points": null,
+      "_a_verifier": "Le formulaire propose « ex-fonctionnaire (reconversion) », mais aucune bonification ne lui a jamais été associée dans le code : ce choix rapporte zéro point. Soit c'est exact et l'option mérite une mention, soit il manque une valeur. À trancher sur les LDG."
+    }
+  },
+
+  "stabilisation_tzr": {
+    "_note": "On retient le palier le plus élevé atteint par l'ancienneté en zone de remplacement.",
+    "paliers": [
+      { "a_partir_de": 1, "points": 40 },
+      { "a_partir_de": 3, "points": 70 },
+      { "a_partir_de": 6, "points": 90 }
+    ]
+  },
+
+  "mesure_de_carte_scolaire": { "points": 1500 },
+
+  "sortie_education_prioritaire": {
+    "_note": "Quitter un REP ou REP+ après cinq ans d'exercice.",
+    "points": 100
+  },
+
+  "etablissement_vise": {
+    "_note": "Bonifications liées à l'établissement demandé, donc réservées au vœu ETB.",
+    "entree_rep_plus": { "points": 600, "types_voeu": ["ETB"] },
+    "entree_rep": { "points": 75, "types_voeu": ["ETB"] },
+    "agrege_en_lycee": { "points": 120, "types_voeu": ["ETB"] }
+  }
+}

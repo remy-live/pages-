@@ -85,6 +85,7 @@ mutation/
 ├── manifest.webmanifest          installation sur l'écran d'accueil
 ├── icone-192.png, icone-512.png
 ├── data/                         les données, lues au chargement
+│   ├── bareme-intra-2026.json    toutes les valeurs du barème
 │   ├── etablissements.csv        251 collèges et lycées
 │   ├── regroupements.json        groupements de communes
 │   ├── zones_remplacement.json   ZR par département
@@ -92,7 +93,8 @@ mutation/
 │   └── gares.geojson        ┘    la case correspondante
 ├── vendor/                       Leaflet, PapaParse, html2pdf
 │                                 (html2pdf, 900 Ko, n'est chargé qu'à l'export PDF)
-└── outils/preparer-donnees.py    régénère data/ depuis les fichiers bruts
+├── outils/preparer-donnees.py    régénère data/ depuis les fichiers bruts
+└── tests/                        vérification du calcul du barème
 ```
 
 Le fond de carte est servi par CartoDB. Les tuiles des zones déjà consultées
@@ -149,11 +151,29 @@ case à cocher, c'est une seconde vue — on y demande des **académies**, pas d
 établissements d'Amiens — et son barème relève des lignes directrices
 ministérielles, pas académiques.
 
+## Changer le barème
+
+Toutes les valeurs sont dans **`data/bareme-intra-2026.json`** : points d'échelon,
+ancienneté de poste, bonifications familiales, paliers de séparation, RQTH, carte
+scolaire, éducation prioritaire, stagiaires, TZR. Aucune n'est écrite dans le
+code. La mise à jour annuelle se fait donc dans ce fichier, et nulle part ailleurs.
+
+Ne le modifiez pas sans le filet : **[`tests/`](tests/)** rejoue 2000 situations
+et signale exactement ce qui change. La marche à suivre y est décrite.
+
+Après modification, incrémenter `VERSION` dans `sw.js` pour que le nouveau barème
+atteigne les visiteurs qui ont la page en cache.
+
+Le champ `verifie_contre_les_ldg` vaut `false` : les valeurs reprennent fidèlement
+celles qui étaient dans le code, mais ce recoupement avec les lignes directrices
+de gestion académiques reste à faire.
+
 ## Pistes suivantes
 
-- Les barèmes sont codés en dur dans `calculateBreakdown()` ; les sortir dans un
-  `bareme-2026.json` rendrait la mise à jour annuelle beaucoup moins risquée, à
-  condition de figer d'abord le calcul actuel dans des tests.
+- Le formulaire propose « stagiaire ex-fonctionnaire (reconversion) », mais aucune
+  bonification n'y a jamais été associée : ce choix rapporte zéro point. Soit
+  c'est exact et l'option mérite une mention, soit il manque une valeur. C'est
+  noté dans le fichier de barème.
 - Pré-télécharger les tuiles de l'académie pour une carte complète hors ligne
   (quelques Mo), plutôt que de dépendre de ce qui a déjà été consulté.
 - Comparer deux stratégies de vœux côte à côte, à partir de deux liens partagés.
