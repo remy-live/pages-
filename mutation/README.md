@@ -36,7 +36,8 @@ pré-rempli.
 
 ## Ce que ça sait faire
 
-- **Chercher** un établissement ou une commune, au clavier comme au doigt.
+- **Chercher** une commune, un groupement, une zone de remplacement ou un
+  établissement, au clavier comme au doigt.
 - **Simuler son barème** — carrière, situation familiale, bonifications — avec le
   détail réglementaire de chaque vœu et la liste des justificatifs à fournir.
 - **Filtrer la carte** par type d'établissement (collège, lycée, lycée pro), par
