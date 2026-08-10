@@ -130,7 +130,10 @@ button.b.grand{font-size:16px;padding:12px 20px;flex:0 0 auto}
 
 /* galerie de silhouettes et bande des figures */
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:7px;
-  max-height:224px;overflow:auto;padding-right:2px}
+  max-height:290px;overflow:auto;padding-right:2px}
+.gal .famille{grid-column:1/-1;margin:6px 0 0;font-family:"Barlow Condensed",sans-serif;
+  font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.gal .famille:first-child{margin-top:0}
 .gal button{background:#EFEFEC;border:1px solid var(--edge-2);border-radius:10px;padding:5px;
   cursor:pointer;aspect-ratio:1;display:grid;place-items:center}
 .gal button:hover{border-color:var(--acc)}
@@ -197,7 +200,7 @@ button.b.grand{font-size:16px;padding:12px 20px;flex:0 0 auto}
   text-align:center;padding:.8mm;overflow:hidden;position:relative;line-height:1.15}
 .piece{border:.25mm solid #97A0AB;position:relative;overflow:hidden}
 .piece.grey{background:#E9E9E9}
-.piece>img{position:absolute;max-width:none;display:block}
+.piece>img{position:absolute;max-width:none;display:block;-webkit-user-drag:none;user-select:none}
 .lab{position:absolute;white-space:nowrap;font-weight:600;color:#111}
 .lab.halo{text-shadow:0 0 .7mm #fff,0 0 .7mm #fff,0 0 .7mm #fff,0 0 1.3mm #fff,0 0 1.3mm #fff}
 .sol .piece{border-color:#C8CDD4}
@@ -232,6 +235,10 @@ button.b.grand{font-size:16px;padding:12px 20px;flex:0 0 auto}
   flex:0 0 auto}
 .jp>img{position:absolute;max-width:none;display:block}
 .jp.pris{outline:3px solid var(--acc);outline-offset:2px;z-index:2}
+.jp{touch-action:none}
+.jp.fantome{position:fixed;left:0;top:0;z-index:60;pointer-events:none;opacity:.92;
+  box-shadow:0 10px 24px rgba(0,0,0,.55);border-color:var(--acc)}
+.jcase.survol{box-shadow:0 0 0 3px var(--acc) inset;background:#FFF3DE}
 .jcase .jp{border:0;position:absolute;inset:0;background:none}
 .jbandeau{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;justify-content:center}
 .jcompte{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--dim)}
@@ -249,6 +256,8 @@ body[data-etape=jeu] .barre .dedans[data-si=jeu]{display:flex}
 .barre .quoi{flex:1 1 auto;min-width:0;color:var(--dim);font-size:13px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .barre .sw{flex:0 0 auto;padding-bottom:9px}
+.barre .alerte{flex:0 0 auto;padding:7px 11px;border-radius:9px;font-size:13.5px;
+  background:#4B2126;border:1px solid #7E3B41;color:#FFDADD}
 .barre .choix.rot{flex:0 0 auto}
 .barre .choix.rot button{width:86px;flex:0 0 auto;padding:5px 4px;font-size:12px}
 .barre .choix.rot svg{height:26px}
@@ -411,6 +420,26 @@ body[data-etape=jeu] .barre .dedans[data-si=jeu]{display:flex}
         <select id="fGen"></select>
         <button class="b" type="button" id="bGen" style="flex:0 0 auto">Générer</button>
       </div>
+      <div id="wrapLibre" style="display:flex;flex-direction:column;gap:11px">
+        <div class="f">
+          <span class="lbl">Opérations — on peut en cocher plusieurs</span>
+          <div class="choix ops" id="segOps">
+            <button type="button" data-v="+">+</button>
+            <button type="button" data-v="−">−</button>
+            <button type="button" data-v="×">×</button>
+            <button type="button" data-v="÷">÷</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="f"><label for="fMin">Nombres de</label><input type="number" id="fMin" step="1"></div>
+          <div class="f"><label for="fMax">à</label><input type="number" id="fMax" step="1"></div>
+        </div>
+        <label class="sw"><input type="checkbox" id="fDec"><span class="box"></span>
+          <span>Nombres décimaux (au dixième)</span></label>
+        <p class="hint">Un intervalle qui descend sous zéro donne des relatifs, écrits
+          <code>(−3) + 7</code>. En division, le diviseur et le quotient sont pris dans
+          l'intervalle pour que le calcul tombe juste — le dividende peut donc le dépasser.</p>
+      </div>
       <div class="f"><label for="fLines">Une ligne par case</label>
         <textarea id="fLines" spellcheck="false"></textarea></div>
       <p class="hint">Le résultat est calculé tout seul. Pour l'imposer : <code>énoncé = réponse</code>.</p>
@@ -528,12 +557,14 @@ body[data-etape=jeu] .barre .dedans[data-si=jeu]{display:flex}
     </div>
     <label class="sw" id="swDroit"><input type="checkbox" id="fDroit"><span class="box"></span>
       <span>Nombres toujours à l'endroit</span></label>
+    <span class="alerte"></span>
     <button class="b primary grand" type="button" id="bCreer">Créer le puzzle</button>
   </div>
 
   <div class="dedans" data-si="fiche">
     <button class="b" type="button" id="bRetour">← Mise en page</button>
     <span class="quoi" id="quoiFiche"></span>
+    <span class="alerte"></span>
     <button class="b" type="button" id="bShuffle2">Remélanger</button>
     <button class="b" type="button" id="bPreview">Plein écran</button>
     <button class="b" type="button" id="bJouer">Jouer →</button>
@@ -543,6 +574,7 @@ body[data-etape=jeu] .barre .dedans[data-si=jeu]{display:flex}
   <div class="dedans" data-si="jeu">
     <button class="b" type="button" id="bRetour2">← La fiche</button>
     <span class="quoi" id="quoiJeu"></span>
+    <span class="alerte"></span>
     <button class="b" type="button" id="bTourner">Tourner la pièce</button>
     <button class="b" type="button" id="bRejouer">Recommencer</button>
     <button class="b primary grand" type="button" id="bVerifier">Vérifier</button>
@@ -681,17 +713,44 @@ function evaluer(src){
 }
 
 /* ───────────────────────── générateurs ───────────────────────── */
+
+/* Un vivier large : avec 48 cases, une douzaine de bases s'épuisait. */
+const BASES_P10 = ['2','3','4','5','7','8','9','12','15','22','25','35','40','48','60','75','90',
+  '120','202','450','1 200','0,2','0,22','0,5','0,45','1,2','2,2','3,5','4,5','5,6','6,3','7,8',
+  '0,04','0,08','0,15','0,06'];
+
+/** Écrit un relatif comme au tableau : (−3) entre parenthèses, 3 tout court. */
+const ecrire = n => n < 0 ? '(−' + fmt(-n) + ')' : fmt(n);
+
 const GENERATEURS = [
+  { id:'libre', nom:'Opérations au choix, dans un intervalle',
+    tirer(r){
+      const ops = S.ops.filter(o => '+−×÷'.includes(o));
+      if (!ops.length) return null;
+      const op = tire(r, ops);
+      const pas = S.dec ? 10 : 1;
+      const lo = Math.round(Math.min(S.min, S.max) * pas), hi = Math.round(Math.max(S.min, S.max) * pas);
+      const pioche = () => (lo + Math.floor(r() * (hi - lo + 1))) / pas;
+      const a = pioche();
+      let b = pioche();
+      if (op === '÷'){
+        // une division exacte : on tire le diviseur et le quotient, le dividende suit
+        let q = pioche();
+        if (b === 0) b = pas === 1 ? 1 : 0.1;
+        if (q === 0) q = 1;
+        return ecrire(net(b * q)) + ' ÷ ' + ecrire(b);
+      }
+      return ecrire(a) + ' ' + op + ' ' + ecrire(b);
+    } },
   { id:'p10', nom:'Multiplier / diviser par 10, 100, 1 000',
-    tirer: r => tire(r, ['2','12','22','202','1,2','2,2','0,2','0,22','1 200','35','4,5','0,45'])
-      + ' ' + tire(r, ['×','÷']) + ' ' + tire(r, ['10','100','1 000','10 000']) },
+    tirer: r => tire(r, BASES_P10) + ' ' + tire(r, ['×','÷'])
+      + ' ' + tire(r, ['10','100','1 000','10 000']) },
   { id:'p10d', nom:'Multiplier par 0,1 / 0,01 / 0,001',
-    tirer: r => tire(r, ['2','12','22','202','120','1 200','35','450','7','78','5,6'])
-      + ' × ' + tire(r, ['0,1','0,01','0,001']) },
+    tirer: r => tire(r, BASES_P10) + ' × ' + tire(r, ['0,1','0,01','0,001']) },
   { id:'tables', nom:'Tables de multiplication',
-    tirer: r => (2 + Math.floor(r() * 8)) + ' × ' + (2 + Math.floor(r() * 11)) },
+    tirer: r => (2 + Math.floor(r() * 11)) + ' × ' + (2 + Math.floor(r() * 14)) },
   { id:'quot', nom:'Divisions exactes',
-    tirer(r){ const b = 2 + Math.floor(r() * 8); return fmt(b * (2 + Math.floor(r() * 20))) + ' ÷ ' + b; } },
+    tirer(r){ const b = 2 + Math.floor(r() * 11); return fmt(b * (2 + Math.floor(r() * 59))) + ' ÷ ' + b; } },
   { id:'dec', nom:'Sommes et différences décimales',
     tirer(r){
       const a = Math.round(r() * 200) / 10, b = Math.round(r() * 200) / 10;
@@ -700,19 +759,18 @@ const GENERATEURS = [
     } },
 ];
 
-/** Tire n énoncés dont les résultats sont tous différents et restent lisibles. */
-function recolte(n, rnd, tirer){
-  const lignes = [], vus = new Set(), dejaDits = new Set();
-  for (let essai = 0; essai < 8000 && lignes.length < n; essai++){
+/** Tire des énoncés jusqu'à n, tous à résultats différents et lisibles. */
+function recolte(n, rnd, tirer, lignes = [], vus = new Set(), dits = new Set()){
+  for (let essai = 0; essai < 12000 && lignes.length < n; essai++){
     const q = tirer(rnd);
-    if (!q || dejaDits.has(q) || q.length > 15) continue;
+    if (!q || dits.has(q) || q.length > 18) continue;
     const r = evaluer(q);
     if (r === null) continue;
     const abs = Math.abs(r);
-    if (abs > 100000 || abs > 0 && abs < 0.001) continue;   // ni fleuve de zéros ni poussière
+    if (abs > 1e6 || abs > 0 && abs < 1e-4) continue;   // ni fleuve de zéros ni poussière
     const cle = fmt(r);
     if (vus.has(cle)) continue;     // deux pièces au même nombre = puzzle ambigu
-    vus.add(cle); dejaDits.add(q); lignes.push(q);
+    vus.add(cle); dits.add(q); lignes.push(q);
   }
   return lignes;
 }
@@ -979,16 +1037,151 @@ ville: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 230"><g fill="#
 <rect x="328" y="156" width="8" height="11"/><rect x="342" y="156" width="8" height="11"/>
 </g>
 </g></svg>`,
+citrouille: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 240"><g fill="#111">
+<path d="M128 46c-18 0-30 8-38 20-10-8-24-10-38-2C30 76 20 104 20 138c0 48 30 88 62 88 16 0 26-6 46-6s30 6 46 6c32 0 62-40 62-88 0-34-10-62-32-74-14-8-28-6-38 2-8-12-20-20-38-20z"/>
+<path d="M122 44c0-16-6-28-18-36 20-2 32 8 34 24z" />
+<g fill="#fff">
+<path d="M62 122l34-20 12 30z"/><path d="M198 122l-34-20-12 30z"/>
+<path d="M130 130l18 28h-36z"/>
+<path d="M62 178h136c-10 20-26 30-42 24l-12-12-14 14-14-14-12 12c-16 6-32-4-42-24z"/>
+</g>
+</g></svg>`,
+fantome: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260"><g fill="#111">
+<path d="M100 10c44 0 74 34 74 80v148l-24-20-24 20-26-22-26 22-24-20-24 20V90c0-46 30-80 74-80z"/>
+<g fill="#fff">
+<ellipse cx="74" cy="94" rx="14" ry="18"/><ellipse cx="126" cy="94" rx="14" ry="18"/>
+<ellipse cx="100" cy="136" rx="16" ry="12"/>
+</g>
+</g></svg>`,
+chauvesouris: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160"><g fill="#111">
+<path d="M160 44c10 0 18 8 18 20 0 14-8 24-18 24s-18-10-18-24c0-12 8-20 18-20z"/>
+<path d="M148 40 138 8l-14 26-16-14 2 24z"/><path d="M172 40 182 8l14 26 16-14-2 24z"/>
+<path d="M142 56C118 34 78 24 34 30c14 10 20 22 18 36 16-6 28-2 36 8-12 2-20 8-24 18 26-4 46 4 60 22 12-14 18-32 18-58z"/>
+<path d="M178 56c24-22 64-32 108-26-14 10-20 22-18 36-16-6-28-2-36 8 12 2 20 8 24 18-26-4-46 4-60 22-12-14-18-32-18-58z"/>
+<circle cx="152" cy="58" r="4" fill="#fff"/><circle cx="168" cy="58" r="4" fill="#fff"/>
+</g></svg>`,
+araignee: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220"><g fill="none" stroke="#111" stroke-width="9" stroke-linecap="round">
+<path d="M104 96 56 66 22 84"/><path d="M104 118 50 118 16 140"/>
+<path d="M106 140 56 168 30 196"/><path d="M112 158 82 194 88 212"/>
+<path d="M176 96l48-30 34 18"/><path d="M176 118l54 0 34 22"/>
+<path d="M174 140l50 28 26 28"/><path d="M168 158l30 36-6 18"/>
+</g><g fill="#111">
+<ellipse cx="140" cy="132" rx="46" ry="52"/>
+<circle cx="140" cy="80" r="30"/>
+<path d="M126 40 118 14M154 40l8-26" stroke="#111" stroke-width="6" stroke-linecap="round"/>
+<circle cx="129" cy="74" r="7" fill="#fff"/><circle cx="151" cy="74" r="7" fill="#fff"/>
+</g></svg>`,
+sorciere: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 210"><g fill="#111">
+<path d="M108 152 140 26c4-14 14-20 24-14 10 6 10 18 3 27l-19 25 34 88z"/>
+<path d="M14 152h232c0 24-52 40-116 40S14 176 14 152z"/>
+<path d="M96 126h82l8 26H88z"/>
+<rect x="124" y="128" width="26" height="22" fill="#fff"/>
+</g></svg>`,
+sapindenoel: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 280"><g fill="#111">
+<path d="M110 8 62 78h26L46 140h30L26 208h168l-50-68h30l-42-62h26z"/>
+<rect x="94" y="208" width="32" height="30"/>
+<path d="M62 238h96l10 26H52z"/>
+<path d="M110 4 96 30l-26 4 20 20-6 26 26-14 26 14-6-26 20-20-26-4z" transform="translate(0,-16) scale(1)"/>
+<g fill="#fff">
+<circle cx="84" cy="104" r="8"/><circle cx="136" cy="118" r="8"/>
+<circle cx="70" cy="170" r="9"/><circle cx="150" cy="164" r="9"/><circle cx="110" cy="188" r="9"/>
+<circle cx="110" cy="62" r="7"/>
+</g>
+</g></svg>`,
+bonhommedeneige: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 280"><g fill="#111">
+<circle cx="110" cy="214" r="60"/>
+<circle cx="110" cy="132" r="44"/>
+<circle cx="110" cy="66" r="34"/>
+<rect x="72" y="30" width="76" height="14"/>
+<rect x="84" y="0" width="52" height="32"/>
+<path d="M66 130 12 108M154 130l54-22" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+<g fill="#fff">
+<circle cx="98" cy="60" r="6"/><circle cx="122" cy="60" r="6"/>
+<path d="M110 70l24 8-24 8z"/>
+<path d="M92 86q18 12 36 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
+<circle cx="110" cy="124" r="8"/><circle cx="110" cy="152" r="8"/>
+<circle cx="110" cy="200" r="9"/><circle cx="110" cy="232" r="9"/>
+</g>
+</g></svg>`,
+renne: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 240"><g fill="none" stroke="#111" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+<path d="M98 78 74 38 40 30M74 38 58 10M98 62 66 60"/>
+<path d="M162 78l24-40 34-8M186 38l16-28M162 62l32-2"/>
+</g><g fill="#111">
+<ellipse cx="76" cy="122" rx="21" ry="30" transform="rotate(-22 76 122)"/>
+<ellipse cx="184" cy="122" rx="21" ry="30" transform="rotate(22 184 122)"/>
+<ellipse cx="130" cy="142" rx="52" ry="62"/>
+<circle cx="130" cy="192" r="25"/>
+<circle cx="110" cy="126" r="9" fill="#fff"/><circle cx="150" cy="126" r="9" fill="#fff"/>
+<circle cx="130" cy="192" r="10" fill="#fff"/>
+</g></svg>`,
+cadeau: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><g fill="#111">
+<path d="M118 96c-32-2-56-14-56-32 0-15 13-24 28-19 17 5 28 23 28 51z"/>
+<path d="M142 96c32-2 56-14 56-32 0-15-13-24-28-19-17 5-28 23-28 51z"/>
+<rect x="22" y="96" width="196" height="36"/>
+<rect x="38" y="132" width="164" height="96"/>
+<g fill="#fff"><rect x="114" y="96" width="12" height="132"/></g>
+</g></svg>`,
+perenoel: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 250"><g fill="#111">
+<path d="M120 20c44 0 76 22 80 48H40c4-26 36-48 80-48z"/>
+<path d="M186 42c16-14 30-24 38-14 8 10-2 26-20 38z"/>
+<circle cx="214" cy="24" r="17"/>
+<rect x="28" y="66" width="184" height="22" rx="4"/>
+<path d="M50 88h140c0 40-8 70-22 90 6 12 6 26-2 38-16 10-36 16-46 16s-30-6-46-16c-8-12-8-26-2-38-14-20-22-50-22-90z"/>
+<g fill="#fff">
+<circle cx="96" cy="112" r="9"/><circle cx="144" cy="112" r="9"/>
+<path d="M120 132c15 0 27 6 31 16-10 8-21 12-31 12s-21-4-31-12c4-10 16-16 31-16z"/>
+</g>
+</g></svg>`,
+oeufdepaques: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260"><g fill="#111">
+<path d="M100 10c46 0 84 66 84 124 0 66-38 116-84 116s-84-50-84-116C16 76 54 10 100 10z"/>
+<g fill="#fff">
+<path d="M20 96h160v14H20zM16 146h168v14H16z"/>
+<path d="M28 190h144v12H28z"/>
+<circle cx="66" cy="70" r="9"/><circle cx="100" cy="58" r="9"/><circle cx="134" cy="70" r="9"/>
+<circle cx="66" cy="126" r="10"/><circle cx="134" cy="126" r="10"/><circle cx="100" cy="126" r="10"/>
+<circle cx="70" cy="222" r="9"/><circle cx="130" cy="222" r="9"/><circle cx="100" cy="230" r="9"/>
+</g>
+</g></svg>`,
+poussin: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 230"><g fill="#111">
+<ellipse cx="110" cy="146" rx="76" ry="66"/>
+<circle cx="110" cy="70" r="48"/>
+<path d="M110 44 100 12l22 14 22-16-10 34z"/>
+<path d="M144 78l40 12-40 14z"/>
+<path d="M62 140c26-6 44 4 52 26-24 12-46 6-58-8z"/>
+<path d="M84 208l-8 20M136 208l8 20" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+<circle cx="96" cy="62" r="8" fill="#fff"/><circle cx="126" cy="62" r="8" fill="#fff"/>
+</g></svg>`,
+panier: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 230"><g fill="#111">
+<ellipse cx="88" cy="96" rx="34" ry="26"/><ellipse cx="170" cy="92" rx="30" ry="24"/>
+<ellipse cx="130" cy="76" rx="26" ry="22"/>
+<path d="M26 112h208l-26 108H52z"/>
+<path d="M40 112c0-46 40-78 90-78s90 32 90 78h-22c0-34-30-58-68-58s-68 24-68 58z"/>
+<g fill="#fff">
+<path d="M40 140h180l-4 16H44zM52 176h156l-4 16H56z"/>
+<circle cx="88" cy="90" r="6"/><circle cx="170" cy="88" r="6"/><circle cx="130" cy="72" r="6"/>
+</g>
+</g></svg>`,
 };
+
+/* Rangement de la galerie : l'ordre des clés d'ART reste la source de vérité. */
+const FAMILLES = [
+  { nom:'Animaux', cles:['chat','lapin','poisson','papillon','oiseau','escargot','tortue','dinosaure','elephant'] },
+  { nom:'Objets',  cles:['arbre','fusee','voilier','avion','maison','ampoule','etoile','coeur'] },
+  { nom:'Villes',  cles:['newyork','paris','londres','ville'] },
+  { nom:'Halloween', cles:['citrouille','fantome','chauvesouris','araignee','sorciere'] },
+  { nom:'Noël',    cles:['sapindenoel','bonhommedeneige','renne','cadeau','perenoel'] },
+  { nom:'Pâques',  cles:['oeufdepaques','poussin','panier'] },
+];
 
 /* ───────────────────────── état ───────────────────────── */
 const FIGURE = { art:'poisson', src:'', iw:320, ih:200, dx:0, dy:0, angle:0, zoom:100, fit:'cover' };
 const DEFAUTS = {
   cols:6, rows:4, carres:true, marge:8, orient:'portrait', sep:false,
   rot:'none', droit:false, seed:'1', gen:'p10', lines:'',
-  sol:true, cons:true, titres:false,
+  sol:true, cons:false, titres:false,
   consigne:"Calcule, découpe les pièces et colle chacune sur la case dont le résultat correspond.",
   labPos:'random', labSize:3.4, halo:true, grey:true,
+  ops:['+','−'], min:-20, max:20, dec:false,
   figures:[ { ...FIGURE } ], sel:0, vue:100, nom:'',
 };
 let S = { ...DEFAUTS, figures:[ { ...FIGURE } ] };
@@ -999,10 +1192,11 @@ const CHAMPS = {
   droit:'#fDroit', seed:'#fSeed', gen:'#fGen', lines:'#fLines',
   sol:'#fSol', cons:'#fCons', consigne:'#fConsigne', titres:'#fTitres',
   labSize:'#fLabSize', halo:'#fHalo', grey:'#fGrey', nom:'#fNom',
+  min:'#fMin', max:'#fMax', dec:'#fDec',
 };
 const CHAMPS_FIG = { zoom:'#fZoom', angle:'#fAngle' };
 const SEGMENTS = { rot:'#segRot', orient:'#segOrient', labPos:'#segLab' };
-const NOMBRES = new Set(['cols','rows','marge','labSize']);
+const NOMBRES = new Set(['cols','rows','marge','labSize','min','max']);
 
 function versFormulaire(){
   for (const [k, sel] of Object.entries(CHAMPS)){
@@ -1023,6 +1217,9 @@ function versFormulaire(){
   }
   for (const b of $('#segSep').children){          // une case à cocher déguisée en deux images
     b.setAttribute('aria-pressed', String((b.dataset.v === 'separe') === !!S.sep));
+  }
+  for (const b of $('#segOps').children){          // celui-ci accepte plusieurs choix
+    b.setAttribute('aria-pressed', String(S.ops.includes(b.dataset.v)));
   }
 }
 function depuisFormulaire(){
@@ -1155,6 +1352,7 @@ function piece(idx, g, rot, corrige, k = 1, u = 'mm'){
     const img = new Image();
     img.src = f.src;
     img.alt = '';
+    img.draggable = false;
     placerImage(img, g, c, r, f, k, u);
     p.appendChild(img);
     if (u === 'mm') vignettes.push({ img, c, r, f });
@@ -1521,7 +1719,10 @@ function messages(items, total, n, g){
     add('err', `<b>${total} calcul${total > 1 ? 's' : ''}</b> pour <b>${n} case${n > 1 ? 's' : ''}</b>. `
       + (total < n ? 'Il en manque ' + (n - total) + '.' : 'Les ' + (total - n) + ' derniers sont ignorés.')
       + (total < n && genCourt > 0 ? ' Ce générateur n\'a pas assez de calculs à résultats tous '
-        + 'différents : complète à la main, change de générateur, ou réduis la grille.' : '')
+        + 'différents pour une grille de cette taille : '
+        + (S.gen === 'libre' ? 'élargis l\'intervalle, ajoute une opération, '
+                             : 'change de générateur, ')
+        + 'complète à la main, ou réduis la grille.' : '')
       + `<div><button class="b" type="button" id="bGenMsg" style="margin-top:9px;padding:6px 11px;font-size:13px">`
       + `Générer ${n} calculs</button></div>`);
     $('#bGenMsg').addEventListener('click', () => { generer(); actualiser(); });
@@ -1539,6 +1740,7 @@ function messages(items, total, n, g){
     add('tip', '<b>Résultats en double :</b> ' + doubles.join(', ')
       + '. Ces pièces sont interchangeables : un élève qui calcule juste peut quand même casser l\'image.');
   }
+  majAlerte(Math.max(0, n - Math.min(total, n)) || (n - items.filter(i => i.q).length));
   $('#infoGrille').textContent = n + ' pièces · cases de '
     + g.cw.toFixed(1).replace('.', ',') + ' × ' + g.ch.toFixed(1).replace('.', ',') + ' mm';
 }
@@ -1614,7 +1816,8 @@ function lireFichier(f){
 function majGalerie(){
   const box = $('#gal');
   box.textContent = '';
-  for (const nom of Object.keys(ART)){
+  const vues = new Set();
+  const pose = nom => {
     const b = el('button');
     b.type = 'button';
     b.title = nom;
@@ -1623,6 +1826,20 @@ function majGalerie(){
     b.innerHTML = ART[nom];
     b.addEventListener('click', () => poserSvg(ART[nom], nom));
     box.appendChild(b);
+    vues.add(nom);
+  };
+  for (const f of FAMILLES){
+    const t = el('p', 'famille');
+    t.textContent = f.nom;
+    box.appendChild(t);
+    for (const nom of f.cles) if (ART[nom]) pose(nom);
+  }
+  const reste = Object.keys(ART).filter(n => !vues.has(n));
+  if (reste.length){
+    const t = el('p', 'famille');
+    t.textContent = 'Divers';
+    box.appendChild(t);
+    reste.forEach(pose);
   }
 }
 
@@ -1657,6 +1874,7 @@ function rendreJeu(){
   for (let c = 0; c < n; c++){
     const case_ = el('div', 'jcase');
     case_.style.fontSize = (taille * k) + 'px';
+    case_.dataset.c = c;
     const p = jeu.cases[c];
     if (p === null){
       case_.textContent = items[c] ? items[c].q : '';
@@ -1666,7 +1884,6 @@ function rendreJeu(){
       case_.title = items[c] ? items[c].q : '';
       if (jeu.verif) case_.classList.add(p === c && jeu.rot[p] === 0 ? 'juste' : 'faux');
     }
-    case_.addEventListener('click', () => toucherCase(c));
     plateau.appendChild(case_);
   }
 
@@ -1675,7 +1892,6 @@ function rendreJeu(){
   for (const p of jeu.bac){
     const d = pieceJeu(p, g, k, poss, items);
     if (jeu.pris === p) d.classList.add('pris');
-    d.addEventListener('click', () => { jeu.pris = jeu.pris === p ? null : p; rendreJeu(); });
     bac.appendChild(d);
   }
   if (!jeu.bac.length) bac.appendChild(Object.assign(el('span', 'hint'),
@@ -1694,10 +1910,96 @@ function rendreJeu(){
 function pieceJeu(p, g, k, poss, items){
   const d = piece(p, g, jeu.rot[p], false, k, 'px');
   d.classList.add('jp');
+  d.dataset.p = p;
   d.style.width = (g.cw * k) + 'px';
   d.style.height = (g.ch * k) + 'px';
   d.appendChild(etiquette(items[p] ? items[p].a : '', jeu.rot[p], poss[p], S.labSize * k, 'px'));
   return d;
+}
+
+/* ---- prendre une pièce : au doigt levé (tap) ou en la traînant ---- */
+let attrape = null;
+
+function deposer(p, source, cible){
+  jeu.verif = false;
+  if (cible === null){ rendreJeu(); return; }        // lâchée dans le vide : rien ne bouge
+  if (source === 'bac') jeu.bac = jeu.bac.filter(x => x !== p);
+  else jeu.cases[source] = null;
+
+  if (cible === 'bac'){
+    if (!jeu.bac.includes(p)) jeu.bac.push(p);
+  } else {
+    const occupe = jeu.cases[cible];
+    if (occupe !== null && occupe !== p){
+      if (source === 'bac') jeu.bac.push(occupe);    // la délogée repart au bac
+      else jeu.cases[source] = occupe;               // deux cases : elles s'échangent
+    }
+    jeu.cases[cible] = p;
+  }
+  jeu.pris = null;
+  rendreJeu();
+}
+
+function gestesJeu(){
+  const zone = $('#jeu');
+
+  zone.addEventListener('pointerdown', e => {
+    if (e.button || !jeu) return;
+    const jp = e.target.closest('.jp');
+    const jc = e.target.closest('.jcase');
+    if (!jp && !jc) return;
+    const source = jc ? +jc.dataset.c : 'bac';
+    const p = jp ? +jp.dataset.p : null;
+    // sans ça le navigateur lance son propre glisser d'image et coupe les événements pointeur
+    e.preventDefault();
+    attrape = { p, source, jc, x0:e.clientX, y0:e.clientY, id:e.pointerId, bouge:false, fantome:null };
+  });
+
+  addEventListener('pointermove', e => {
+    if (!attrape || e.pointerId !== attrape.id) return;
+    if (attrape.p === null) return;                  // une case vide ne se traîne pas
+    if (!attrape.bouge){
+      if (Math.hypot(e.clientX - attrape.x0, e.clientY - attrape.y0) < 7) return;
+      attrape.bouge = true;
+      const src = attrape.jc ? attrape.jc.querySelector('.jp')
+                             : $(`#jBac .jp[data-p="${attrape.p}"]`);
+      if (!src){ attrape = null; return; }
+      const r = src.getBoundingClientRect();
+      const f = src.cloneNode(true);
+      f.className = 'jp fantome';
+      f.style.width = r.width + 'px';
+      f.style.height = r.height + 'px';
+      attrape.demi = { x:r.width / 2, y:r.height / 2 };
+      document.body.appendChild(f);
+      attrape.fantome = f;
+      src.style.opacity = '.25';
+    }
+    attrape.fantome.style.transform =
+      `translate(${e.clientX - attrape.demi.x}px, ${e.clientY - attrape.demi.y}px)`;
+    const sous = document.elementFromPoint(e.clientX, e.clientY);
+    const cible = sous && sous.closest('.jcase');
+    for (const c of $$('.jcase.survol')) c.classList.remove('survol');
+    if (cible) cible.classList.add('survol');
+  }, { passive:true });
+
+  const relacher = e => {
+    if (!attrape || e.pointerId !== attrape.id) return;
+    const a = attrape;
+    attrape = null;
+    for (const c of $$('.jcase.survol')) c.classList.remove('survol');
+    if (!a.bouge){                                   // simple appui : on garde le jeu au doigt
+      if (a.jc) toucherCase(+a.jc.dataset.c);
+      else if (a.p !== null){ jeu.pris = jeu.pris === a.p ? null : a.p; rendreJeu(); }
+      return;
+    }
+    if (a.fantome) a.fantome.remove();
+    const sous = document.elementFromPoint(e.clientX, e.clientY);
+    const surCase = sous && sous.closest('.jcase');
+    const surBac = sous && sous.closest('.jbac');
+    deposer(a.p, a.source, surCase ? +surCase.dataset.c : surBac ? 'bac' : null);
+  };
+  addEventListener('pointerup', relacher);
+  addEventListener('pointercancel', relacher);
 }
 
 function toucherCase(c){
@@ -1852,13 +2154,31 @@ function majAffichages(){
   $('#fDroit').disabled = S.rot === 'none';
   $('#swDroit').style.opacity = S.rot === 'none' ? '.45' : '';
   $('#wrapCons').style.display = S.cons ? '' : 'none';
+  $('#wrapLibre').style.display = S.gen === 'libre' ? '' : 'none';
   $('#bCreer').textContent = 'Créer le puzzle · ' + (S.cols * S.rows) + ' pièces';
+}
+
+/** L'avertissement du panneau est invisible aux étapes 2 et 3 : on le répète dans la barre. */
+function majAlerte(manque){
+  const txt = manque > 0
+    ? '⚠ ' + manque + ' case' + (manque > 1 ? 's' : '') + ' sans calcul'
+    : '';
+  for (const n of $$('.alerte')){
+    n.textContent = txt;
+    n.style.display = txt ? '' : 'none';
+  }
 }
 
 function generer(){
   const g = GENERATEURS.find(x => x.id === S.gen) || GENERATEURS[0];
   const n = S.cols * S.rows;
   const lignes = recolte(n, rngFrom('gen|' + S.seed + '|' + S.gen), g.tirer);
+  // le vivier d'un générateur peut s'épuiser avant de remplir une grande grille :
+  // on retire avec d'autres graines plutôt que de rendre une fiche à trous
+  for (let essai = 0; essai < 6 && lignes.length < n; essai++){
+    recolte(n, rngFrom('gen|' + S.seed + '|' + S.gen + '|r' + essai), g.tirer,
+            lignes, new Set(lignes.map(l => fmt(evaluer(l)))), new Set(lignes));
+  }
   genCourt = n - lignes.length;
   S.lines = lignes.join('\n');
   $('#fLines').value = S.lines;
@@ -1950,6 +2270,14 @@ function init(){
     const b = e.target.closest('button');
     if (b) { $('#fSep').checked = b.dataset.v === 'separe'; actualiser(); }
   });
+  $('#segOps').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const v = b.dataset.v;
+    S.ops = S.ops.includes(v) ? S.ops.filter(o => o !== v) : S.ops.concat([v]);
+    if (!S.ops.length) S.ops = [v];               // il en faut au moins une
+    actualiser();
+  });
   for (const b of $$('[data-pas]')){
     b.addEventListener('click', () => {
       const champ = $('#' + b.dataset.pas);
@@ -1984,6 +2312,7 @@ function init(){
   $('#bRetirer').addEventListener('click', retirerFigure);
   $('#bDevant').addEventListener('click', devantFigure);
   gestes();
+  gestesJeu();
 
   const vue = d => { S.vue = borne(S.vue + d, 25, 400); ajuster(); sauver(); };
   $('#bVueMoins').addEventListener('click', () => vue(-20));

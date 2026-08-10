@@ -34,9 +34,16 @@ tour, montrée sur un « 12 » qui bascule) et l'interrupteur **nombres toujours
 l'endroit**. Les pages sortent en grand, avec *Remélanger*, *Plein écran* et
 *Imprimer*.
 
-**3 · Jouer.** Le même puzzle, à l'écran : on touche une pièce, on la tourne si
-besoin, on touche sa case. *Vérifier* marque en vert ce qui est bien placé et en
-rouge le reste ; quand tout est juste, l'image apparaît d'un coup.
+**3 · Jouer.** Le même puzzle, à l'écran, au doigt ou à la souris :
+
+- **glisser-déposer** une pièce du bac vers sa case — deux pièces posées
+  s'échangent si on traîne l'une sur l'autre, et une pièce ramenée sur le bac y
+  retourne ;
+- ou **toucher** la pièce puis la case, ce qui marche aussi bien sur un écran tactile.
+
+*Tourner la pièce* fait pivoter celle qu'on tient, quand le puzzle est à rotations.
+*Vérifier* marque en vert ce qui est bien placé et en rouge le reste ; quand tout
+est juste, l'image apparaît d'un coup.
 
 ## Le plan de travail
 
@@ -62,8 +69,8 @@ silhouette cliquée dans la galerie remplace le dessin choisi.
 |---|---|
 | **La feuille** | portrait ou paysage, plateau et pièces sur une ou deux feuilles, marges de 0 à 25 mm |
 | **Les cases** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces ; carrées, ou étirées pour remplir la feuille |
-| **Les dessins** | vingt-et-une silhouettes fournies — animaux, objets et quatre villes (New York, Paris, Londres, une ville quelconque) — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
-| **Les calculs** | cinq générateurs, ou ta propre liste ; une graine de mélange (même graine = même fiche) |
+| **Les dessins** | trente-quatre silhouettes fournies, rangées par familles — animaux, objets, villes (New York, Paris, Londres), Halloween, Noël, Pâques — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
+| **Les calculs** | six générateurs, ou ta propre liste ; une graine de mélange (même graine = même fiche) |
 | **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
 | **Finitions** | corrigé, consigne, titres de section, position et taille des nombres, halo blanc, fond gris |
 
@@ -87,6 +94,19 @@ exporté reste la porte de sortie.
 
 ## Les calculs
 
+### Opérations au choix, dans un intervalle
+
+Le générateur du même nom laisse cocher les opérations voulues — **+ − × ÷**, une
+ou plusieurs — et fixer l'**intervalle** des nombres tirés. Un intervalle qui
+descend sous zéro donne des **relatifs**, écrits comme au tableau : `(−7) + 3`,
+`5 × (−4)`. Une case ajoute les décimaux au dixième.
+
+En division, le diviseur et le quotient sont pris dans l'intervalle pour que le
+calcul tombe juste ; le dividende, lui, peut le dépasser — c'est le prix d'une
+division exacte.
+
+### Ta propre liste
+
 Une ligne par case, dans la zone de texte. Le résultat est calculé tout seul :
 
 ```
@@ -107,6 +127,13 @@ Le tiers de 27 = 9
 deviennent interchangeables, et un élève qui calcule juste peut quand même
 casser l'image. La page le signale, et les générateurs ne produisent que des
 résultats tous différents.
+
+C'est aussi ce qui les limite : un générateur finit par épuiser les résultats
+distincts qu'il sait produire. « Tables de multiplication » n'en a que 76, quelle
+que soit la grille. Quand il en manque, la barre du bas l'annonce — **à chacune
+des trois étapes** — et l'avertissement du panneau porte le bouton qui régénère
+la bonne quantité. Pour une grande grille, il faut élargir l'intervalle, ajouter
+une opération, ou changer de générateur.
 
 ## Impression
 
