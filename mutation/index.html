@@ -50,6 +50,7 @@
             font-weight: bold;
             font-size: 1.2rem;
         }
+        .titre-court { display: none; }
 
         .header-controls {
             display: flex;
@@ -469,7 +470,8 @@
         }
         .score-badge:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); cursor: help; }
         .score-label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
-        .score-value { font-size: 1em; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+        .score-value { font-size: 1em; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            font-variant-numeric: tabular-nums; white-space: nowrap; }
 
         /* DEBUG STATUS */
         .debug-status { font-size:0.85em; color:#2c3e50; font-weight:bold; margin-bottom:5px; background: #e8f8f5; padding: 5px; border-radius: 4px; border-left: 4px solid #1abc9c; }
@@ -529,18 +531,30 @@
 
         /* ==================== TÉLÉPHONE ET TABLETTE ==================== */
         @media (max-width: 1280px) {
+            /* En flex, la largeur du badge décidait des retours à la ligne : passer
+               de 35 à 1535 points redistribuait tout l'en-tête. Une grille fixe le
+               plan, quel que soit le nombre de chiffres. */
             header {
-                height: auto; flex-wrap: wrap; padding: 8px 10px; gap: 8px;
-                justify-content: flex-start;
+                height: auto; padding: 8px 10px;
+                display: grid; grid-template-columns: minmax(0, 1fr) auto;
+                gap: 7px 8px; align-items: center; justify-content: initial;
             }
-            .header-title { font-size: 1rem; order: 1; flex: 1 1 auto; }
+            .header-title {
+                grid-column: 1; grid-row: 1; font-size: 1rem;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            }
+            /* Tronquer en « Mouvement… » n'apprend rien ; une forme courte, si. */
+            .titre-long { display: none; }
+            .titre-court { display: inline; }
             .score-badge {
-                order: 2; margin-right: 0; min-width: 0; padding: 3px 12px;
-                flex-direction: row; gap: 6px; align-items: baseline;
+                grid-column: 2; grid-row: 1; margin-right: 0; min-width: 0;
+                padding: 3px 12px; flex-direction: row; gap: 6px; align-items: baseline;
             }
-            .search-bar { order: 4; flex: 1 1 100%; margin: 0; max-width: none; }
-            .header-controls { order: 3; gap: 6px; }
+            .header-controls:first-of-type { grid-column: 1; grid-row: 2; }
+            .header-controls:last-of-type { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+            .header-controls { gap: 6px; flex-wrap: wrap; }
             .header-controls button { padding: 6px 10px; font-size: .82rem; }
+            .search-bar { grid-column: 1 / -1; grid-row: 3; margin: 0; max-width: none; }
 
             .sidebar {
                 position: absolute; top: 0; bottom: 0; width: min(90vw, 380px);
@@ -570,6 +584,8 @@
             .header-controls { flex-wrap: wrap; }
             .header-controls button { padding: 5px 8px; font-size: .75rem; }
             .score-badge { padding: 2px 10px; }
+            /* « BARÈME : » coûtait 60 px pour ne rien apprendre à personne. */
+            .score-label { display: none; }
             #etab-search { padding: 6px 12px; }
             /* Cinq boutons libellés tenaient sur deux rangées : on ne garde que l'icône. */
             .header-controls .lbl { display: none; }
@@ -803,6 +819,13 @@
             .bilan-actions { justify-content: stretch; }
             .bilan-actions .btn-action { flex: 1 1 30%; padding: 10px 6px; }
         }
+        /* ==================== GENRE DANS LES RÉSULTATS ==================== */
+        .sr-genre { font-style: normal; font-weight: 600; font-size: .78rem;
+            padding: 1px 6px; border-radius: 3px; color: #fff; }
+        .sr-ETB { background: #34495e; }
+        .sr-COM { background: #e67e22; }
+        .sr-GEO { background: #2980b9; }
+        .sr-ZR  { background: #8e44ad; }
 </style>
 </head>
 
@@ -830,7 +853,7 @@
 
         <header>
             <div class="header-controls"><button onclick="toggleSidebar('left')" title="Zones et filtres" aria-label="Zones et filtres">🗺️<span class="lbl"> Zones &amp; Filtres</span></button></div>
-            <div class="header-title">Mouvement Intra 2026</div>
+            <div class="header-title"><span class="titre-long">Mouvement Intra 2026</span><span class="titre-court">Intra 2026</span></div>
 
             <div id="header-score" class="score-badge">
                 <span class="score-label">Barème :</span>
@@ -838,7 +861,7 @@
             </div>
 
             <div class="search-bar">
-                <input type="search" id="etab-search" placeholder="Chercher un établissement ou une commune…"
+                <input type="search" id="etab-search" placeholder="Chercher une commune ou un établissement…"
                        autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Chercher un établissement ou une commune">
                 <div id="search-results" role="listbox"></div>
             </div>
@@ -1661,6 +1684,7 @@
                             sg.style.borderLeftColor = "#27ae60";
                             sg.style.background = "#e8f8f5";
                         }
+                        construireIndexZones();
                         appliquerModeMemorise();
                         remplirListeCommunes();
                         majUiObjectif();
@@ -1918,8 +1942,32 @@
             if (chk.checked) AppState.layers[t].addTo(AppState.map);
         }
 
+        /* Les zones ne vivaient que sous forme de polygones du mode courant : on ne
+           pouvait donc pas chercher une commune en regardant les groupements. Cet
+           index les tient toutes, avec leur centre, quel que soit le mode affiché. */
+        function construireIndexZones() {
+            const parCode = {};
+            ['GEO', 'COM', 'ZR'].forEach(type => {
+                AppState.etablissementObjects.forEach(e => {
+                    (e.groupes[type] || []).forEach(g => {
+                        if (!g.code || !g.nom) return;
+                        const cle = type + '|' + g.code;
+                        if (!parCode[cle]) parCode[cle] = { type, code: g.code, nom: g.nom, lats: [], lons: [], etabs: 0 };
+                        parCode[cle].etabs++;
+                        if (!isNaN(e.lat) && !isNaN(e.lon)) { parCode[cle].lats.push(e.lat); parCode[cle].lons.push(e.lon); }
+                    });
+                });
+            });
+            const moyenne = (t) => t.reduce((s, v) => s + v, 0) / t.length;
+            AppState.indexZones = Object.values(parCode)
+                .filter(z => z.lats.length)
+                .map(z => ({ type: z.type, code: z.code, nom: z.nom, etabs: z.etabs,
+                             lat: moyenne(z.lats), lon: moyenne(z.lons) }));
+        }
+
         function rebuildPolygonsForMode() {
             AppState.layers.zones.clearLayers();
+            AppState.polygonesParCode = {};
             const pts = {};
             const m = AppState.currentMode;
 
@@ -1966,6 +2014,8 @@
                             AppState.map.closePopup();
                         }
                     });
+
+                    AppState.polygonesParCode[code] = zonePolygon;
 
                     zonePolygon.bindPopup(formaterTexte(`
                         <b>${d.name}</b><br>
@@ -3698,18 +3748,65 @@
             const q = normalizeSearch(document.getElementById('etab-search').value.trim());
             if (q.length < 2) { box.classList.remove('open'); box.innerHTML = ''; return; }
 
-            const hits = AppState.etablissementObjects
+            /* Les zones d'abord : ce sont elles qui portent les bonifications, et
+               c'est ce qu'on cherche quand on tape le nom d'une ville. */
+            const LIBELLE = { COM: 'Commune', GEO: 'Groupement', ZR: 'Zone de remplacement' };
+            const zones = (AppState.indexZones || [])
+                .filter(z => normalizeSearch(z.nom).includes(q))
+                .sort((a, b) => normalizeSearch(a.nom).indexOf(q) - normalizeSearch(b.nom).indexOf(q)
+                             || a.nom.localeCompare(b.nom, 'fr'))
+                .slice(0, 6);
+
+            const etabs = AppState.etablissementObjects
                 .filter(e => normalizeSearch(e.nom).includes(q) || normalizeSearch(e.ville).includes(q))
-                .slice(0, 10);
+                .slice(0, 8);
+
+            const hits = [
+                ...zones.map(z => ({ genre: 'zone', z })),
+                ...etabs.map(e => ({ genre: 'etab', e }))
+            ];
 
             box.innerHTML = hits.length
-                ? hits.map((e, i) => `<div class="sr-item" role="option" data-i="${i}"><b>${e.nom}</b><span>${e.ville} · ${e.category || ''}</span></div>`).join('')
-                : '<div class="sr-empty">Aucun établissement à ce nom.</div>';
+                ? hits.map((h, i) => h.genre === 'zone'
+                    ? `<div class="sr-item" role="option" data-i="${i}">
+                         <b>${h.z.nom}</b>
+                         <span><em class="sr-genre sr-${h.z.type}">${LIBELLE[h.z.type]}</em> · ${h.z.etabs} établissement${h.z.etabs > 1 ? 's' : ''} · vœu large</span>
+                       </div>`
+                    : `<div class="sr-item" role="option" data-i="${i}">
+                         <b>${h.e.nom}</b>
+                         <span><em class="sr-genre sr-ETB">Établissement</em> · ${h.e.ville}</span>
+                       </div>`).join('')
+                : '<div class="sr-empty">Rien à ce nom, ni établissement ni commune.</div>';
+
             box.classList.add('open');
             indexSurvol = -1;
             box.querySelectorAll('.sr-item').forEach(el => {
-                el.onclick = () => gotoEtab(hits[parseInt(el.dataset.i, 10)]);
+                const h = hits[parseInt(el.dataset.i, 10)];
+                el.onclick = () => (h.genre === 'zone') ? allerAlaZone(h.z) : gotoEtab(h.e);
             });
+        }
+
+        /* Aller à une zone suppose parfois de changer de mode d'affichage : demander
+           « Laon » en commune alors qu'on regarde les groupements doit fonctionner. */
+        function allerAlaZone(zone) {
+            document.getElementById('search-results').classList.remove('open');
+            document.getElementById('etab-search').blur();
+            if (isNarrow()) closeSidebars();
+
+            if (AppState.currentMode !== zone.type) {
+                const radio = document.getElementById({ GEO: 'mode_geo', COM: 'mode_com', ZR: 'mode_zr' }[zone.type]);
+                if (radio) radio.checked = true;
+                switchMode(zone.type);
+            }
+
+            const polygone = (AppState.polygonesParCode || {})[zone.code];
+            if (polygone) {
+                AppState.map.fitBounds(polygone.getBounds(), { padding: [40, 40], maxZoom: 12 });
+                setTimeout(() => polygone.openPopup(), 350);
+            } else {
+                AppState.map.setView([zone.lat, zone.lon], 11);
+                showToast("Zone affichée", "Cochez « Afficher les polygones » pour la sélectionner sur la carte.", "info", 7000);
+            }
         }
 
         function gotoEtab(e) {

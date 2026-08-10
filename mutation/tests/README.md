@@ -180,6 +180,27 @@ Et la fenêtre **ripait latéralement** : le titre se retrouvait coupé à gauch
 baladeuse au doigt. Le test essaie de la faire riper, détail replié puis
 déplié, et contrôle qu'elle ne bouge pas.
 
+## `recherche-et-entete.mjs` — chercher une ville, et un barème à quatre chiffres
+
+```sh
+node tests/recherche-et-entete.mjs
+```
+
+La recherche trouvait bien les villes, mais ne renvoyait que des
+**établissements** : taper « Laon » listait six lycées et collèges sans jamais
+proposer la commune de Laon, qui est pourtant le vœu qui porte les
+bonifications. Elle renvoie maintenant d'abord les zones — commune, groupements,
+zone de remplacement — avec le nombre d'établissements que chacune recouvre.
+
+Le test vérifie que « Laon » propose la commune, les groupements et la ZR avant
+les établissements, que choisir une commune depuis le mode Groupements bascule
+de mode, s'y rend et ouvre la bulle « Ajouter ce vœu ».
+
+Côté en-tête, la largeur du badge de barème décidait des retours à la ligne :
+passer de 35 à 1535 points redistribuait toute la mise en page. Le test mesure la
+hauteur de l'en-tête pour 0, 35, 485, 1535 et 3179,2 points sur deux téléphones,
+et exige qu'elle ne bouge pas d'un pixel.
+
 ## Ce que ces tests ne disent pas
 
 Ils garantissent que le calcul **ne change pas par accident**. Ils ne disent rien
