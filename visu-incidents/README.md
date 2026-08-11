@@ -80,6 +80,50 @@ médian entre le signalement et la dernière réponse portée au registre.
 Répartition mensuelle (cliquable), par famille de risque et par état. Les
 chiffres sont aussi consultables en tableau.
 
+**Priorités** — où intervenir. Le classement repose sur trois signaux, tous
+tirés de dates et de noms de déclarants, sans rien d'interprété :
+
+- **Sans réponse** — un signalement non clos qu'aucune observation n'a suivi
+  au-delà du seuil. C'est le signal le plus objectif : il ne dit rien du risque,
+  seulement que personne n'a répondu.
+- **Situation collective** — plusieurs agents *différents* sur une fenêtre
+  courte. Cinq signalements par cinq personnes en une semaine ne se lisent pas
+  comme cinq signalements par une personne sur deux ans ; le motif nomme le
+  risque quand il est commun à tous.
+- **Réponse tardive** — une réponse arrivée bien après le signalement, que la
+  médiane de la synthèse masque par construction.
+- **Récidive** — le même sujet re-signalé peu après la clôture du précédent : la
+  mesure prise n'a pas tenu. Le délai se compte à partir de la **clôture**, pas
+  du signalement. Par défaut, le sujet comparé est le **risque exact** et non la
+  famille — « Risques psychosociaux » couvre sept situations distinctes, et deux
+  signalements RPS à six mois d'écart ne sont pas forcément le même problème.
+  Réglable sur la famille si vous voulez ratisser plus large.
+
+Chaque établissement porte un niveau (critique, sérieux, à surveiller) **et une
+phrase qui dit pourquoi** : « 5 agents différents ont signalé en 5 jours, tous
+sur Risques psychosociaux : Exigences émotionnelles ». Aucun score opaque.
+
+Les six seuils sont affichés, modifiables et mémorisés — ils appartiennent à qui
+se sert de l'outil, pas au code. Deux exports en découlent : la liste à relancer
+(CSV) et un relevé imprimable (PDF).
+
+Le niveau « critique » est réservé : situation collective, signalement resté
+sans réponse au-delà du double du seuil, ou récidive chronique (le sujet revient
+une quatrième fois). Une récidive isolée reste « sérieux », même répétée deux
+fois — un établissement qui répond en quatre jours mais voit le sujet revenir
+n'est pas au même rang qu'un signalement laissé deux ans sans réponse, et les
+confondre viderait le mot « critique » de son sens.
+
+La carte a un mode **Urgence** correspondant, où la couleur suit le niveau au
+lieu du nombre de signalements.
+
+Deux limites inscrites dans l'interface : **aucun signalement ne veut pas dire
+aucun risque** — un établissement silencieux peut être celui où l'on n'ose pas
+écrire —, et ce classement porte sur le traitement des registres, pas sur la
+sécurité des lieux ni sur une performance d'établissement. Si l'export chargé
+est ancien, l'outil le signale plutôt que de faire passer tout le monde pour
+en retard.
+
 **Fiche d'établissement** — indicateurs, répartition des risques et journal des
 signalements. La fiche respecte les filtres actifs et indique combien de
 signalements sont masqués.
@@ -92,8 +136,33 @@ L'annuaire ne recense que des écoles, collèges et lycées : les signalements
 portés par un CIO, un service ou une circonscription apparaîtront donc dans
 cette liste, faute de coordonnées où les placer.
 
+**Fiche à envoyer** — depuis la fiche d'un établissement, un PDF d'une page ou
+un texte à coller dans un courriel, ne contenant **que** les signalements de cet
+établissement. On n'adresse pas à une direction les signalements des autres, et
+la recopie manuelle disparaît.
+
+**Suivi des relances** — noter « relancé le… » sur les signalements en attente
+d'un établissement, et une note interne libre. Au chargement suivant, le
+classement distingue *jamais relancé* de *relancé et toujours sans réponse* —
+la seconde situation étant précisément celle qui justifie de remonter d'un cran.
+
+Ces marques vivent dans le navigateur, comme le reste : elles disparaîtraient
+au premier changement de poste. D'où l'export et l'import du suivi, en JSON,
+depuis la section **Export**. La note interne n'apparaît jamais dans un export
+de données, et sur la fiche PDF elle est signalée comme non destinée à l'envoi.
+
+**Quoi de neuf** — au chargement d'un nouvel export, un encart compare au
+précédent : nouveaux signalements, clôtures, dossiers toujours ouverts. Rien au
+premier chargement, faute de point de comparaison.
+
+**Masquage des noms** — un interrupteur remplace partout le nom du déclarant par
+une mention neutre, exports compris. Un registre est nominatif par nature ; une
+statistique portée devant une instance n'a pas à l'être.
+
 **Exports** — CSV (encodage compatible Excel) et rapport PDF, l'un comme l'autre
 strictement limités à ce qui est affiché, avec le rappel des filtres appliqués.
+La page s'imprime proprement : filtres et carte sont retirés du papier, la
+synthèse et les priorités sont conservées.
 
 ## Version autonome (Drive, clé USB, poste hors ligne)
 
