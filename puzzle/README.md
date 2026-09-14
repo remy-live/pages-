@@ -69,8 +69,8 @@ silhouette cliquée dans la galerie remplace le dessin choisi.
 |---|---|
 | **La feuille** | portrait ou paysage, plateau et pièces sur une ou deux feuilles, marges de 0 à 25 mm |
 | **Les cases** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces ; carrées, ou étirées pour remplir la feuille |
-| **Les dessins** | trente-quatre silhouettes fournies, rangées par familles — animaux, objets, villes (New York, Paris, Londres), Halloween, Noël, Pâques — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
-| **Les calculs** | six générateurs, ou ta propre liste ; une graine de mélange (même graine = même fiche) |
+| **Les dessins** | quarante-six silhouettes fournies, rangées par familles — vingt-deux animaux, objets, villes (New York, Paris, Londres), Halloween, Noël, Pâques — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
+| **Les calculs** | sept générateurs, dont cinq réglables (opérations et intervalle), ou ta propre liste ; une graine de mélange (même graine = même fiche) |
 | **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
 | **Finitions** | corrigé, consigne, titres de section, position et taille des nombres, halo blanc, fond gris |
 
@@ -94,16 +94,22 @@ exporté reste la porte de sortie.
 
 ## Les calculs
 
-### Opérations au choix, dans un intervalle
+### Les générateurs réglables
 
-Le générateur du même nom laisse cocher les opérations voulues — **+ − × ÷**, une
-ou plusieurs — et fixer l'**intervalle** des nombres tirés. Un intervalle qui
-descend sous zéro donne des **relatifs**, écrits comme au tableau : `(−7) + 3`,
-`5 × (−4)`. Une case ajoute les décimaux au dixième.
+**Additions**, **Soustractions**, **Multiplications**, **Divisions exactes** et
+**Opérations mélangées** partagent les mêmes réglages : l'**intervalle** des
+nombres tirés, et une case pour les décimaux au dixième. « Opérations mélangées »
+laisse en plus cocher les opérations voulues — **+ − × ÷**, une ou plusieurs.
+
+Un intervalle qui descend sous zéro donne des **relatifs**, écrits comme au
+tableau : `(−7) + 3`, `5 × (−4)`.
 
 En division, le diviseur et le quotient sont pris dans l'intervalle pour que le
 calcul tombe juste ; le dividende, lui, peut le dépasser — c'est le prix d'une
 division exacte.
+
+Sous les réglages, la page annonce en permanence **combien de résultats
+différents** ces bornes peuvent produire, et combien de cases il y a à remplir.
 
 ### Ta propre liste
 
@@ -128,12 +134,15 @@ deviennent interchangeables, et un élève qui calcule juste peut quand même
 casser l'image. La page le signale, et les générateurs ne produisent que des
 résultats tous différents.
 
-C'est aussi ce qui les limite : un générateur finit par épuiser les résultats
-distincts qu'il sait produire. « Tables de multiplication » n'en a que 76, quelle
-que soit la grille. Quand il en manque, la barre du bas l'annonce — **à chacune
-des trois étapes** — et l'avertissement du panneau porte le bouton qui régénère
-la bonne quantité. Pour une grande grille, il faut élargir l'intervalle, ajouter
-une opération, ou changer de générateur.
+C'est aussi ce qui les limite. Des additions de 1 à 10 ne donnent que **19
+sommes différentes** : elles ne peuvent pas remplir 36 cases, quoi qu'on fasse.
+
+Pour les cinq générateurs réglables, la page **élargit l'intervalle toute seule**
+jusqu'à avoir de quoi remplir, met à jour les bornes affichées, et dit ce qu'elle
+a fait. Les générateurs non réglables (×÷ par 10, par 0,1) n'ont pas ce recours :
+quand il leur manque des résultats, la barre du bas l'annonce — **à chacune des
+trois étapes** — et l'avertissement du panneau porte le bouton qui régénère la
+bonne quantité.
 
 ## Impression
 
