@@ -7,6 +7,28 @@ le recopie, puis le colorie.
 
 **En ligne :** https://remy-live.github.io/pages-/relier/
 
+## Deux façons d'entrer
+
+La page s'ouvre sur un choix :
+
+- **Pas à pas** — trois questions (le dessin, les calculs, le nombre de points) et
+  la fiche est prête à jouer, à imprimer ou à partager. Une question par écran,
+  de grands boutons : c'est le mode à l'aise sur téléphone.
+- **Interface complète** — tous les réglages sous les yeux, la galerie entière et
+  l'atelier.
+
+On passe de l'une à l'autre par le bouton **Mode**, en haut. Le choix est retenu
+d'une visite à l'autre.
+
+## Partager une fiche par lien
+
+**Partager le lien** donne une adresse qui rouvre *exactement* la même fiche :
+même dessin, mêmes calculs, même ordre. Le tirage passe par une graine écrite
+dans l'adresse — rien n'est envoyé nulle part, tout tient dans l'URL. Le lien
+s'ouvre directement en mode jeu, ce qui permet d'envoyer un exercice à un élève
+qui n'a qu'à cliquer. Un dessin fait à l'atelier voyage avec le lien : son
+contour y est encodé, et celui qui le reçoit peut l'ajouter à sa bibliothèque.
+
 ## Le principe
 
 Chaque point du dessin reçoit un calcul. L'élève calcule, trie, et relie dans
@@ -113,6 +135,13 @@ Les contours sont des listes de points en coordonnées 0–100, l'ordre du table
 étant le sens du tracé ; un contour marqué `lisse` passe par un lissage de
 Chaikin avant d'être densifié. Aucun ne se recoupe — un contour qui se croise
 fait une figure fausse à colorier.
+
+Les deux interfaces pilotent les mêmes champs : le panneau de l'interface
+complète reste la source de vérité, le mode guidé ne fait que l'actionner. Il n'y
+a donc qu'un seul état, et une seule galerie, rendue à deux endroits.
+
+Les calculs sont tirés par un générateur à graine (*mulberry32* amorcé par un
+hachage FNV du texte de la graine) : c'est ce qui rend un lien reproductible.
 
 Le placement des étiquettes est calculé : pour chaque point, la normale
 extérieure au contour donne une direction de départ, puis une trentaine de

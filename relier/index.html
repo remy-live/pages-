@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1f3a8a">
-<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : intervalle et nombre de points au choix (jusqu'à 200), quatre-vingt-seize dessins dont soixante animaux, et un atelier pour créer les siens à partir d'une image.">
+<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : mode pas à pas ou interface complète, intervalle et nombre de points au choix (jusqu'à 200), quatre-vingt-quinze dessins dont soixante animaux, un atelier pour créer les siens, et un lien pour partager une fiche.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='9' fill='%231f3a8a'/%3E%3Cpolyline points='8,34 14,12 24,30 30,8 38,26' fill='none' stroke='%23ffd84d' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='34' r='3.2'/%3E%3Ccircle cx='14' cy='12' r='3.2'/%3E%3Ccircle cx='24' cy='30' r='3.2'/%3E%3Ccircle cx='30' cy='8' r='3.2'/%3E%3Ccircle cx='38' cy='26' r='3.2'/%3E%3C/g%3E%3C/svg%3E">
 <title>Points à relier — calculs</title>
 <style>
@@ -19,7 +19,7 @@ header svg{width:44px;height:44px;flex:none}
 header h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.2px}
 header p{margin:0;font-size:13px;opacity:.8}
 main{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
-.panneau{background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(31,58,138,.12);position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.panneau{background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(31,58,138,.12);position:sticky;top:12px;z-index:2;max-height:calc(100vh - 24px);overflow:auto}
 .panneau h3{margin:4px 0 0;font-size:12px;font-weight:600;color:var(--encre2);letter-spacing:.4px;text-transform:uppercase}
 label.champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--gris)}
 select,input[type=range],input[type=number],input[type=text]{font:inherit;width:100%}
@@ -54,7 +54,7 @@ svg .suivant{fill:var(--surligneur);stroke:var(--encre);stroke-width:.8}
 @keyframes secoue{25%{transform:translateX(-1px)}75%{transform:translateX(1px)}}
 @keyframes trace{to{stroke-dashoffset:0}}
 /* Galerie */
-.galerie{grid-column:1/-1;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(31,58,138,.12)}
+.galerie{grid-column:2;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(31,58,138,.12)}
 .galerie .haut{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .galerie h2{margin:0;font-size:18px;color:var(--encre)}
 .onglets{display:flex;gap:6px;flex-wrap:wrap}
@@ -79,13 +79,74 @@ dialog::backdrop{background:rgba(20,30,70,.45)}
 .scene svg,.scene canvas{position:absolute;inset:0;width:100%;height:100%}
 .cote{display:flex;flex-direction:column;gap:9px}
 .fin{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+/* Écran d'accueil et mode guidé */
+#accueil{display:none;max-width:1000px;margin:0 auto;padding:22px 16px}
+body[data-vue=accueil] #accueil{display:block}
+body[data-vue=accueil] main{display:none}
+.accueil-boite{background:#fff;border-radius:18px;padding:26px 24px;box-shadow:0 2px 14px rgba(31,58,138,.12)}
+.accueil-boite h2{margin:0;font-size:24px;color:var(--encre)}
+.chapeau{margin:6px 0 20px;color:var(--gris);max-width:62ch}
+.choix{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.grandchoix{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;
+  padding:20px;border:2px solid var(--bord);border-radius:16px;min-height:150px;transition:transform .12s,border-color .12s}
+.grandchoix:hover{transform:translateY(-2px);border-color:var(--encre2);background:#f6f9ff}
+.grandchoix .ico{font-size:22px;font-weight:700;color:var(--encre2);letter-spacing:1px}
+.grandchoix .t{font-size:19px;font-weight:700;color:var(--encre)}
+.grandchoix .q{font-size:14px;color:var(--gris);line-height:1.45}
+#accueil .aide{margin:18px 0 0;font-size:13px;color:var(--gris)}
+.bascule{margin-left:auto;display:flex;gap:8px}
+body[data-vue=accueil] .bascule{display:none}
+.bascule button{padding:7px 13px;border-radius:99px;font-size:13px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)}
+.bascule button:hover{background:rgba(255,255,255,.26)}
+
+#guide{grid-column:1/-1;display:none;background:#fff;border-radius:14px;padding:16px 18px 14px;box-shadow:0 1px 3px rgba(31,58,138,.12)}
+body[data-vue=guide] #guide{display:block}
+body[data-vue=guide] .panneau,body[data-vue=guide] .galerie{display:none}
+body[data-vue=guide] main{grid-template-columns:minmax(0,1fr)}
+body[data-vue=guide] .feuille{display:none}
+body[data-vue=guide][data-pas="3"] .feuille,body[data-vue=guide][data-pas="4"] .feuille{display:block}
+.fil{display:flex;gap:6px;list-style:none;margin:0 0 14px;padding:0;flex-wrap:wrap}
+.fil li{flex:1 1 90px;font-size:12px;color:var(--gris);border-top:3px solid var(--bord);padding-top:6px;min-width:80px}
+.fil li[aria-current=step]{color:var(--encre);font-weight:600;border-top-color:var(--encre)}
+.fil li.fait{border-top-color:var(--vert);color:var(--vert)}
+.pas{display:none}
+body[data-vue=guide][data-pas="1"] .pas[data-p="1"],body[data-vue=guide][data-pas="2"] .pas[data-p="2"],
+body[data-vue=guide][data-pas="3"] .pas[data-p="3"],body[data-vue=guide][data-pas="4"] .pas[data-p="4"]{display:block}
+.pas h2{margin:0 0 4px;font-size:19px;color:var(--encre)}
+.pas h3{margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--encre2);letter-spacing:.4px;text-transform:uppercase}
+.pas>p.aide{margin:0 0 12px;font-size:13px;color:var(--gris)}
+.cartes-choix{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.cartes-choix button{text-align:left;padding:11px 12px;line-height:1.3;min-height:48px}
+.cartes-choix button[aria-pressed=true]{background:var(--encre);color:#fff;border-color:var(--encre)}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chips button{padding:9px 14px;border-radius:99px;font-size:14px;min-height:42px}
+.chips button[aria-pressed=true]{background:var(--encre);color:#fff;border-color:var(--encre)}
+.nav{display:flex;gap:8px;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--bord)}
+.nav button{min-width:120px;min-height:46px}
+.boutons-larges{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.boutons-larges button{min-height:50px;font-size:15px}
+#lien{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;width:100%;padding:9px;border:1px solid var(--bord);border-radius:9px;background:#f7f9ff}
+.bandeau{grid-column:1/-1;background:#fff6d8;border:1px solid #e8d48a;border-radius:12px;padding:10px 14px;
+  display:none;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;color:#6b5300}
+body[data-partage] .bandeau{display:flex}
+.bandeau button{padding:7px 12px;font-size:13px}
+
 @media(max-width:820px){
   main{grid-template-columns:1fr;padding:10px;gap:12px}
-  .panneau{position:static;max-height:none}
+  .panneau{position:static;max-height:none;z-index:auto}
+  .galerie{grid-column:1/-1}
   header{padding:10px 14px}header h1{font-size:18px}header p{display:none}
   .feuille{padding:12px}
-  .grille{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}
+  .grille{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
   .atelier{grid-template-columns:1fr}
+  #accueil{padding:12px 10px}
+  .accueil-boite{padding:18px 16px}
+  .accueil-boite h2{font-size:20px}
+  .grandchoix{min-height:0;padding:16px}
+  #guide{padding:12px 12px 10px}
+  .cartes-choix{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .nav button{min-width:0;flex:1}
+  header h1{font-size:17px}
 }
 #impression{display:none}
 @media print{
@@ -102,13 +163,101 @@ dialog::backdrop{background:rgba(20,30,70,.45)}
 }
 </style>
 </head>
-<body>
+<body data-vue="accueil">
 <header>
   <svg viewBox="0 0 44 44" aria-hidden="true"><polyline points="8,34 14,12 24,30 30,8 38,26" fill="none" stroke="#ffd84d" stroke-width="2.5" stroke-linejoin="round"/><g fill="#fff"><circle cx="8" cy="34" r="3.2"/><circle cx="14" cy="12" r="3.2"/><circle cx="24" cy="30" r="3.2"/><circle cx="30" cy="8" r="3.2"/><circle cx="38" cy="26" r="3.2"/></g></svg>
   <div><h1>Points à relier</h1><p>Calcule, relie dans l'ordre, découvre l'animal — puis colorie-le.</p></div>
+  <div class="bascule">
+    <button id="btnAccueil" title="Revenir au choix du mode">Mode</button>
+    <button id="btnBascule">Interface complète</button>
+  </div>
 </header>
 
+<section id="accueil">
+  <div class="accueil-boite">
+    <h2>Fabriquer une fiche de points à relier</h2>
+    <p class="chapeau">L'élève calcule, relie les points dans l'ordre des résultats, découvre l'animal,
+      apprend son nom — puis le colorie. Par où veux-tu commencer&nbsp;?</p>
+    <div class="choix">
+      <button class="grandchoix" data-vers="guide">
+        <span class="ico">1 · 2 · 3</span>
+        <span class="t">Pas à pas</span>
+        <span class="q">Trois questions — le dessin, les calculs, le nombre de points — et la fiche est prête
+          à jouer, à imprimer ou à partager. Le plus simple, et le plus à l'aise sur téléphone.</span>
+      </button>
+      <button class="grandchoix" data-vers="expert">
+        <span class="ico">⚙</span>
+        <span class="t">Interface complète</span>
+        <span class="q">Tous les réglages sous les yeux, la galerie des quatre-vingt-quinze dessins,
+          et l'atelier pour créer les siens à partir d'une image.</span>
+      </button>
+    </div>
+    <p class="aide">On passe de l'une à l'autre quand on veut, avec le bouton <b>Mode</b> en haut de la page.</p>
+  </div>
+</section>
+
 <main>
+  <div class="bandeau">
+    <span id="texteBandeau">Fiche partagée : les calculs sont exactement ceux de la personne qui t'a envoyé le lien.</span>
+    <button id="btnGarderPartage" hidden>Ajouter ce dessin à mes dessins</button>
+  </div>
+
+  <section id="guide">
+    <ol class="fil" id="fil">
+      <li data-p="1">1. Le dessin</li><li data-p="2">2. Les calculs</li>
+      <li data-p="3">3. Les points</li><li data-p="4">4. C'est prêt</li>
+    </ol>
+
+    <div class="pas" data-p="1">
+      <h2>Quel dessin&nbsp;?</h2>
+      <p class="aide">Touche une vignette. L'élève ne verra pas le nom avant d'avoir fini son tracé.</p>
+      <div class="onglets" id="ongletsG"></div>
+      <div class="grille" id="grilleG"></div>
+      <div class="nav" style="justify-content:flex-start">
+        <button id="gAtelier">Créer un dessin…</button>
+      </div>
+    </div>
+
+    <div class="pas" data-p="2">
+      <h2>Quels calculs&nbsp;?</h2>
+      <p class="aide">Chaque point porte un calcul ; on relie du plus petit résultat au plus grand.</p>
+      <div class="cartes-choix" id="typesG"></div>
+      <h3>Niveau</h3>
+      <div class="chips" id="niveauxG"></div>
+      <h3>Résultats — de … à …</h3>
+      <div class="deux">
+        <input type="number" id="gMin" step="1" value="1" aria-label="résultat minimum">
+        <input type="number" id="gMax" step="1" value="200" aria-label="résultat maximum">
+      </div>
+      <div class="chips" id="intervallesG" style="margin-top:8px"></div>
+    </div>
+
+    <div class="pas" data-p="3">
+      <h2>Combien de points&nbsp;?</h2>
+      <p class="aide">Peu de points pour une fiche courte, beaucoup pour un dessin précis — jusqu'à 200.</p>
+      <div class="chips" id="pointsG"></div>
+      <label class="reglage" style="margin-top:10px"><span>Nombre de points <b id="gVN">20</b></span>
+        <input type="range" id="gN" min="4" max="200" step="1" value="20"></label>
+      <div class="alerte" id="alerteG"></div>
+    </div>
+
+    <div class="pas" data-p="4">
+      <h2 id="gTitre">C'est prêt.</h2>
+      <p class="aide">La fiche est en dessous. Elle s'imprime en deux pages : l'exercice, puis la solution.</p>
+      <div class="boutons-larges">
+        <button class="vert" id="gJouer">Jouer à l'écran</button>
+        <button class="encre" id="gImprimer">Imprimer / PDF</button>
+        <button id="gPartager">Partager le lien</button>
+        <button id="gAutres">D'autres calculs</button>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button id="gRetour">← Retour</button>
+      <button class="encre" id="gSuivant">Suivant →</button>
+    </div>
+  </section>
+
   <aside class="panneau">
     <h3>Dessin</h3>
     <label class="champ">Sujet<select id="dessin"></select></label>
@@ -163,6 +312,7 @@ dialog::backdrop{background:rgba(20,30,70,.45)}
       <button id="btnSvg">SVG exercice</button>
       <button id="btnSvgSol">SVG solution</button>
       <button class="large" id="btnSvgCol">SVG à colorier</button>
+      <button class="large encre" id="btnPartager">Partager le lien de cette fiche</button>
       <button class="large" id="btnPdf">Imprimer / PDF (exercice + solution)</button>
     </div>
   </aside>
@@ -220,6 +370,19 @@ dialog::backdrop{background:rgba(20,30,70,.45)}
     <div class="fin">
       <button value="annuler">Annuler</button>
       <button type="button" class="encre" id="btnGarder">Ajouter à mes dessins</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="partage">
+  <form method="dialog" class="modale">
+    <h2>Partager cette fiche</h2>
+    <p class="aide">Ce lien rouvre <b>exactement</b> la même fiche — même dessin, mêmes calculs, même ordre —
+      et démarre en mode jeu. Rien n'est envoyé nulle part : tout est écrit dans l'adresse.</p>
+    <input type="text" id="lien" readonly>
+    <div class="fin">
+      <button value="fermer">Fermer</button>
+      <button type="button" id="btnEnvoyer" hidden>Envoyer…</button>
+      <button type="button" class="encre" id="btnCopier">Copier le lien</button>
     </div>
   </form>
 </dialog>
@@ -464,8 +627,23 @@ function maxPoints(d){return Math.max(6,Math.min(200,Math.floor(contour(d).lengt
    3. Générateurs de calculs : gen(niveau, min, max) → {e, v}
    L'intervalle porte sur le RÉSULTAT : c'est lui que l'élève trie.
    ============================================================ */
-const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
-const pick=t=>t[Math.floor(Math.random()*t.length)];
+/* Le tirage passe par une graine : deux personnes qui ouvrent le même lien
+   obtiennent la même fiche, aux mêmes calculs. */
+let graine='1',etatAlea=1;
+function semer(g){
+  graine=String(g);let h=2166136261;
+  for(let i=0;i<graine.length;i++){h^=graine.charCodeAt(i);h=Math.imul(h,16777619)}
+  etatAlea=(h>>>0)||1;
+}
+function alea(){
+  etatAlea=etatAlea+0x6D2B79F5|0;
+  let t=Math.imul(etatAlea^etatAlea>>>15,1|etatAlea);
+  t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296;
+}
+const nouvelleGraine=()=>Math.random().toString(36).slice(2,8);
+const rnd=(a,b)=>a+Math.floor(alea()*(b-a+1));
+const pick=t=>t[Math.floor(alea()*t.length)];
 const fr=x=>String(x).replace('.',',');
 const rel=n=>n<0?`(−${-n})`:String(n);
 const sup={0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};
@@ -484,7 +662,7 @@ const TYPES={
     const t=FACTEURS[l-1];
     for(let k=0;k<40;k++){
       const m=pick(t),lo=Math.max(1,Math.ceil(Math.max(a,1)/m)),hi=Math.floor(b/m);
-      if(hi>=lo){const q=rnd(lo,hi),[x,y]=Math.random()<.5?[m,q]:[q,m];return{e:`${x} × ${y}`,v:m*q}}
+      if(hi>=lo){const q=rnd(lo,hi),[x,y]=alea()<.5?[m,q]:[q,m];return{e:`${x} × ${y}`,v:m*q}}
     }
     const v=rnd(Math.max(a,1),Math.max(b,1));return{e:`${v} × 1`,v}}},
   div:{nom:'Divisions',gen(l,a,b){
@@ -493,40 +671,49 @@ const TYPES={
   melange:{nom:'Mélange des 4 opérations',gen(l,a,b){return TYPES[pick(['add','sous','mult','div'])].gen(l,a,b)}},
   relatifs:{nom:'Nombres relatifs',gen(l,a,b){
     const v=rnd(a,b),E=Math.max(10,Math.min(60,Math.round((Math.abs(a)+Math.abs(b))/2)));
-    if(l>=4&&Math.random()<.4&&v!==0){
+    if(l>=4&&alea()<.4&&v!==0){
       for(let k=0;k<12;k++){const c=pick([-12,-9,-8,-7,-6,-5,-4,-3,-2,2,3,4,5,6,7,8,9,12]);
         if(v%c===0)return{e:`${rel(c)} × ${rel(v/c)}`,v}}
     }
     const x=rnd(-E,E);
-    return Math.random()<.5?{e:`${rel(x)} + ${rel(v-x)}`,v}:{e:`${rel(v+x)} − ${rel(x)}`,v}}},
+    return alea()<.5?{e:`${rel(x)} + ${rel(v-x)}`,v}:{e:`${rel(v+x)} − ${rel(x)}`,v}}},
   decimaux:{nom:'Nombres décimaux',gen(l,a,b){
     const d=l<=2?10:100,V=rnd(Math.round(Math.max(a,0)*d),Math.round(Math.max(b,1)*d)),v=V/d;
-    if(l>=3&&Math.random()<.5){const X=rnd(0,Math.round(2*d));return{e:`${fr((V+X)/d)} − ${fr(X/d)}`,v}}
+    if(l>=3&&alea()<.5){const X=rnd(0,Math.round(2*d));return{e:`${fr((V+X)/d)} − ${fr(X/d)}`,v}}
     const X=rnd(0,V);return{e:`${fr(X/d)} + ${fr((V-X)/d)}`,v}}},
   fractions:{nom:'Fractions (comparer)',gen(l){
     const b=pick(DENOMINATEURS[l-1]),a=rnd(1,l>=4?3*b:b);return{e:`${a}/${b}`,v:a/b}}},
   puissances:{nom:'Carrés et puissances',gen(l,a,b){
     const lo=Math.max(0,Math.floor(Math.sqrt(Math.max(a,0)))),hi=Math.max(lo+1,Math.floor(Math.sqrt(Math.max(b,1))));
-    if(l>=4&&Math.random()<.4){
-      const base=Math.random()<.5?2:3,m=[];
+    if(l>=4&&alea()<.4){
+      const base=alea()<.5?2:3,m=[];
       for(let n=0;n<=14;n++){const v=base**n;if(v>=a&&v<=b)m.push(n)}
       if(m.length){const n=pick(m);return{e:exp(base,n),v:base**n}}
     }
-    if(l>=3&&Math.random()<.3){
+    if(l>=3&&alea()<.3){
       const m=[];for(let n=1;n<=20;n++){const v=n**3;if(v>=a&&v<=b)m.push(n)}
       if(m.length){const n=pick(m);return{e:exp(n,3),v:n**3}}
     }
     const n=rnd(lo,hi);return{e:exp(n,2),v:n*n}}},
+  /* On part du résultat voulu et on fabrique l'expression autour : tirer au
+     hasard puis rejeter laisserait passer des résultats hors intervalle. */
   mixte:{nom:'Priorités opératoires',gen(l,a,b){
-    const m=[5,10,10,12,20][l-1];let dernier=null;
-    for(let k=0;k<60;k++){
-      const x=rnd(1,m),y=rnd(1,m),z=rnd(1,Math.max(2,Math.min(m*2,b)));
-      const c=[[`${x} × ${y} + ${z}`,x*y+z],[`${z} + ${x} × ${y}`,z+x*y],
-               [`(${x} + ${y}) × ${z}`,(x+y)*z],[`${x} × ${y} − ${z}`,x*y-z]][rnd(0,3)];
-      dernier={e:c[0],v:c[1]};
-      if(c[1]>=a&&c[1]<=b)return dernier;
+    const m=[5,10,10,12,20][l-1],v=rnd(Math.max(a,1),Math.max(b,2));
+    for(let k=0;k<30;k++){
+      if(rnd(0,2)===1){ // (x + y) × z
+        const div=[];
+        for(let d=2;d<=Math.min(m*2,v);d++)if(v%d===0&&v/d>=2)div.push(d);
+        if(div.length){const z=pick(div),som=v/z,x=rnd(1,som-1);return{e:`(${x} + ${som-x}) × ${z}`,v}}
+      }else if(rnd(0,2)===2){ // x × y − z
+        const x=rnd(2,m),y=rnd(2,m),z=x*y-v;
+        if(z>=1&&z<=2*m)return{e:`${x} × ${y} − ${z}`,v};
+      }else{ // x × y + z
+        const x=rnd(2,Math.max(2,Math.min(m,v))),y=rnd(1,Math.max(1,Math.min(m,Math.floor(v/x))));
+        const z=v-x*y;
+        if(z>=0)return alea()<.5?{e:`${x} × ${y} + ${z}`,v}:{e:`${z} + ${x} × ${y}`,v};
+      }
     }
-    return dernier}},
+    return{e:`1 × 1 + ${v-1}`,v}}},
 };
 const SANS_INTERVALLE=new Set(['fractions']);
 
@@ -681,9 +868,10 @@ function texteConsigne(){
   return debut+' Commence par le point jaune et termine en revenant au point de départ.';
 }
 
-function message(txt){$('alerte').textContent=txt||''}
+function message(txt){$('alerte').textContent=txt||'';$('alerteG').textContent=txt||''}
 
 function nouveau(){
+  semer(graine);
   const type=$('type').value,niveau=+$('niveau').value;
   let d=DESSINS.find(x=>x.id===$('dessin').value);
   if(!d){const pool=DESSINS.filter(x=>x.cat!=='perso');d=pick(pool.length?pool:DESSINS)}
@@ -709,7 +897,7 @@ function nouveau(){
   if(!dits.length&&SANS_INTERVALLE.has(type))dits.push("Les fractions ne suivent pas l'intervalle : elles dépendent du niveau.");
   if(n>80)dits.push(`${n} points : imprime en A4, et préfère « Nombres entiers » pour que les étiquettes restent lisibles.`);
   message(dits.join(' '));
-  afficher();majGalerie();
+  afficher();majGalerie();majGuide();
 }
 
 function afficher(){
@@ -780,25 +968,30 @@ function vignette(d){
     +`<polygon points="${poly}" fill="none" stroke="#1f3a8a" stroke-width="1.6" stroke-linejoin="round"/>`
     +p.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2" fill="#24262c"/>`).join('')+'</svg>';
 }
+const GALERIES=[['onglets','grille'],['ongletsG','grilleG']];
 function construireGalerie(){
   const cats=Object.entries(CATEGORIES).filter(([k])=>k!=='perso'||DESSINS.some(d=>d.cat==='perso'));
   if(filtre==='perso'&&!DESSINS.some(d=>d.cat==='perso'))filtre='animaux';
-  const o=$('onglets');
-  o.innerHTML=[['tous','Tous'],...cats].map(([k,v])=>`<button data-cat="${k}" aria-pressed="${k===filtre}">${v}</button>`).join('');
-  o.onclick=e=>{const b=e.target.closest('button');if(!b)return;filtre=b.dataset.cat;construireGalerie()};
   const liste=DESSINS.filter(d=>filtre==='tous'||d.cat===filtre);
-  $('grille').innerHTML=liste.map(d=>`<div class="carte" role="button" tabindex="0" data-id="${d.id}" aria-pressed="false">`
+  const htmlOnglets=[['tous','Tous'],...cats]
+    .map(([k,v])=>`<button data-cat="${k}" aria-pressed="${k===filtre}">${v}</button>`).join('');
+  const htmlCartes=liste.map(d=>`<div class="carte" role="button" tabindex="0" data-id="${d.id}" aria-pressed="false">`
     +vignette(d)+`<span class="nom">${d.nom}</span>`
     +`<span class="meta"><span>dès ${detail(d)} points</span></span>`
     +(d.cat==='perso'?`<button class="jeter" data-jeter="${d.id}" title="Supprimer">✕</button>`:'')+`</div>`).join('');
-  $('grille').onclick=e=>{
-    const j=e.target.closest('[data-jeter]');
-    if(j){supprimerPerso(j.dataset.jeter);return}
-    const c=e.target.closest('.carte');if(!c)return;
-    choisirDessin(c.dataset.id);
-  };
-  $('grille').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const c=e.target.closest('.carte');
-    if(c){e.preventDefault();choisirDessin(c.dataset.id)}}};
+  for(const[ido,idg]of GALERIES){
+    const o=$(ido),g=$(idg);if(!o||!g)continue;
+    o.innerHTML=htmlOnglets;g.innerHTML=htmlCartes;
+    o.onclick=e=>{const b=e.target.closest('button');if(!b)return;filtre=b.dataset.cat;construireGalerie()};
+    g.onclick=e=>{
+      const j=e.target.closest('[data-jeter]');
+      if(j){supprimerPerso(j.dataset.jeter);return}
+      const c=e.target.closest('.carte');if(!c)return;
+      choisirDessin(c.dataset.id);
+    };
+    g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const c=e.target.closest('.carte');
+      if(c){e.preventDefault();choisirDessin(c.dataset.id)}}};
+  }
   majGalerie();
 }
 function choisirDessin(id){
@@ -807,9 +1000,141 @@ function choisirDessin(id){
   const n=+$('nPts').value;
   if(n<detail(d)||n>maxPoints(d))majN(Math.max(detail(d),Math.min(n,maxPoints(d))));
   majBornesN();nouveau();
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(document.body.dataset.vue==='guide'&&pasCourant===1)allerA(2);
+  else window.scrollTo({top:0,behavior:'smooth'});
 }
 function majGalerie(){document.querySelectorAll('.carte').forEach(c=>c.setAttribute('aria-pressed',!!exo&&c.dataset.id===exo.dessin.id))}
+
+/* ============================================================
+   6 bis. Deux interfaces : pas à pas, ou tous les réglages
+   Les deux pilotent les mêmes champs — le panneau reste la
+   source de vérité, le mode guidé ne fait que l'actionner.
+   ============================================================ */
+const CLE_VUE='relier:vue';
+let pasCourant=1;
+
+function vue(v){
+  document.body.dataset.vue=v;
+  if(v!=='accueil'){try{localStorage.setItem(CLE_VUE,v)}catch(e){}}
+  $('btnBascule').textContent=v==='guide'?'Interface complète':'Pas à pas';
+  if(v==='guide')allerA(pasCourant);else delete document.body.dataset.pas;
+  window.scrollTo({top:0,behavior:'instant' in window?'instant':'auto'});
+}
+function allerA(p){
+  pasCourant=Math.max(1,Math.min(4,p));
+  document.body.dataset.pas=pasCourant;
+  [...$('fil').children].forEach(li=>{
+    const n=+li.dataset.p;
+    li.setAttribute('aria-current',n===pasCourant?'step':'false');
+    li.classList.toggle('fait',n<pasCourant);
+  });
+  $('gRetour').disabled=pasCourant===1;
+  $('gSuivant').hidden=pasCourant===4;
+  majGuide();
+}
+/* Les commandes du mode guidé, remplies depuis l'état courant. */
+function majGuide(){
+  if(!$('typesG'))return;
+  const t=$('type').value,niv=$('niveau').value;
+  $('typesG').innerHTML=Object.entries(TYPES)
+    .map(([k,v])=>`<button data-t="${k}" aria-pressed="${k===t}">${v.nom}</button>`).join('');
+  $('niveauxG').innerHTML=[1,2,3,4,5].map(n=>
+    `<button data-l="${n}" aria-pressed="${String(n)===niv}">${n}</button>`).join('');
+  const a=+$('rgMin').value,b=+$('rgMax').value;
+  $('gMin').value=a;$('gMax').value=b;
+  $('intervallesG').innerHTML=[[1,10],[1,20],[1,50],[1,100],[1,200],[-20,20]].map(([x,y])=>
+    `<button data-a="${x}" data-b="${y}" aria-pressed="${x===a&&y===b}">${x} → ${y}</button>`).join('');
+  const n=+$('nPts').value,max=+$('nPts').max||200;
+  $('gN').max=max;$('gN').value=Math.min(n,max);$('gVN').textContent=n;
+  $('pointsG').innerHTML=[12,20,30,60,100,200].filter(v=>v<=max).map(v=>
+    `<button data-n="${v}" aria-pressed="${v===n}">${v}</button>`).join('');
+  if(exo)$('gTitre').textContent=`C'est prêt : ${exo.items.length} points, ${TYPES[exo.type].nom.toLowerCase()}.`;
+}
+
+/* ---------- Le lien de partage : tout l'état tient dans l'adresse ---------- */
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function encoderPts(pts){
+  let o='';
+  for(const p of pts){
+    const x=Math.max(0,Math.min(255,Math.round(p[0]*2.5))),y=Math.max(0,Math.min(255,Math.round(p[1]*2.5)));
+    o+=B64[x>>2]+B64[((x&3)<<4)|(y>>4)]+B64[(y&15)<<2];
+  }
+  return o;
+}
+function decoderPts(txt){
+  const pts=[];
+  for(let i=0;i+2<txt.length;i+=3){
+    const a=B64.indexOf(txt[i]),b=B64.indexOf(txt[i+1]),c=B64.indexOf(txt[i+2]);
+    if(a<0||b<0||c<0)continue;
+    pts.push([((a<<2)|(b>>4))/2.5,(((b&15)<<4)|(c>>2))/2.5]);
+  }
+  return pts;
+}
+function etatFiche(){
+  const d=exo.dessin;
+  const p={d:d.id,n:exo.pts.length,t:exo.type,l:exo.niveau,o:$('ordre').value,
+           a:Math.round(+$('rgMin').value),b:Math.round(+$('rgMax').value),g:graine};
+  if(!$('surprise').checked)p.v=1;
+  if(d.cat==='perso'){p.p=encoderPts(d.pts);p.nom=d.nom;if(d.info)p.i=d.info}
+  return p;
+}
+function lienPartage(){
+  const p=etatFiche();p.j=1;
+  return location.origin+location.pathname+'#'+
+    Object.entries(p).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+}
+function lireLien(){
+  const h=decodeURIComponent(location.hash).slice(1);
+  if(!h||h.indexOf('=')<0)return null;
+  const o={};
+  for(const m of location.hash.slice(1).split('&')){
+    const i=m.indexOf('=');if(i>0)o[m.slice(0,i)]=decodeURIComponent(m.slice(i+1));
+  }
+  return(o.d||o.p)?o:null;
+}
+function appliquerLien(o){
+  if(o.p){ // le dessin voyage avec le lien : il n'est pas encore dans la bibliothèque
+    const pts=decoderPts(o.p);
+    if(pts.length>=4){
+      const id='partage';
+      const i=DESSINS.findIndex(x=>x.id===id);if(i>=0)DESSINS.splice(i,1);
+      DESSINS.push({id,cat:'perso',nom:(o.nom||'Dessin partagé').slice(0,40),info:(o.i||'').slice(0,120),lisse:0,pts});
+      majListeDessins();construireGalerie();
+      o.d=id;
+      $('btnGarderPartage').hidden=false;
+    }
+  }
+  if(o.d&&DESSINS.some(x=>x.id===o.d))$('dessin').value=o.d;
+  if(o.t&&TYPES[o.t])$('type').value=o.t;
+  if(o.l)$('niveau').value=Math.max(1,Math.min(5,+o.l||2));
+  if(o.o==='desc'||o.o==='asc')$('ordre').value=o.o;
+  if(o.a!=null&&o.a!=='')$('rgMin').value=Math.round(+o.a)||0;
+  if(o.b!=null&&o.b!=='')$('rgMax').value=Math.round(+o.b)||1;
+  $('surprise').checked=!o.v;
+  graine=o.g||'1';
+  majBornesN();
+  if(o.n)majN(Math.max(4,Math.min(+o.n||20,+$('nPts').max)));
+  nouveau();
+  document.body.dataset.partage='1';
+  return o.j==='1'||o.j===1;
+}
+function partager(){
+  const url=lienPartage();
+  $('lien').value=url;
+  $('btnCopier').textContent='Copier le lien';
+  $('btnEnvoyer').hidden=!navigator.share;
+  $('partage').showModal();
+  $('lien').select();
+}
+async function copierLien(){
+  const c=$('lien');
+  c.select();c.setSelectionRange(0,99999);
+  let ok=false;
+  try{await navigator.clipboard.writeText(c.value);ok=true}
+  catch(e){try{ok=document.execCommand('copy')}catch(_){}}
+  $('btnCopier').textContent=ok?'Copié ✓':'Sélectionne puis copie';
+  setTimeout(()=>{$('btnCopier').textContent='Copier le lien'},2500);
+}
 
 /* ============================================================
    7. Atelier — dessiner, décalquer une image, coller un tracé
@@ -1114,7 +1439,7 @@ injecterPerso();
 majListeDessins();
 majN(20);
 
-$('btnNouveau').onclick=()=>{$('dessin').value='';majBornesN();nouveau()};
+$('btnNouveau').onclick=()=>{$('dessin').value='';graine=nouvelleGraine();delete document.body.dataset.partage;majBornesN();nouveau()};
 $('btnJouer').onclick=()=>jouer();
 $('btnIndice').onclick=indice;
 $('btnRecommencer').onclick=()=>{if(jeu)jouer();else afficher()};
@@ -1122,6 +1447,7 @@ $('btnSvg').onclick=()=>telecharger(`relier-${exo.dessin.id}-exercice.svg`,svgTe
 $('btnSvgSol').onclick=()=>telecharger(`relier-${exo.dessin.id}-solution.svg`,svgTexte('solution'));
 $('btnSvgCol').onclick=()=>telecharger(`relier-${exo.dessin.id}-colorier.svg`,svgTexte('colorier'));
 $('btnPdf').onclick=imprimer;
+$('btnPartager').onclick=partager;
 $('voirSolution').onchange=()=>{jeu=null;afficher()};
 $('surprise').onchange=()=>{if(!jeu)afficher();else redessiner()};
 $('rPt').oninput=()=>{$('vPt').textContent=fr($('rPt').value);redessiner()};
@@ -1176,11 +1502,66 @@ $('btnLireSvg').onclick=()=>{
     atelier.trace=[];dessinAtelier();
   });
 })();
+/* Accueil et mode guidé */
+$('btnAccueil').onclick=()=>vue('accueil');
+$('btnBascule').onclick=()=>vue(document.body.dataset.vue==='guide'?'expert':'guide');
+document.querySelectorAll('.grandchoix').forEach(b=>b.onclick=()=>vue(b.dataset.vers));
+$('fil').onclick=e=>{const li=e.target.closest('li');if(li)allerA(+li.dataset.p)};
+$('gRetour').onclick=()=>allerA(pasCourant-1);
+$('gSuivant').onclick=()=>allerA(pasCourant+1);
+$('typesG').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('type').value=b.dataset.t;nouveau()};
+$('niveauxG').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('niveau').value=b.dataset.l;nouveau()};
+$('intervallesG').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  $('rgMin').value=b.dataset.a;$('rgMax').value=b.dataset.b;nouveau()};
+['gMin','gMax'].forEach((id,i)=>$(id).onchange=()=>{$(i?'rgMax':'rgMin').value=$(id).value;nouveau()});
+$('pointsG').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  majN(Math.min(+b.dataset.n,+$('nPts').max));nouveau()};
+$('gN').oninput=()=>{majN(+$('gN').value);$('gVN').textContent=$('gN').value};
+$('gN').onchange=nouveau;
+$('gJouer').onclick=()=>{jouer();$('zone').scrollIntoView({behavior:'smooth',block:'center'})};
+$('gImprimer').onclick=imprimer;
+$('gPartager').onclick=partager;
+$('gAutres').onclick=()=>{graine=nouvelleGraine();delete document.body.dataset.partage;nouveau()};
+$('gAtelier').onclick=ouvrirAtelier;
+
+/* Partage */
+$('btnCopier').onclick=copierLien;
+$('btnEnvoyer').onclick=()=>{
+  navigator.share({title:'Points à relier',text:'Une fiche de points à relier',url:$('lien').value}).catch(()=>{});
+};
+$('btnGarderPartage').onclick=()=>{
+  const d=DESSINS.find(x=>x.id==='partage');if(!d)return;
+  const liste=chargerPerso(),id='p'+Date.now().toString(36);
+  liste.push({id,nom:d.nom,info:d.info||'',lisse:0,pts:d.pts.map(p=>[+p[0].toFixed(1),+p[1].toFixed(1)])});
+  if(!ecrirePerso(liste)){message('La mémoire du navigateur est pleine.');return}
+  injecterPerso();filtre='perso';construireGalerie();
+  $('btnGarderPartage').hidden=true;
+  message(`« ${d.nom} » est rangé dans Mes dessins.`);
+};
+
 $('btnExportPerso').onclick=exporterPerso;
 $('btnImportPerso').onclick=()=>$('fichierJson').click();
 $('fichierJson').onchange=e=>{const f=e.target.files[0];if(f)importerPerso(f);e.target.value=''};
 
-majBornesN();construireGalerie();nouveau();
+majBornesN();construireGalerie();
+
+/* Un lien partagé passe avant tout : il rouvre la fiche telle quelle. */
+const venu=lireLien();
+if(venu){
+  const jouerTout_de_suite=appliquerLien(venu);
+  history.replaceState(null,'',location.pathname+location.search);
+  let depart='guide';
+  try{depart=localStorage.getItem(CLE_VUE)||'guide'}catch(e){}
+  vue(depart);
+  if(depart==='guide')allerA(4);
+  if(jouerTout_de_suite)jouer();
+}else{
+  graine=nouvelleGraine();
+  nouveau();
+  let retenu=null;
+  try{retenu=localStorage.getItem(CLE_VUE)}catch(e){}
+  vue(retenu==='expert'||retenu==='guide'?retenu:'accueil');
+}
 </script>
 </body>
 </html>
