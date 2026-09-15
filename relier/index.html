@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1f3a8a">
-<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : onze types de calculs, cinq niveaux, trente-sept dessins, à jouer à l'écran ou à imprimer avec sa solution.">
+<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : intervalle et nombre de points au choix (jusqu'à 200), quatre-vingt-seize dessins dont soixante animaux, et un atelier pour créer les siens à partir d'une image.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='9' fill='%231f3a8a'/%3E%3Cpolyline points='8,34 14,12 24,30 30,8 38,26' fill='none' stroke='%23ffd84d' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='34' r='3.2'/%3E%3Ccircle cx='14' cy='12' r='3.2'/%3E%3Ccircle cx='24' cy='30' r='3.2'/%3E%3Ccircle cx='30' cy='8' r='3.2'/%3E%3Ccircle cx='38' cy='26' r='3.2'/%3E%3C/g%3E%3C/svg%3E">
 <title>Points à relier — calculs</title>
 <style>
@@ -19,12 +19,12 @@ header svg{width:44px;height:44px;flex:none}
 header h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.2px}
 header p{margin:0;font-size:13px;opacity:.8}
 main{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
-.panneau{background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(31,58,138,.12);position:sticky;top:12px}
+.panneau{background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(31,58,138,.12);position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
 .panneau h3{margin:4px 0 0;font-size:12px;font-weight:600;color:var(--encre2);letter-spacing:.4px;text-transform:uppercase}
 label.champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--gris)}
-select,input[type=range]{font:inherit;width:100%}
-select{padding:8px 9px;border:1px solid var(--bord);border-radius:9px;background:#fff;color:var(--texte)}
-input[type=range]{accent-color:var(--encre);margin:2px 0}
+select,input[type=range],input[type=number],input[type=text]{font:inherit;width:100%}
+select,input[type=number],input[type=text]{padding:8px 9px;border:1px solid var(--bord);border-radius:9px;background:#fff;color:var(--texte)}
+input[type=range]{accent-color:var(--encre);margin:2px 0;padding:0}
 .deux{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .reglage{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--gris)}
 .reglage span{display:flex;justify-content:space-between}.reglage b{color:var(--texte);font-weight:600}
@@ -35,14 +35,17 @@ button.encre{background:var(--encre);color:#fff;border-color:var(--encre)}button
 button.vert{background:var(--vert);color:#fff;border-color:var(--vert)}button.vert:hover{background:#256a42}
 .boutons{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .boutons .large{grid-column:1/-1}
-.coche{display:flex;align-items:center;gap:8px;font-size:14px}.coche input{width:17px;height:17px;margin:0;accent-color:var(--encre)}
+.coche{display:flex;align-items:center;gap:8px;font-size:14px}.coche input{width:17px;height:17px;margin:0;accent-color:var(--encre);flex:none}
+.alerte{background:#fff6d8;border:1px solid #e8d48a;border-radius:10px;padding:8px 10px;font-size:13px;color:#6b5300}
+.alerte:empty{display:none}
+.note{margin:18px 0 0;font-size:12px;color:var(--gris);align-self:end}
 .feuille{background:var(--papier);border-radius:14px;padding:18px 20px 14px;box-shadow:0 2px 10px rgba(31,58,138,.14),0 0 0 1px var(--bord);
   background-image:linear-gradient(var(--grille) 1px,transparent 1px),linear-gradient(90deg,var(--grille) 1px,transparent 1px);background-size:22px 22px}
 .feuille .entete{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .feuille h2{margin:0;font-size:20px;color:var(--encre)}
 .badge{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--surligneur);color:#3a2d00;font-weight:600;white-space:nowrap}
 .feuille .consigne{margin:6px 0 10px;color:var(--texte);max-width:70ch}
-.feuille svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.feuille svg{width:100%;height:auto;max-height:72vh;display:block;margin:0 auto;touch-action:manipulation}
 .etat{margin-top:10px;min-height:26px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:15px}
 .etat .info{color:var(--gris)}.etat .ok{color:var(--vert);font-weight:600}.etat .erreur{color:var(--rouge);font-weight:600}
 svg .point{cursor:pointer}svg .bon{fill:var(--vert)}svg .faux{fill:var(--rouge)}
@@ -58,42 +61,64 @@ svg .suivant{fill:var(--surligneur);stroke:var(--encre);stroke-width:.8}
 .onglets button{padding:6px 12px;border-radius:99px;font-size:13px}
 .onglets button[aria-pressed=true]{background:var(--encre);color:#fff;border-color:var(--encre)}
 .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-.carte{border:2px solid var(--bord);border-radius:12px;padding:8px 8px 6px;background:#fff;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:4px;transition:transform .12s,border-color .12s}
+.carte{position:relative;border:2px solid var(--bord);border-radius:12px;padding:8px 8px 6px;background:#fff;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:4px;transition:transform .12s,border-color .12s}
 .carte:hover{transform:translateY(-2px);border-color:var(--encre2)}
 .carte[aria-pressed=true]{border-color:var(--encre);background:#f4f7ff;box-shadow:0 0 0 3px var(--surligneur)}
 .carte svg{width:100%;height:auto;display:block}
 .carte .nom{font-weight:600;font-size:14px;color:var(--encre)}
 .carte .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--gris)}
-.niv{letter-spacing:1px;color:var(--encre2)}
+.jeter{position:absolute;top:4px;right:4px;padding:2px 7px;font-size:13px;line-height:1.1;border-radius:7px;color:var(--rouge)}
+/* Atelier */
+dialog{border:none;border-radius:16px;padding:0;max-width:760px;width:calc(100% - 24px);box-shadow:0 12px 40px rgba(20,30,70,.3)}
+dialog::backdrop{background:rgba(20,30,70,.45)}
+.modale{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.modale h2{margin:0;font-size:19px;color:var(--encre)}
+.modale p.aide{margin:0;font-size:13px;color:var(--gris)}
+.atelier{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;align-items:start}
+.scene{border:1px solid var(--bord);border-radius:12px;background:var(--papier);aspect-ratio:1;position:relative;overflow:hidden;touch-action:none}
+.scene svg,.scene canvas{position:absolute;inset:0;width:100%;height:100%}
+.cote{display:flex;flex-direction:column;gap:9px}
+.fin{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 @media(max-width:820px){
   main{grid-template-columns:1fr;padding:10px;gap:12px}
-  .panneau{position:static}
+  .panneau{position:static;max-height:none}
   header{padding:10px 14px}header h1{font-size:18px}header p{display:none}
   .feuille{padding:12px}
   .grille{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}
+  .atelier{grid-template-columns:1fr}
 }
 #impression{display:none}
 @media print{
-  @page{margin:12mm}
-  body>header,main{display:none}body{background:#fff}
+  @page{size:A4 portrait;margin:12mm}
+  body>header,main{display:none}html,body{background:#fff}
   #impression{display:block}
   .page{page-break-after:always;text-align:center;font-family:system-ui,sans-serif}
   .page:last-child{page-break-after:auto}
   .page h2{margin:0 0 2px;font-size:22px;color:#1f3a8a}
   .page p{margin:0 0 4px;font-size:15px}
-  .page svg{width:100%;max-height:78vh}
+  .page svg{width:100%;height:auto;max-height:64vh}
   .pied{display:flex;justify-content:space-between;font-size:14px;margin-top:14px}
+  .lignes{text-align:left;font-size:15px;margin-top:10px;line-height:2.1}
 }
 </style>
 </head>
 <body>
 <header>
   <svg viewBox="0 0 44 44" aria-hidden="true"><polyline points="8,34 14,12 24,30 30,8 38,26" fill="none" stroke="#ffd84d" stroke-width="2.5" stroke-linejoin="round"/><g fill="#fff"><circle cx="8" cy="34" r="3.2"/><circle cx="14" cy="12" r="3.2"/><circle cx="24" cy="30" r="3.2"/><circle cx="30" cy="8" r="3.2"/><circle cx="38" cy="26" r="3.2"/></g></svg>
-  <div><h1>Points à relier</h1><p>Calcule, relie dans l'ordre, découvre le dessin.</p></div>
+  <div><h1>Points à relier</h1><p>Calcule, relie dans l'ordre, découvre l'animal — puis colorie-le.</p></div>
 </header>
 
 <main>
   <aside class="panneau">
+    <h3>Dessin</h3>
+    <label class="champ">Sujet<select id="dessin"></select></label>
+    <label class="reglage"><span>Nombre de points <b id="vN">20</b></span>
+      <input type="range" id="rN" min="4" max="200" step="1" value="20"></label>
+    <div class="deux">
+      <label class="champ">Exactement<input type="number" id="nPts" min="4" max="200" step="1" value="20"></label>
+      <p class="note" id="conseil"></p>
+    </div>
+
     <h3>Calculs</h3>
     <label class="champ">Type de calcul<select id="type"></select></label>
     <div class="deux">
@@ -105,23 +130,39 @@ svg .suivant{fill:var(--surligneur);stroke:var(--encre);stroke-width:.8}
       <label class="champ">Ordre
         <select id="ordre"><option value="asc">croissant</option><option value="desc">décroissant</option></select></label>
     </div>
-    <label class="champ">Dessin<select id="dessin"><option value="">Au hasard (selon le niveau)</option></select></label>
+    <label class="champ">Résultats — de … à …</label>
+    <div class="deux">
+      <input type="number" id="rgMin" step="1" value="1" aria-label="résultat minimum">
+      <input type="number" id="rgMax" step="1" value="200" aria-label="résultat maximum">
+    </div>
+    <div class="alerte" id="alerte"></div>
+
     <h3>Apparence</h3>
     <div class="deux">
-      <label class="reglage"><span>Points <b id="vPt">1,7</b></span><input type="range" id="rPt" min="0.8" max="4" step="0.1" value="1.7"></label>
+      <label class="reglage"><span>Points <b id="vPt">1,7</b></span><input type="range" id="rPt" min="0.3" max="4" step="0.05" value="1.7"></label>
       <label class="reglage"><span>Texte <b id="vTx">100 %</b></span><input type="range" id="rTx" min="60" max="150" step="5" value="100"></label>
     </div>
     <label class="coche"><input type="checkbox" id="voirSolution"> Afficher le tracé (solution)</label>
+    <label class="coche"><input type="checkbox" id="surprise" checked> Cacher le nom (surprise)</label>
     <div class="boutons">
       <button class="encre" id="btnNouveau">Nouveau</button>
       <button class="vert" id="btnJouer">Jouer</button>
       <button id="btnIndice">Indice</button>
       <button id="btnRecommencer">Recommencer</button>
     </div>
-    <h3>Exporter</h3>
+
+    <h3>Atelier</h3>
+    <div class="boutons">
+      <button class="large encre" id="btnAtelier">Créer un dessin…</button>
+      <button id="btnExportPerso">Exporter</button>
+      <button id="btnImportPerso">Importer</button>
+    </div>
+
+    <h3>Exporter la fiche</h3>
     <div class="boutons">
       <button id="btnSvg">SVG exercice</button>
       <button id="btnSvgSol">SVG solution</button>
+      <button class="large" id="btnSvgCol">SVG à colorier</button>
       <button class="large" id="btnPdf">Imprimer / PDF (exercice + solution)</button>
     </div>
   </aside>
@@ -142,17 +183,65 @@ svg .suivant{fill:var(--surligneur);stroke:var(--encre);stroke-width:.8}
   </section>
 </main>
 
+<dialog id="atelier">
+  <form method="dialog" class="modale">
+    <h2>Atelier — fabriquer un dessin à relier</h2>
+    <div class="onglets" id="ongletsAtelier">
+      <button type="button" data-mode="dessin" aria-pressed="true">Dessiner</button>
+      <button type="button" data-mode="image" aria-pressed="false">À partir d'une image</button>
+      <button type="button" data-mode="svg" aria-pressed="false">Coller un tracé SVG</button>
+    </div>
+    <p class="aide" id="aideAtelier"></p>
+    <div class="atelier">
+      <div class="scene" id="scene">
+        <canvas id="toile" width="400" height="400"></canvas>
+        <svg id="apercu" viewBox="0 0 100 100"></svg>
+      </div>
+      <div class="cote">
+        <div id="outilsDessin">
+          <div class="boutons"><button type="button" class="large" id="btnEffacer">Tout effacer</button></div>
+        </div>
+        <div id="outilsImage" hidden>
+          <label class="champ">Image<input type="file" id="fichierImage" accept="image/*"></label>
+          <label class="reglage"><span>Seuil <b id="vSeuil">50 %</b></span><input type="range" id="rSeuil" min="5" max="95" step="1" value="50"></label>
+          <label class="coche"><input type="checkbox" id="inverse"> Sujet clair sur fond sombre</label>
+        </div>
+        <div id="outilsSvg" hidden>
+          <label class="champ">Tracé ou &lt;svg&gt; entier
+            <textarea id="texteSvg" rows="5" style="font:12px ui-monospace,monospace;width:100%;border:1px solid var(--bord);border-radius:9px;padding:8px"></textarea></label>
+          <div class="boutons"><button type="button" class="large" id="btnLireSvg">Lire le tracé</button></div>
+        </div>
+        <label class="champ">Nom<input type="text" id="nomPerso" placeholder="Baleine bleue" maxlength="40"></label>
+        <label class="champ">À savoir (facultatif)<input type="text" id="infoPerso" placeholder="Le plus grand animal du monde." maxlength="120"></label>
+        <label class="reglage"><span>Aperçu à <b id="vNa">30</b> points</span><input type="range" id="rNa" min="4" max="200" step="1" value="30"></label>
+        <div class="alerte" id="alerteAtelier"></div>
+      </div>
+    </div>
+    <div class="fin">
+      <button value="annuler">Annuler</button>
+      <button type="button" class="encre" id="btnGarder">Ajouter à mes dessins</button>
+    </div>
+  </form>
+</dialog>
+<input type="file" id="fichierJson" accept="application/json" hidden>
+
 <div id="impression"></div>
 
 <script>
-/* ---------- Dessins (coordonnées 0–100, sens de parcours = ordre des points) ---------- */
+/* ============================================================
+   1. Les dessins — un contour, pas une liste de points figée.
+   Chaque dessin est un contour en coordonnées 0–100 (l'ordre du
+   tableau est le sens du tracé) ; le nombre de points affiché est
+   choisi par l'utilisateur et recalculé sur ce contour.
+   ============================================================ */
 function etoile(k,R,r){const p=[];for(let i=0;i<2*k;i++){const a=-Math.PI/2+i*Math.PI/k,d=i%2?r:R;p.push([50+d*Math.cos(a),50+d*Math.sin(a)])}return p}
-function cadre(p){const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-  const s=90/Math.max(x1-x0,y1-y0);return p.map(([x,y])=>[5+(x-x0)*s+(90-(x1-x0)*s)/2,95-(y-y0)*s-(90-(y1-y0)*s)/2])}
-function coeur(n){const p=[];for(let i=0;i<n;i++){const t=i/n*2*Math.PI;p.push([16*Math.sin(t)**3,13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)])}return cadre(p)}
+function coeur(n){const p=[];for(let i=0;i<n;i++){const t=i/n*2*Math.PI;p.push([16*Math.sin(t)**3,-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))])}return p}
 
-const CATEGORIES={formes:'Formes',animaux:'Animaux',nature:'Nature',objets:'Objets',vehicules:'Véhicules'};
+const CATEGORIES={animaux:'Animaux',oiseaux:'Oiseaux',mer:'Mer',bestioles:'Petites bêtes',
+  nature:'Nature',formes:'Formes',objets:'Objets',vehicules:'Véhicules',perso:'Mes dessins'};
+
 const DESSINS=[
+  /* — formes, objets, véhicules, nature — */
   {id:'losange',cat:'formes',nom:'Cerf-volant',pts:[[50,4],[80,30],[64,55],[50,96],[36,55],[20,30]]},
   {id:'eclair',cat:'formes',nom:'Éclair',pts:[[60,2],[25,52],[46,52],[36,98],[78,42],[56,42],[70,2]]},
   {id:'fleche',cat:'formes',nom:'Flèche',pts:[[10,38],[60,38],[60,18],[95,50],[60,82],[60,62],[10,62]]},
@@ -160,97 +249,327 @@ const DESSINS=[
   {id:'tasse',cat:'objets',nom:'Tasse',pts:[[16,28],[68,28],[68,40],[82,38],[90,50],[82,64],[68,62],[64,84],[22,84]]},
   {id:'maison',cat:'objets',nom:'Maison',pts:[[20,90],[20,50],[50,25],[80,50],[80,90],[60,90],[60,70],[40,70],[40,90]]},
   {id:'etoile5',cat:'formes',nom:'Étoile à 5 branches',pts:etoile(5,48,20)},
-  {id:'feuille',cat:'nature',nom:'Feuille',pts:[[50,4],[68,16],[84,34],[90,56],[82,78],[64,90],[52,86],[50,98],[46,86],[34,90],[16,78],[8,56],[14,34],[30,16]]},
+  {id:'feuille',cat:'nature',nom:'Feuille',lisse:1,pts:[[50,4],[68,16],[84,34],[90,56],[82,78],[64,90],[52,86],[50,98],[46,86],[34,90],[16,78],[8,56],[14,34],[30,16]]},
   {id:'bateau',cat:'vehicules',nom:'Bateau',pts:[[18,92],[5,72],[47,72],[47,18],[53,18],[53,25],[88,66],[53,66],[53,72],[95,72],[82,92]]},
-  {id:'poisson',cat:'animaux',nom:'Poisson',pts:[[4,26],[22,36],[40,26],[60,27],[76,38],[92,50],[76,62],[60,73],[40,74],[22,64],[4,74],[12,50]]},
   {id:'fantome',cat:'objets',nom:'Fantôme',pts:[[50,6],[70,12],[82,30],[84,90],[74,80],[64,92],[54,80],[44,92],[34,80],[24,92],[16,80],[18,30],[30,12]]},
-  {id:'bonhomme',cat:'nature',nom:'Bonhomme de neige',pts:[[50,8],[64,14],[68,28],[60,38],[76,50],[84,70],[76,90],[24,90],[16,70],[24,50],[40,38],[32,28],[36,14]]},
-  {id:'chat',cat:'animaux',nom:'Chat',pts:[[30,8],[40,22],[60,22],[70,8],[75,30],[68,42],[80,55],[85,75],[80,92],[20,92],[15,75],[20,55],[32,42],[25,30]]},
-  {id:'coeur',cat:'formes',nom:'Cœur',pts:coeur(14)},
+  {id:'bonhomme',cat:'nature',nom:'Bonhomme de neige',lisse:1,pts:[[50,8],[64,14],[68,28],[60,38],[76,50],[84,70],[76,90],[24,90],[16,70],[24,50],[40,38],[32,28],[36,14]]},
+  {id:'coeur',cat:'formes',nom:'Cœur',lisse:1,pts:coeur(14)},
   {id:'sapin',cat:'nature',nom:'Sapin',pts:[[50,5],[70,30],[60,30],[78,55],[65,55],[85,80],[57,80],[57,95],[43,95],[43,80],[15,80],[35,55],[22,55],[40,30],[30,30]]},
   {id:'fusee',cat:'vehicules',nom:'Fusée',pts:[[50,4],[60,18],[65,40],[65,68],[80,84],[80,92],[62,82],[56,92],[44,92],[38,82],[20,92],[20,84],[35,68],[35,40],[40,18]]},
-  {id:'champignon',cat:'nature',nom:'Champignon',pts:[[50,10],[70,14],[85,28],[88,45],[70,50],[62,50],[65,88],[58,95],[42,95],[35,88],[38,50],[30,50],[12,45],[15,28],[30,14]]},
-  {id:'baleine',cat:'animaux',nom:'Baleine',pts:[[6,44],[20,34],[42,28],[64,30],[80,38],[88,50],[86,62],[96,54],[98,78],[82,70],[70,76],[50,78],[30,74],[14,64],[4,56]]},
-  {id:'dauphin',cat:'animaux',nom:'Dauphin',pts:[[4,52],[14,42],[30,36],[44,34],[52,20],[58,36],[74,40],[86,46],[96,40],[94,58],[86,54],[74,62],[62,70],[52,72],[46,80],[40,70],[26,68],[12,62]]},
+  {id:'champignon',cat:'nature',nom:'Champignon',lisse:1,pts:[[50,10],[70,14],[85,28],[88,45],[70,50],[62,50],[65,88],[58,95],[42,95],[35,88],[38,50],[30,50],[12,45],[15,28],[30,14]]},
   {id:'etoile8',cat:'formes',nom:'Étoile à 8 branches',pts:etoile(8,48,30)},
   {id:'voiture',cat:'vehicules',nom:'Voiture',pts:[[6,72],[6,50],[24,50],[36,32],[66,32],[78,50],[94,50],[94,72],[80,72],[74,80],[64,80],[58,72],[42,72],[36,80],[26,80],[20,72]]},
   {id:'camion',cat:'vehicules',nom:'Camion',pts:[[4,72],[4,40],[40,40],[40,28],[74,28],[86,44],[96,48],[96,72],[84,72],[78,80],[66,80],[60,72],[36,72],[30,80],[18,80],[12,72]]},
-  {id:'papillon',cat:'animaux',nom:'Papillon',pts:[[50,45],[35,18],[15,12],[6,30],[14,50],[6,68],[14,86],[32,84],[50,62],[68,84],[86,86],[94,68],[86,50],[94,30],[85,12],[65,18]]},
-  {id:'pomme',cat:'nature',nom:'Pomme',pts:[[50,18],[54,4],[62,2],[64,12],[80,16],[92,36],[88,62],[74,86],[58,94],[50,88],[42,94],[26,86],[12,62],[8,36],[20,16],[36,10]]},
+  {id:'pomme',cat:'nature',nom:'Pomme',lisse:1,pts:[[50,18],[54,4],[62,2],[64,12],[80,16],[92,36],[88,62],[74,86],[58,94],[50,88],[42,94],[26,86],[12,62],[8,36],[20,16],[36,10]]},
   {id:'cactus',cat:'nature',nom:'Cactus',pts:[[42,90],[42,50],[24,50],[22,28],[30,28],[32,42],[42,42],[42,14],[58,14],[58,34],[70,34],[72,18],[80,18],[78,44],[58,44],[58,90]]},
   {id:'cle',cat:'objets',nom:'Clé',pts:[[10,44],[24,32],[40,36],[46,44],[86,44],[92,50],[86,58],[80,52],[74,58],[68,52],[62,58],[56,52],[46,56],[40,64],[24,68],[10,56]]},
-  {id:'canard',cat:'animaux',nom:'Canard',pts:[[22,16],[36,12],[46,22],[44,38],[52,48],[72,44],[94,30],[92,52],[80,70],[54,76],[28,68],[12,56],[16,42],[24,38],[16,30],[4,26],[14,22]]},
-  {id:'lapin',cat:'animaux',nom:'Lapin',pts:[[30,4],[42,2],[47,30],[53,30],[58,2],[70,4],[64,34],[74,42],[78,58],[84,72],[90,84],[84,94],[16,94],[10,84],[16,72],[22,58],[26,42],[36,34]]},
   {id:'avion',cat:'vehicules',nom:'Avion',pts:[[50,4],[56,12],[56,36],[94,60],[94,68],[56,58],[56,80],[70,90],[70,95],[50,90],[30,95],[30,90],[44,80],[44,58],[6,68],[6,60],[44,36],[44,12]]},
   {id:'parapluie',cat:'objets',nom:'Parapluie',pts:[[50,6],[54,12],[92,44],[80,38],[70,44],[60,38],[54,44],[54,82],[50,90],[42,90],[38,82],[44,82],[46,86],[48,82],[48,44],[40,38],[30,44],[20,38],[8,44],[46,12]]},
   {id:'etoile10',cat:'formes',nom:'Étoile à 10 branches',pts:etoile(10,48,34)},
-  {id:'elephant',cat:'animaux',nom:'Éléphant',pts:[[24,36],[40,24],[62,22],[80,30],[92,46],[94,66],[86,68],[86,92],[74,92],[72,74],[60,74],[58,92],[46,92],[44,74],[32,74],[30,92],[18,92],[16,72],[10,84],[2,92],[4,80],[8,58],[12,44]]},
-  {id:'dino',cat:'animaux',nom:'Dinosaure',pts:[[4,22],[16,18],[22,26],[15,32],[24,46],[34,58],[48,54],[62,50],[78,56],[92,72],[98,80],[84,70],[80,80],[84,95],[72,95],[66,80],[56,82],[50,95],[38,95],[40,80],[28,72],[16,66],[10,46],[3,30]]},
   {id:'etoile12',cat:'formes',nom:'Étoile à 12 branches',pts:etoile(12,48,38)},
-  {id:'tortue',cat:'animaux',nom:'Tortue',pts:[[4,44],[12,36],[22,40],[26,48],[34,34],[48,24],[64,26],[78,36],[86,50],[88,62],[96,68],[98,78],[90,74],[82,84],[72,84],[68,72],[58,74],[50,72],[44,74],[34,72],[30,84],[20,84],[14,72],[12,58],[6,56]]},
-  {id:'grandcoeur',cat:'formes',nom:'Grand cœur',pts:coeur(26)},
+  {id:'grandcoeur',cat:'formes',nom:'Grand cœur',lisse:1,pts:coeur(26)},
   {id:'soleil',cat:'nature',nom:'Soleil',pts:etoile(16,48,38)},
+  /* — animaux d'origine — */
+  {id:'poisson',cat:'mer',nom:'Poisson',lisse:1,pts:[[4,26],[22,36],[40,26],[60,27],[76,38],[92,50],[76,62],[60,73],[40,74],[22,64],[4,74],[12,50]]},
+  {id:'chat',cat:'animaux',nom:'Chat',lisse:1,pts:[[30,8],[40,22],[60,22],[70,8],[75,30],[68,42],[80,55],[85,75],[80,92],[20,92],[15,75],[20,55],[32,42],[25,30]]},
+  {id:'baleine',cat:'mer',nom:'Baleine',lisse:1,pts:[[6,44],[20,34],[42,28],[64,30],[80,38],[88,50],[86,62],[96,54],[98,78],[82,70],[70,76],[50,78],[30,74],[14,64],[4,56]]},
+  {id:'dauphin',cat:'mer',nom:'Dauphin',lisse:1,pts:[[4,52],[14,42],[30,36],[44,34],[52,20],[58,36],[74,40],[86,46],[96,40],[94,58],[86,54],[74,62],[62,70],[52,72],[46,80],[40,70],[26,68],[12,62]]},
+  {id:'papillon',cat:'bestioles',nom:'Papillon',lisse:1,pts:[[50,45],[35,18],[15,12],[6,30],[14,50],[6,68],[14,86],[32,84],[50,62],[68,84],[86,86],[94,68],[86,50],[94,30],[85,12],[65,18]]},
+  {id:'canard',cat:'oiseaux',nom:'Canard',lisse:1,pts:[[22,16],[36,12],[46,22],[44,38],[52,48],[72,44],[94,30],[92,52],[80,70],[54,76],[28,68],[12,56],[16,42],[24,38],[16,30],[4,26],[14,22]]},
+  {id:'lapin',cat:'animaux',nom:'Lapin',lisse:1,pts:[[30,4],[42,2],[47,30],[53,30],[58,2],[70,4],[64,34],[74,42],[78,58],[84,72],[90,84],[84,94],[16,94],[10,84],[16,72],[22,58],[26,42],[36,34]]},
+  {id:'elephant',cat:'animaux',nom:'Éléphant',lisse:1,pts:[[24,36],[40,24],[62,22],[80,30],[92,46],[94,66],[86,68],[86,92],[74,92],[72,74],[60,74],[58,92],[46,92],[44,74],[32,74],[30,92],[18,92],[16,72],[10,84],[2,92],[4,80],[8,58],[12,44]]},
+  {id:'dino',cat:'animaux',nom:'Dinosaure',lisse:1,pts:[[4,22],[16,18],[22,26],[15,32],[24,46],[34,58],[48,54],[62,50],[78,56],[92,72],[98,80],[84,70],[80,80],[84,95],[72,95],[66,80],[56,82],[50,95],[38,95],[40,80],[28,72],[16,66],[10,46],[3,30]]},
+  {id:'tortue',cat:'mer',nom:'Tortue',lisse:1,pts:[[4,44],[12,36],[22,40],[26,48],[34,34],[48,24],[64,26],[78,36],[86,50],[88,62],[96,68],[98,78],[90,74],[82,84],[72,84],[68,72],[58,74],[50,72],[44,74],[34,72],[30,84],[20,84],[14,72],[12,58],[6,56]]},
+  /* — les soixante nouveaux, à découvrir en reliant — */
+  {id:'pangolin',cat:'animaux',nom:"Pangolin",lisse:1,info:"Le seul mammifère couvert d'écailles ; il se roule en boule pour se protéger.",pts:[[4,58],[14,50],[22,46],[27,41],[34,40],[48,30],[66,27],[82,35],[92,47],[110,52],[128,60],[132,66],[116,66],[96,61],[86,66],[88,84],[78,84],[76,66],[60,70],[46,70],[36,68],[38,84],[28,84],[26,66],[18,62]]},
+  {id:'tatou',cat:'animaux',nom:"Tatou",lisse:1,info:"Sa carapace est faite de plaques osseuses ; certains se roulent en boule parfaite.",pts:[[6,56],[14,48],[20,44],[19,30],[27,42],[33,44],[44,26],[66,21],[86,29],[94,46],[110,58],[126,74],[116,70],[96,60],[86,64],[88,82],[80,82],[78,64],[58,66],[40,63],[42,82],[34,82],[32,62],[18,60]]},
+  {id:'okapi',cat:'animaux',nom:"Okapi",lisse:1,info:"Cousin de la girafe, découvert seulement en 1901 dans les forêts du Congo.",pts:[[6,30],[16,20],[20,6],[26,18],[33,6],[36,20],[46,26],[58,33],[86,33],[98,40],[105,56],[100,72],[100,94],[92,94],[90,70],[84,60],[72,58],[60,58],[58,94],[50,94],[52,58],[44,50],[36,32],[14,34]]},
+  {id:'fourmilier',cat:'animaux',nom:"Fourmilier",lisse:1,info:"Sa langue mesure 60 cm et attrape 30 000 fourmis par jour.",pts:[[2,74],[20,66],[36,58],[48,48],[58,40],[70,34],[86,32],[100,38],[110,28],[124,16],[138,14],[136,30],[128,46],[116,56],[106,60],[100,66],[102,88],[92,88],[90,66],[76,66],[62,64],[62,88],[52,88],[52,62],[44,62],[30,68],[16,76],[4,78]]},
+  {id:'ornithorynque',cat:'animaux',nom:"Ornithorynque",lisse:1,info:"Mammifère à bec de canard : il pond des œufs et détecte ses proies à l'électricité.",pts:[[2,52],[16,44],[28,44],[38,40],[56,36],[76,38],[96,44],[116,54],[130,66],[122,70],[104,64],[92,62],[86,72],[76,72],[78,60],[60,62],[42,62],[34,72],[24,70],[28,58],[16,58],[4,58]]},
+  {id:'tapir',cat:'animaux',nom:"Tapir",lisse:1,info:"Sa petite trompe lui sert à attraper les feuilles ; les bébés sont rayés.",pts:[[4,42],[12,32],[22,26],[28,18],[36,26],[52,26],[74,28],[92,36],[98,50],[102,44],[104,56],[96,62],[96,88],[88,88],[86,64],[70,62],[54,62],[44,62],[42,88],[34,88],[34,60],[22,54],[12,50],[6,50]]},
+  {id:'suricate',cat:'animaux',nom:"Suricate",lisse:1,info:"Il monte la garde debout pendant que le groupe cherche à manger.",pts:[[18,26],[24,14],[26,4],[32,10],[40,4],[48,2],[52,12],[50,22],[46,30],[52,44],[58,58],[60,72],[72,82],[86,92],[94,98],[86,98],[74,90],[62,84],[58,92],[48,94],[40,94],[34,90],[30,74],[28,58],[30,44],[34,30],[30,28]]},
+  {id:'fennec',cat:'animaux',nom:"Fennec",lisse:1,info:"Le plus petit renard du monde : ses grandes oreilles évacuent la chaleur du désert.",pts:[[16,44],[10,16],[22,26],[34,30],[46,28],[56,20],[54,4],[66,26],[74,34],[86,42],[96,54],[92,66],[94,88],[86,88],[84,66],[70,66],[54,68],[44,68],[42,88],[34,88],[34,66],[24,60],[18,54]]},
+  {id:'lemurien',cat:'animaux',nom:"Lémurien",lisse:1,info:"Le maki catta ne vit qu'à Madagascar ; sa queue annelée fait sa taille.",pts:[[12,16],[8,2],[18,10],[26,4],[32,6],[38,0],[42,14],[40,26],[50,38],[56,56],[70,66],[86,62],[96,50],[98,58],[88,72],[72,80],[58,84],[46,94],[32,92],[22,84],[18,68],[16,52],[18,38],[14,28]]},
+  {id:'capybara',cat:'animaux',nom:"Capybara",lisse:1,info:"Le plus gros rongeur du monde : il vit dans l'eau et pèse 60 kg.",pts:[[6,44],[14,34],[24,28],[26,20],[32,28],[48,26],[70,28],[88,36],[94,50],[96,84],[88,84],[86,58],[68,60],[50,60],[40,58],[38,84],[30,84],[30,56],[18,52],[8,52]]},
+  {id:'wombat',cat:'animaux',nom:"Wombat",lisse:1,info:"Il creuse des terriers de 20 m et ses crottes sont… cubiques.",pts:[[8,50],[14,38],[22,32],[24,22],[32,30],[48,26],[70,28],[86,34],[94,46],[96,60],[92,80],[84,80],[82,62],[64,64],[46,64],[38,62],[36,80],[28,80],[28,60],[16,58],[8,58]]},
+  {id:'echidne',cat:'animaux',nom:"Échidné",lisse:1,info:"Couvert de piquants, il pond des œufs comme l'ornithorynque.",pts:[[4,66],[18,58],[26,50],[24,38],[34,46],[38,34],[46,44],[52,30],[60,42],[70,30],[76,44],[86,36],[90,50],[100,46],[100,60],[108,60],[100,70],[94,78],[84,76],[70,78],[52,78],[36,76],[22,74],[8,72]]},
+  {id:'ratel',cat:'animaux',nom:"Ratel",lisse:1,info:"Le blaireau à miel : réputé le plus intrépide des animaux.",pts:[[6,54],[16,46],[24,42],[26,34],[34,42],[50,38],[72,38],[88,44],[96,54],[112,62],[122,72],[112,72],[96,64],[88,66],[90,84],[82,84],[80,66],[62,68],[44,68],[40,84],[32,84],[32,66],[20,62],[8,62]]},
+  {id:'binturong',cat:'animaux',nom:"Binturong",lisse:1,info:"Ce « chat-ours » d'Asie sent la barbe à papa et sa queue sert de cinquième main.",pts:[[6,46],[14,36],[22,32],[22,22],[30,30],[46,28],[68,30],[86,36],[96,46],[112,44],[124,54],[122,68],[110,70],[104,60],[94,58],[90,80],[82,80],[80,60],[62,62],[44,62],[40,80],[32,80],[32,58],[18,54],[8,54]]},
+  {id:'coati',cat:'animaux',nom:"Coati",lisse:1,info:"Cousin du raton laveur, il fouille le sol avec son museau mobile, queue dressée.",pts:[[4,54],[16,46],[26,40],[30,32],[38,40],[54,38],[70,40],[80,34],[82,18],[88,4],[96,8],[92,22],[90,40],[92,56],[86,70],[86,88],[78,88],[76,70],[60,70],[46,70],[42,88],[34,88],[34,68],[22,62],[8,60]]},
+  {id:'narval',cat:'mer',nom:"Narval",lisse:1,info:"Sa « corne » est en fait une dent qui pousse tout droit, longue de 3 m.",pts:[[2,44],[30,50],[42,42],[58,38],[78,38],[98,42],[116,50],[126,36],[136,54],[126,68],[114,56],[96,60],[76,64],[58,64],[52,64],[58,76],[46,74],[44,62],[34,58],[32,52]]},
+  {id:'lamantin',cat:'mer',nom:"Lamantin",lisse:1,info:"Ce gros herbivore paisible brise 50 kg d'herbes d'eau par jour.",pts:[[10,44],[22,36],[38,32],[58,32],[78,36],[96,44],[112,44],[124,54],[128,66],[118,76],[104,72],[86,78],[66,80],[48,78],[36,74],[36,88],[26,86],[26,72],[16,62],[10,54]]},
+  {id:'raie',cat:'mer',nom:"Raie manta",lisse:1,info:"Elle « vole » sous l'eau avec 7 m d'envergure et se nourrit de plancton.",pts:[[2,40],[24,30],[40,26],[44,16],[50,12],[52,22],[58,22],[60,12],[66,16],[70,26],[86,30],[98,42],[86,52],[72,58],[62,64],[58,60],[58,80],[60,98],[54,98],[52,80],[50,62],[42,66],[30,58],[16,52]]},
+  {id:'poulpe',cat:'mer',nom:"Poulpe",lisse:1,info:"Trois cœurs, un sang bleu, et il change de couleur en une seconde.",pts:[[18,36],[20,20],[34,6],[50,2],[66,6],[80,20],[82,36],[94,46],[88,58],[96,74],[86,72],[80,56],[78,64],[82,84],[72,80],[70,60],[66,70],[64,92],[56,88],[58,64],[50,72],[44,92],[38,86],[44,62],[36,68],[26,86],[20,80],[30,58],[22,60],[10,72],[6,62],[16,48]]},
+  {id:'meduse',cat:'mer',nom:"Méduse",lisse:1,info:"Sans cerveau ni squelette : elle est faite de 95 % d'eau.",pts:[[8,44],[12,24],[28,8],[50,4],[72,8],[88,24],[92,44],[84,50],[86,68],[80,90],[72,96],[72,84],[78,66],[76,48],[68,44],[66,62],[60,86],[52,94],[52,80],[58,60],[56,46],[48,50],[44,66],[38,90],[30,94],[32,80],[38,62],[36,46],[28,50],[24,68],[18,88],[12,92],[14,78],[20,60],[18,46]]},
+  {id:'crabe',cat:'mer',nom:"Crabe",lisse:1,info:"Il marche de côté et ses yeux sont montés sur deux petites tiges.",pts:[[28,38],[34,26],[40,24],[42,34],[58,34],[60,24],[66,26],[72,38],[82,28],[92,18],[96,26],[90,32],[96,38],[88,44],[78,40],[86,50],[94,58],[88,62],[80,52],[84,64],[90,74],[84,78],[76,66],[78,72],[80,84],[74,86],[70,68],[60,64],[50,66],[40,64],[30,68],[26,84],[20,86],[22,72],[24,66],[16,76],[10,74],[16,64],[20,52],[12,60],[6,58],[14,50],[22,40],[12,44],[4,38],[10,32],[4,24],[8,18],[18,28]]},
+  {id:'hippocampe',cat:'mer',nom:"Hippocampe",lisse:1,info:"Chez lui, c'est le mâle qui porte les œufs et met bas.",pts:[[4,26],[22,20],[30,12],[34,2],[40,10],[46,4],[48,14],[54,26],[60,40],[64,58],[60,74],[50,86],[36,92],[26,84],[28,74],[38,72],[36,80],[32,82],[34,86],[42,86],[50,80],[52,68],[46,56],[42,42],[34,32],[20,30]]},
+  {id:'requinmarteau',cat:'mer',nom:"Requin-marteau",lisse:1,info:"Sa tête en T écarte ses yeux : il voit presque tout autour de lui.",pts:[[14,8],[16,2],[30,0],[44,4],[56,4],[70,0],[84,2],[86,8],[78,14],[64,18],[60,30],[86,40],[78,48],[62,44],[60,60],[56,76],[62,86],[66,98],[52,84],[48,98],[44,86],[42,76],[40,60],[38,44],[22,48],[14,40],[40,30],[36,18],[22,14]]},
+  {id:'poissonlune',cat:'mer',nom:"Poisson-lune",lisse:1,info:"Une tête qui nage : 1 000 kg pour un corps sans vraie queue.",pts:[[6,44],[12,30],[22,18],[36,10],[44,4],[48,18],[56,8],[62,2],[66,14],[72,26],[76,42],[84,46],[88,52],[80,58],[74,66],[68,82],[62,94],[56,82],[48,96],[42,86],[34,88],[24,78],[14,64],[8,54]]},
+  {id:'seiche',cat:'mer',nom:"Seiche",lisse:1,info:"Elle parle par vagues de couleurs sur sa peau et crache de l'encre.",pts:[[50,2],[64,8],[74,24],[86,30],[88,50],[84,66],[78,60],[76,66],[68,74],[72,80],[62,78],[64,90],[56,84],[54,94],[48,84],[44,94],[40,84],[32,90],[34,78],[24,80],[28,74],[20,62],[14,66],[10,50],[12,30],[22,24],[26,10],[36,4]]},
+  {id:'etoiledemer',cat:'mer',nom:"Étoile de mer",lisse:2,info:"Si elle perd un bras, il repousse — et parfois refait une étoile entière.",pts:[[50,2],[58,26],[62,34],[96,34],[70,52],[66,60],[78,94],[50,74],[44,74],[22,94],[34,60],[30,52],[4,34],[38,34],[42,26]]},
+  {id:'murene',cat:'mer',nom:"Murène",lisse:1,info:"Elle a une seconde mâchoire dans la gorge pour tirer ses proies.",pts:[[4,40],[16,32],[30,30],[46,36],[60,50],[74,66],[88,74],[98,70],[96,80],[84,86],[68,80],[52,66],[38,52],[26,44],[14,46],[8,52],[6,60],[12,66],[6,68],[2,58],[2,48]]},
+  {id:'toucan',cat:'oiseaux',nom:"Toucan",lisse:1,info:"Son bec énorme est creux et léger : il lui sert de radiateur.",pts:[[2,26],[18,18],[34,12],[44,10],[52,14],[60,26],[70,44],[78,64],[88,78],[96,90],[86,90],[76,76],[68,84],[56,84],[52,92],[44,94],[46,86],[38,90],[32,92],[34,84],[34,74],[30,58],[28,44],[34,38],[22,36],[10,32]]},
+  {id:'flamant',cat:'oiseaux',nom:"Flamant rose",lisse:1,info:"Il devient rose en mangeant des crevettes, et dort sur une patte.",pts:[[6,18],[14,8],[24,8],[30,16],[34,30],[36,46],[46,54],[60,52],[74,56],[84,66],[94,62],[96,70],[86,76],[74,80],[70,88],[68,98],[62,98],[64,88],[64,80],[56,78],[52,88],[48,96],[40,96],[44,86],[46,76],[40,66],[28,48],[26,30],[18,18],[8,22]]},
+  {id:'manchot',cat:'oiseaux',nom:"Manchot",lisse:1,info:"Il plonge à 500 m de profondeur et couve son œuf sur ses pieds.",pts:[[50,2],[62,8],[66,20],[74,22],[70,26],[68,34],[82,54],[86,74],[76,70],[74,84],[86,92],[88,96],[70,96],[56,94],[44,94],[30,96],[14,96],[16,92],[28,84],[26,70],[16,74],[20,54],[32,34],[34,20],[38,8]]},
+  {id:'macareux',cat:'oiseaux',nom:"Macareux",lisse:1,info:"Le « perroquet de mer » creuse son nid dans la falaise.",pts:[[6,26],[20,18],[30,14],[42,16],[50,26],[58,44],[64,64],[74,76],[66,80],[56,82],[52,92],[44,94],[46,84],[38,88],[30,90],[34,80],[26,68],[22,50],[22,34],[14,34]]},
+  {id:'hibou',cat:'oiseaux',nom:"Hibou",lisse:1,info:"Ses plumes étouffent le bruit : il vole sans qu'on l'entende.",pts:[[26,10],[34,16],[42,10],[50,6],[58,10],[66,16],[74,10],[72,22],[80,34],[82,54],[76,72],[66,84],[60,92],[66,96],[52,94],[48,96],[34,96],[40,92],[34,84],[24,72],[18,54],[20,34],[28,22]]},
+  {id:'colibri',cat:'oiseaux',nom:"Colibri",lisse:1,info:"Ses ailes battent 70 fois par seconde et il vole à reculons.",pts:[[2,30],[22,26],[30,20],[40,20],[48,26],[56,14],[72,6],[80,12],[66,24],[56,32],[66,36],[78,44],[92,44],[96,50],[84,52],[90,58],[78,56],[70,50],[58,52],[46,50],[36,44],[28,38],[24,32],[14,34]]},
+  {id:'cygne',cat:'oiseaux',nom:"Cygne",lisse:1,info:"Il garde le même partenaire toute sa vie et pèse jusqu'à 15 kg.",pts:[[8,20],[16,14],[24,12],[30,18],[34,32],[34,48],[48,44],[66,44],[82,52],[94,44],[96,52],[88,60],[76,68],[58,72],[40,72],[26,66],[22,54],[24,38],[22,24],[14,24]]},
+  {id:'autruche',cat:'oiseaux',nom:"Autruche",lisse:1,info:"Elle court à 70 km/h et pond le plus gros œuf du monde.",pts:[[6,12],[14,6],[22,8],[26,16],[34,32],[42,50],[56,52],[72,58],[82,72],[92,70],[90,80],[78,86],[74,94],[76,98],[66,98],[64,88],[58,84],[56,94],[58,98],[48,98],[48,86],[46,78],[40,64],[30,44],[24,28],[16,16],[8,16]]},
+  {id:'kiwi',cat:'oiseaux',nom:"Kiwi",lisse:1,info:"Cet oiseau de Nouvelle-Zélande ne vole pas et sent avec le bout de son bec.",pts:[[2,40],[20,44],[32,42],[44,34],[62,26],[80,32],[92,48],[94,66],[84,80],[74,86],[76,96],[68,96],[66,84],[56,84],[52,94],[44,94],[46,82],[36,76],[28,64],[24,52],[16,48]]},
+  {id:'heron',cat:'oiseaux',nom:"Héron",lisse:1,info:"Il reste immobile des heures avant de harponner un poisson.",pts:[[2,20],[18,14],[28,12],[34,18],[44,10],[38,20],[40,34],[44,50],[58,52],[74,56],[90,66],[96,76],[84,74],[72,72],[68,86],[70,98],[62,98],[62,84],[58,74],[52,86],[54,98],[46,98],[48,84],[44,72],[36,58],[34,42],[32,26],[22,20],[8,24]]},
+  {id:'pelican',cat:'oiseaux',nom:"Pélican",lisse:1,info:"Sa poche sous le bec contient trois seaux d'eau.",pts:[[2,22],[24,18],[44,16],[52,22],[56,34],[70,44],[86,58],[96,68],[86,74],[70,76],[54,78],[50,90],[42,92],[44,80],[36,86],[28,88],[32,76],[28,64],[26,54],[14,48],[4,32]]},
+  {id:'abeille',cat:'bestioles',nom:"Abeille",lisse:1,info:"Pour un pot de miel, la ruche visite quatre millions de fleurs.",pts:[[50,4],[58,8],[62,2],[66,4],[60,10],[64,16],[70,22],[86,18],[98,26],[94,38],[80,34],[72,36],[76,50],[74,70],[64,86],[50,92],[36,86],[26,70],[24,50],[28,36],[20,34],[6,38],[2,26],[14,18],[30,22],[36,16],[40,10],[34,4],[38,2],[42,8]]},
+  {id:'libellule',cat:'bestioles',nom:"Libellule",lisse:1,info:"Elle chasse en vol et attrape 95 % de ses proies.",pts:[[50,2],[58,8],[56,16],[74,10],[92,14],[96,22],[80,26],[62,24],[78,30],[94,38],[92,48],[76,44],[60,34],[56,50],[56,74],[54,94],[50,98],[46,94],[44,74],[44,50],[40,34],[24,44],[8,48],[6,38],[22,30],[38,24],[20,26],[4,22],[8,14],[26,10],[44,16],[42,8]]},
+  {id:'scorpion',cat:'bestioles',nom:"Scorpion",lisse:1,info:"Il brille en bleu sous une lampe à ultraviolets.",pts:[[2,44],[14,34],[24,42],[18,50],[28,54],[38,52],[50,48],[48,34],[42,24],[36,16],[30,10],[40,16],[50,24],[58,34],[64,46],[68,50],[78,54],[80,62],[68,68],[52,70],[38,68],[26,70],[14,76],[4,72],[12,62],[20,58]]},
+  {id:'araignee',cat:'bestioles',nom:"Araignée",lisse:1,info:"Sa soie est plus résistante que l'acier à poids égal.",pts:[[34,44],[20,26],[8,14],[14,26],[28,40],[26,44],[10,38],[2,32],[4,42],[20,50],[22,56],[6,60],[2,70],[12,66],[24,64],[28,70],[18,82],[14,94],[24,84],[34,74],[44,78],[56,78],[66,74],[76,84],[86,94],[76,82],[72,70],[78,64],[88,66],[98,70],[94,60],[78,56],[78,50],[96,42],[98,32],[90,38],[74,44],[72,40],[86,26],[92,14],[80,26],[66,44],[58,42],[50,38],[42,40]]},
+  {id:'escargot',cat:'bestioles',nom:"Escargot",lisse:1,info:"Il avance sur un tapis de bave et porte sa maison sur le dos.",pts:[[2,88],[10,80],[18,70],[24,58],[20,40],[25,38],[30,54],[36,38],[41,36],[38,56],[46,60],[48,46],[48,30],[56,18],[70,12],[84,16],[92,30],[92,46],[84,60],[72,70],[60,72],[66,84],[50,90],[30,90],[14,90]]},
+  {id:'lucane',cat:'bestioles',nom:"Lucane",lisse:1,info:"Ses « bois » de cerf sont en fait des mâchoires géantes.",pts:[[36,4],[42,16],[46,10],[48,18],[52,18],[54,10],[58,16],[64,4],[62,16],[56,24],[62,28],[60,36],[68,40],[72,52],[76,70],[70,86],[58,94],[42,94],[30,86],[24,70],[28,52],[32,40],[40,36],[38,28],[44,24]]},
+  {id:'mante',cat:'bestioles',nom:"Mante religieuse",lisse:1,info:"Sa tête pivote à 180° et ses pattes se replient comme des couteaux.",pts:[[10,10],[22,2],[30,10],[26,20],[34,30],[46,26],[58,20],[64,26],[52,32],[42,38],[46,44],[54,56],[68,66],[84,72],[94,84],[84,88],[70,80],[56,70],[48,80],[40,92],[38,80],[44,66],[36,62],[30,74],[22,86],[24,72],[30,56],[26,44],[20,30],[16,18]]},
+  {id:'gecko',cat:'bestioles',nom:"Gecko",lisse:1,info:"Des millions de poils sous ses doigts lui font escalader les vitres.",pts:[[50,2],[60,8],[62,18],[78,20],[92,12],[88,24],[74,30],[66,34],[64,46],[80,54],[92,66],[80,62],[66,58],[60,66],[58,80],[56,96],[50,98],[44,96],[42,80],[40,66],[34,58],[20,62],[8,66],[20,54],[36,46],[34,34],[26,30],[12,24],[8,12],[22,20],[38,18],[40,8]]},
+  {id:'grenouille',cat:'bestioles',nom:"Grenouille",lisse:1,info:"Elle boit par la peau et avale en clignant des yeux.",pts:[[50,4],[62,8],[68,18],[74,14],[78,22],[70,26],[86,32],[96,28],[90,38],[78,40],[82,54],[94,62],[98,78],[88,74],[84,86],[76,78],[72,64],[62,72],[50,74],[38,72],[28,64],[24,78],[12,86],[2,78],[6,62],[18,54],[18,40],[10,38],[4,28],[14,32],[22,26],[14,22],[20,14],[26,18],[32,8]]},
+  {id:'crocodile',cat:'bestioles',nom:"Crocodile",lisse:1,info:"Il change de dents toute sa vie : environ 3 000 au total.",pts:[[50,2],[56,6],[58,14],[60,22],[58,30],[74,32],[84,26],[76,38],[62,40],[64,52],[80,58],[88,52],[78,64],[64,66],[62,78],[58,90],[54,98],[46,98],[42,90],[38,78],[36,66],[22,64],[12,52],[20,58],[36,52],[36,40],[24,38],[16,26],[26,32],[40,30],[40,22],[42,14],[44,6]]},
+  {id:'cobra',cat:'bestioles',nom:"Cobra",lisse:1,info:"Il déploie son capuchon en dressant les côtes de son cou.",pts:[[46,2],[56,4],[58,12],[76,22],[86,42],[80,58],[66,52],[64,66],[74,78],[90,86],[96,94],[74,96],[50,94],[30,88],[20,80],[28,74],[44,82],[54,76],[50,64],[40,56],[26,58],[18,40],[28,20],[40,10]]},
+  {id:'herisson',cat:'animaux',nom:"Hérisson",lisse:1,info:"Il porte 6 000 piquants et se roule en boule au moindre danger.",pts:[[2,66],[12,58],[20,52],[24,38],[30,48],[36,34],[42,46],[50,32],[58,44],[66,32],[74,44],[82,36],[88,50],[94,60],[92,72],[80,78],[72,78],[74,88],[66,88],[64,78],[48,80],[36,80],[38,88],[30,88],[28,78],[18,74],[8,70]]},
+  {id:'chauvesouris',cat:'animaux',nom:"Chauve-souris",lisse:1,info:"Elle voit avec ses oreilles, en écoutant l'écho de ses cris.",pts:[[44,14],[46,22],[40,22],[28,16],[12,10],[2,18],[14,24],[4,34],[20,32],[10,44],[28,42],[22,54],[36,44],[40,56],[44,70],[50,76],[56,70],[60,56],[64,44],[78,54],[72,42],[90,44],[80,34],[96,32],[86,24],[98,18],[88,10],[72,16],[60,22],[54,22],[56,14]]},
+  {id:'renard',cat:'animaux',nom:"Renard",lisse:1,info:"Il entend une souris sous 30 cm de neige et plonge tête la première.",pts:[[2,46],[14,40],[22,34],[20,18],[30,30],[42,28],[44,12],[52,32],[62,38],[78,42],[90,36],[98,46],[96,62],[84,66],[74,60],[72,70],[74,86],[66,86],[64,70],[50,72],[38,70],[40,86],[32,86],[32,68],[26,58],[18,52],[8,50]]},
+  {id:'koala',cat:'animaux',nom:"Koala",lisse:1,info:"Il dort 20 heures par jour ; ses empreintes ressemblent aux nôtres.",pts:[[26,22],[16,12],[4,18],[2,34],[12,46],[24,44],[28,52],[20,64],[18,82],[28,94],[50,98],[72,94],[82,82],[80,64],[72,52],[76,44],[88,46],[98,34],[96,18],[84,12],[74,22],[66,12],[50,8],[34,12]]},
+  {id:'girafe',cat:'animaux',nom:"Girafe",lisse:1,info:"Sept vertèbres au cou, comme nous, mais chacune longue de 25 cm.",pts:[[4,14],[14,6],[18,0],[22,8],[26,2],[30,10],[34,18],[48,36],[60,54],[74,58],[86,66],[94,72],[92,84],[86,76],[82,72],[84,94],[76,94],[74,70],[62,70],[56,94],[48,94],[50,68],[44,58],[34,40],[26,24],[18,18],[8,18]]},
+  {id:'chameau',cat:'animaux',nom:"Chameau",lisse:1,info:"Ses bosses sont des réserves de graisse, pas d'eau.",pts:[[4,22],[12,14],[20,12],[24,20],[34,30],[44,18],[54,30],[64,18],[76,30],[86,42],[92,48],[90,58],[84,50],[82,54],[84,88],[76,88],[74,56],[60,58],[52,88],[44,88],[46,56],[38,46],[30,34],[26,24],[18,24]]},
+  {id:'phoque',cat:'mer',nom:"Phoque",lisse:1,info:"Il dort dans l'eau, une narine au-dessus de la surface.",pts:[[6,30],[16,22],[28,20],[44,24],[62,34],[78,48],[90,58],[98,50],[100,66],[96,76],[88,66],[74,72],[60,74],[64,88],[50,92],[46,78],[34,72],[20,58],[10,44]]},
+  {id:'orque',cat:'mer',nom:"Orque",lisse:1,info:"Chaque famille d'orques a son propre dialecte de sifflements.",pts:[[4,50],[18,42],[36,38],[52,36],[62,16],[74,34],[88,40],[98,46],[104,34],[112,52],[104,68],[96,56],[84,58],[66,62],[50,64],[40,72],[30,82],[36,68],[26,64],[12,58]]},
+  {id:'ours',cat:'animaux',nom:"Ours",lisse:1,info:"Il court à 50 km/h et sent une odeur à trois kilomètres.",pts:[[8,34],[14,22],[12,12],[24,18],[32,12],[36,24],[44,28],[60,26],[78,34],[90,50],[88,68],[82,84],[70,84],[68,68],[54,72],[42,74],[34,86],[24,84],[26,66],[20,54],[12,44]]},
 ];
-DESSINS.forEach(d=>{const n=d.pts.length;d.niveau=n<=8?1:n<=12?2:n<=16?3:n<=20?4:5});
-DESSINS.sort((a,b)=>a.pts.length-b.pts.length||a.nom.localeCompare(b.nom));
 
-/* ---------- Générateurs de calculs : gen(niveau) → {e: texte, v: valeur} ---------- */
+/* ============================================================
+   2. Moteur — contour dense, puis n points choisis dessus.
+   ============================================================ */
+function lisser(p,tours){
+  for(let t=0;t<tours;t++){const out=[];
+    for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];
+      out.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25]);
+      out.push([a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}
+    p=out;}
+  return p;
+}
+function densifier(p,pas){
+  const out=[];
+  for(let i=0;i<p.length;i++){
+    const a=p[i],b=p[(i+1)%p.length],d=Math.hypot(b[0]-a[0],b[1]-a[1]),k=Math.max(1,Math.round(d/pas));
+    for(let j=0;j<k;j++)out.push([a[0]+(b[0]-a[0])*j/k,a[1]+(b[1]-a[1])*j/k]);
+  }
+  return out;
+}
+function cadrer(p,marge){
+  const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const s=(100-2*marge)/Math.max(x1-x0,y1-y0,1e-6);
+  const ox=marge+(100-2*marge-(x1-x0)*s)/2,oy=marge+(100-2*marge-(y1-y0)*s)/2;
+  return p.map(([x,y])=>[+(ox+(x-x0)*s).toFixed(2),+(oy+(y-y0)*s).toFixed(2)]);
+}
+/* Douglas-Peucker sur une polyligne ouverte : indices conservés. */
+function dpIdx(p,i0,i1,eps,garde){
+  const a=p[i0],b=p[i1],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;
+  let dmax=-1,imax=-1;
+  for(let i=i0+1;i<i1;i++){
+    const d=Math.abs(dy*(p[i][0]-a[0])-dx*(p[i][1]-a[1]))/L;
+    if(d>dmax){dmax=d;imax=i}
+  }
+  if(dmax>eps){dpIdx(p,i0,imax,eps,garde);garde.push(imax);dpIdx(p,imax,i1,eps,garde)}
+}
+/* Simplifie un contour fermé : indices des sommets gardés. */
+function simplifierEps(p,eps){
+  const N=p.length;
+  let ib=0,dmax=-1;
+  for(let i=1;i<N;i++){const d=Math.hypot(p[i][0]-p[0][0],p[i][1]-p[0][1]);if(d>dmax){dmax=d;ib=i}}
+  const g1=[],g2=[];
+  dpIdx(p,0,ib,eps,g1);
+  const boucle=p.slice(ib).concat([p[0]]);
+  dpIdx(boucle,0,boucle.length-1,eps,g2);
+  return [0,...g1,ib,...g2.map(i=>(ib+i)%N)].sort((a,b)=>a-b);
+}
+function simplifier(p,n){
+  let g=simplifierEps(p,0);
+  if(g.length<=n)return g;
+  let lo=0,hi=40,best=g;
+  for(let k=0;k<32;k++){
+    const mid=(lo+hi)/2,e=simplifierEps(p,mid);
+    if(e.length>n)lo=mid;else{hi=mid;best=e}
+  }
+  return best;
+}
+/* Contour dense d'un dessin (mis en cache). */
+function contour(d){
+  if(!d._dense){
+    let p=d.pts.map(q=>q.slice());
+    if(d.lisse)p=lisser(p,d.lisse);
+    d._dense=cadrer(densifier(p,.3),5);
+  }
+  return d._dense;
+}
+/* Détail du dessin : combien de points il lui faut pour rester lisible. */
+function detail(d){
+  if(d._mini==null){
+    const dense=contour(d);
+    d._mini=Math.max(5,Math.min(60,simplifierEps(dense,1.6).length));
+  }
+  return d._mini;
+}
+/* n points répartis sur le contour : les angles d'abord, puis les longs arcs coupés. */
+function echantillonner(dense,n){
+  const N=dense.length;
+  n=Math.max(3,Math.min(n,Math.floor(N/2)));
+  let idx=simplifier(dense,n);
+  while(idx.length>n){ // on retire les sommets les moins saillants
+    let pire=1,score=Infinity;
+    for(let i=0;i<idx.length;i++){
+      const a=dense[idx[(i-1+idx.length)%idx.length]],b=dense[idx[i]],c=dense[idx[(i+1)%idx.length]];
+      const s=Math.abs((b[0]-a[0])*(c[1]-a[1])-(c[0]-a[0])*(b[1]-a[1]));
+      if(s<score){score=s;pire=i}
+    }
+    idx.splice(pire,1);
+  }
+  const arcs=()=>idx.map((v,i)=>{let l=idx[(i+1)%idx.length]-v;if(l<=0)l+=N;return l});
+  while(idx.length<n){ // on coupe le plus long arc, en suivant le contour
+    const a=arcs();let pire=0;
+    for(let i=1;i<a.length;i++)if(a[i]>a[pire])pire=i;
+    if(a[pire]<2)break;
+    idx.push((idx[pire]+Math.floor(a[pire]/2))%N);
+    idx.sort((x,y)=>x-y);
+  }
+  /* Rééquilibrage : un contour décalqué est en escalier, et la simplification
+     y entasse des points là où ça tremble, en laissant de grands vides
+     ailleurs. On déplace les points les moins saillants vers ces vides —
+     les vrais angles, eux, ont une aire trop grande pour être choisis. */
+  for(let t=0;t<3*n&&idx.length>3;t++){
+    const a=arcs(),moy=N/idx.length;
+    let iMax=0;for(let i=1;i<a.length;i++)if(a[i]>a[iMax])iMax=i;
+    if(a[iMax]<moy*1.7)break;
+    let pire=-1,score=Infinity;
+    for(let i=0;i<idx.length;i++){
+      if(i===iMax||i===(iMax+1)%idx.length)continue;
+      const p=dense[idx[(i-1+idx.length)%idx.length]],q=dense[idx[i]],r=dense[idx[(i+1)%idx.length]];
+      const s=Math.abs((q[0]-p[0])*(r[1]-p[1])-(r[0]-p[0])*(q[1]-p[1]));
+      if(s<score){score=s;pire=i}
+    }
+    const coupe=(idx[iMax]+Math.floor(a[iMax]/2))%N;
+    if(pire<0||idx.includes(coupe))break;
+    idx.splice(pire,1);idx.push(coupe);idx.sort((x,y)=>x-y);
+  }
+  return idx.map(i=>dense[i]);
+}
+function maxPoints(d){return Math.max(6,Math.min(200,Math.floor(contour(d).length/2)))}
+
+/* ============================================================
+   3. Générateurs de calculs : gen(niveau, min, max) → {e, v}
+   L'intervalle porte sur le RÉSULTAT : c'est lui que l'élève trie.
+   ============================================================ */
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const pick=t=>t[Math.floor(Math.random()*t.length)];
 const fr=x=>String(x).replace('.',',');
 const rel=n=>n<0?`(−${-n})`:String(n);
 const sup={0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};
 const exp=(a,n)=>a+String(n).split('').map(c=>sup[c]).join('');
-const TABLES=[[2,5,10],[2,3,4,5],[2,3,4,5,6,7,8,9,10],[2,3,4,5,6,7,8,9,10,11,12],[2,3,4,5,6,7,8,9,10,11,12]];
+const FACTEURS=[[2,5,10],[2,3,4,5],[2,3,4,5,6,7,8,9,10],[2,3,4,5,6,7,8,9,10,11,12],[2,3,4,5,6,7,8,9,10,11,12,15,20,25]];
+const DENOMINATEURS=[[2,4],[2,3,4,6],[2,3,4,5,6,8],[2,3,4,5,6,8,10,12],[2,3,4,5,6,7,8,9,10,12]];
 
 const TYPES={
-  nombres:{nom:'Nombres entiers (sans calcul)',gen(l){const v=rnd(1,[20,50,100,500,1000][l-1]);return{e:String(v),v}}},
-  add:{nom:'Additions',gen(l){const m=[10,20,50,100,1000][l-1],v=rnd(1,m),a=rnd(0,v);return{e:`${a} + ${v-a}`,v}}},
-  sous:{nom:'Soustractions',gen(l){const m=[10,20,50,100,1000][l-1],v=rnd(0,m),b=rnd(0,m-v);return{e:`${v+b} − ${b}`,v}}},
-  mult:{nom:'Multiplications (tables)',gen(l){
-    let a,b;if(l<=3){a=pick(TABLES[l-1]);b=rnd(1,10)}else if(l===4){a=rnd(3,12);b=rnd(11,25)}else{a=rnd(11,40);b=rnd(11,40)}
-    if(Math.random()<.5)[a,b]=[b,a];return{e:`${a} × ${b}`,v:a*b}}},
-  div:{nom:'Divisions',gen(l){
-    let b,q;if(l<=3){b=pick(TABLES[l-1]);q=rnd(1,10)}else if(l===4){b=rnd(2,12);q=rnd(2,20)}else{b=rnd(2,25);q=rnd(2,30)}
-    return{e:`${b*q} ÷ ${b}`,v:q}}},
-  melange:{nom:'Mélange des 4 opérations',gen(l){return TYPES[pick(['add','sous','mult','div'])].gen(l)}},
-  relatifs:{nom:'Nombres relatifs',gen(l){
-    const m=[10,20,50,100,100][l-1],a=rnd(-m,m),b=rnd(-m,m);
-    const op=pick(l>=4?['+','−','×']:['+','−']);
-    if(op==='×'){const c=rnd(-12,12),d=rnd(-12,12);return{e:`${rel(c)} × ${rel(d)}`,v:c*d}}
-    return{e:`${rel(a)} ${op} ${rel(b)}`,v:op==='+'?a+b:a-b}}},
-  decimaux:{nom:'Nombres décimaux',gen(l){
-    const d=l<=2?10:100,m=[10,20,50,100,1000][l-1]*d,a=rnd(0,m),b=rnd(0,m);
-    if(l>=3&&Math.random()<.5){const [x,y]=a>=b?[a,b]:[b,a];return{e:`${fr(x/d)} − ${fr(y/d)}`,v:(x-y)/d}}
-    return{e:`${fr(a/d)} + ${fr(b/d)}`,v:(a+b)/d}}},
+  nombres:{nom:'Nombres entiers (sans calcul)',gen(l,a,b){const v=rnd(a,b);return{e:String(v),v}}},
+  add:{nom:'Additions',gen(l,a,b){
+    const v=rnd(Math.max(a,0),Math.max(b,1)),x=rnd(0,v);return{e:`${x} + ${v-x}`,v}}},
+  sous:{nom:'Soustractions',gen(l,a,b){
+    const v=rnd(Math.max(a,0),Math.max(b,1)),x=rnd(0,Math.max(5,Math.min(3*v+10,999)));
+    return{e:`${v+x} − ${x}`,v}}},
+  mult:{nom:'Multiplications',gen(l,a,b){
+    const t=FACTEURS[l-1];
+    for(let k=0;k<40;k++){
+      const m=pick(t),lo=Math.max(1,Math.ceil(Math.max(a,1)/m)),hi=Math.floor(b/m);
+      if(hi>=lo){const q=rnd(lo,hi),[x,y]=Math.random()<.5?[m,q]:[q,m];return{e:`${x} × ${y}`,v:m*q}}
+    }
+    const v=rnd(Math.max(a,1),Math.max(b,1));return{e:`${v} × 1`,v}}},
+  div:{nom:'Divisions',gen(l,a,b){
+    const q=rnd(Math.max(a,0),Math.max(b,1)),m=pick(FACTEURS[l-1]);
+    return{e:`${m*q} ÷ ${m}`,v:q}}},
+  melange:{nom:'Mélange des 4 opérations',gen(l,a,b){return TYPES[pick(['add','sous','mult','div'])].gen(l,a,b)}},
+  relatifs:{nom:'Nombres relatifs',gen(l,a,b){
+    const v=rnd(a,b),E=Math.max(10,Math.min(60,Math.round((Math.abs(a)+Math.abs(b))/2)));
+    if(l>=4&&Math.random()<.4&&v!==0){
+      for(let k=0;k<12;k++){const c=pick([-12,-9,-8,-7,-6,-5,-4,-3,-2,2,3,4,5,6,7,8,9,12]);
+        if(v%c===0)return{e:`${rel(c)} × ${rel(v/c)}`,v}}
+    }
+    const x=rnd(-E,E);
+    return Math.random()<.5?{e:`${rel(x)} + ${rel(v-x)}`,v}:{e:`${rel(v+x)} − ${rel(x)}`,v}}},
+  decimaux:{nom:'Nombres décimaux',gen(l,a,b){
+    const d=l<=2?10:100,V=rnd(Math.round(Math.max(a,0)*d),Math.round(Math.max(b,1)*d)),v=V/d;
+    if(l>=3&&Math.random()<.5){const X=rnd(0,Math.round(2*d));return{e:`${fr((V+X)/d)} − ${fr(X/d)}`,v}}
+    const X=rnd(0,V);return{e:`${fr(X/d)} + ${fr((V-X)/d)}`,v}}},
   fractions:{nom:'Fractions (comparer)',gen(l){
-    const den=[[2,4],[2,3,4,6],[2,3,4,5,6,8],[2,3,4,5,6,8,10,12],[2,3,4,5,6,7,8,9,10,12]][l-1];
-    const b=pick(den),a=rnd(1,l>=4?3*b:b);return{e:`${a}/${b}`,v:a/b}}},
-  puissances:{nom:'Carrés et puissances',gen(l){
-    if(l<=2){const n=rnd(1,20);return{e:exp(n,2),v:n*n}}
-    if(l===3){if(Math.random()<.6){const n=rnd(1,15);return{e:exp(n,2),v:n*n}}const n=rnd(1,6);return{e:exp(n,3),v:n**3}}
-    const c=rnd(0,2);if(c===0){const n=rnd(1,25);return{e:exp(n,2),v:n*n}}
-    if(c===1){const n=rnd(0,10);return{e:exp(2,n),v:2**n}}const n=rnd(0,6);return{e:exp(3,n),v:3**n}}},
-  mixte:{nom:'Priorités opératoires',gen(l){
-    const m=[5,10,10,12,20][l-1],a=rnd(1,m),b=rnd(1,m),c=rnd(1,m*2);
-    switch(rnd(0,3)){
-      case 0:return{e:`${a} × ${b} + ${c}`,v:a*b+c};
-      case 1:return{e:`${c} + ${a} × ${b}`,v:c+a*b};
-      case 2:return{e:`(${a} + ${b}) × ${c}`,v:(a+b)*c};
-      default:{const v=a*b-c;return v>=0?{e:`${a} × ${b} − ${c}`,v}:{e:`${a} × ${b} + ${c}`,v:a*b+c}}}}},
+    const b=pick(DENOMINATEURS[l-1]),a=rnd(1,l>=4?3*b:b);return{e:`${a}/${b}`,v:a/b}}},
+  puissances:{nom:'Carrés et puissances',gen(l,a,b){
+    const lo=Math.max(0,Math.floor(Math.sqrt(Math.max(a,0)))),hi=Math.max(lo+1,Math.floor(Math.sqrt(Math.max(b,1))));
+    if(l>=4&&Math.random()<.4){
+      const base=Math.random()<.5?2:3,m=[];
+      for(let n=0;n<=14;n++){const v=base**n;if(v>=a&&v<=b)m.push(n)}
+      if(m.length){const n=pick(m);return{e:exp(base,n),v:base**n}}
+    }
+    if(l>=3&&Math.random()<.3){
+      const m=[];for(let n=1;n<=20;n++){const v=n**3;if(v>=a&&v<=b)m.push(n)}
+      if(m.length){const n=pick(m);return{e:exp(n,3),v:n**3}}
+    }
+    const n=rnd(lo,hi);return{e:exp(n,2),v:n*n}}},
+  mixte:{nom:'Priorités opératoires',gen(l,a,b){
+    const m=[5,10,10,12,20][l-1];let dernier=null;
+    for(let k=0;k<60;k++){
+      const x=rnd(1,m),y=rnd(1,m),z=rnd(1,Math.max(2,Math.min(m*2,b)));
+      const c=[[`${x} × ${y} + ${z}`,x*y+z],[`${z} + ${x} × ${y}`,z+x*y],
+               [`(${x} + ${y}) × ${z}`,(x+y)*z],[`${x} × ${y} − ${z}`,x*y-z]][rnd(0,3)];
+      dernier={e:c[0],v:c[1]};
+      if(c[1]>=a&&c[1]<=b)return dernier;
+    }
+    return dernier}},
 };
+const SANS_INTERVALLE=new Set(['fractions']);
 
-function faireSerie(n,type,niveau){
-  const vus=new Set(),out=[];let l=niveau,essais=0;
-  while(out.length<n){
-    const it=TYPES[type].gen(Math.min(l,5)),k=Math.round(it.v*1000)/1000;
-    if(!vus.has(k)){vus.add(k);out.push({e:it.e,v:k});essais=0}
-    else if(++essais>400){essais=0;if(l<5)l++;else{let v=1;while(vus.has(v))v++;vus.add(v);out.push({e:String(v),v})}}
+/* Combien de résultats différents ce réglage peut-il produire ? */
+function capacite(type,a,b,l){
+  if(type==='fractions'){
+    const s=new Set();
+    for(const d of DENOMINATEURS[l-1])for(let x=1;x<=(l>=4?3*d:d);x++)s.add(x/d);
+    return s.size;
   }
-  return out.sort((a,b)=>a.v-b.v);
+  if(type==='decimaux')return Math.floor((b-a)*(l<=2?10:100))+1;
+  if(type==='puissances')return Math.max(2,Math.floor(Math.sqrt(Math.max(b,0)))-Math.ceil(Math.sqrt(Math.max(a,0)))+1);
+  return Math.floor(b-a)+1;
+}
+/* Une série de n résultats tous différents. Si le réglage n'en donne pas
+   assez, on élargit l'intervalle — et, en dernier ressort, on monte d'un
+   niveau : mieux vaut le dire que rendre une fiche à trous. */
+function faireSerie(n,type,niveau,a,b){
+  let A=a,B=b,niv=niveau;
+  if(capacite(type,A,B,niv)<n&&!SANS_INTERVALLE.has(type))B=A+Math.ceil(n*1.4);
+  while(capacite(type,A,B,niv)<n&&niv<5)niv++;
+  const vus=new Set(),out=[];let essais=0,tours=0;
+  while(out.length<n){
+    const it=TYPES[type].gen(niv,A,B),k=Math.round(it.v*1000)/1000;
+    if(!vus.has(k)){vus.add(k);out.push({e:it.e,v:k});essais=0;continue}
+    if(++essais<=200)continue;
+    essais=0;
+    if(++tours>25){ // filet de sécurité : la boucle doit toujours se terminer
+      let v=Math.max(1,Math.round(A));
+      while(out.length<n){while(vus.has(v))v++;vus.add(v);out.push({e:String(v),v});v++}
+      break;
+    }
+    if(SANS_INTERVALLE.has(type)){if(niv<5)niv++}
+    else B=Math.round(B+Math.max(5,(B-A)*.4));
+  }
+  out.sort((x,y)=>x.v-y.v);
+  return{items:out,min:A,max:B,niveau:niv,
+    elargi:(A!==a||B!==b)?[a,b,A,B]:null,monte:niv!==niveau?[niveau,niv]:null};
 }
 
-/* ---------- Géométrie et placement des étiquettes ---------- */
+/* ============================================================
+   4. Placement des étiquettes (grille d'occupation : tient à 200 points)
+   ============================================================ */
 const unit=(x,y)=>{const h=Math.hypot(x,y)||1;return[x/h,y/h]};
 function dedans(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];
   if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
@@ -263,60 +582,91 @@ function direction(pts,i){
   if(dedans([p[0]+d[0]*1.5,p[1]+d[1]*1.5],pts))d=[-d[0],-d[1]];
   return d;
 }
+function casier(cell){
+  const m=new Map(),k=(i,j)=>i+'/'+j;
+  const bornes=b=>[Math.floor(b[0]/cell),Math.floor((b[0]+b[2])/cell),Math.floor(b[1]/cell),Math.floor((b[1]+b[3])/cell)];
+  return{
+    ajouter(b,v){const[i0,i1,j0,j1]=bornes(b);
+      for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const c=k(i,j);let a=m.get(c);if(!a)m.set(c,a=[]);a.push(v)}},
+    autour(b){const[i0,i1,j0,j1]=bornes(b),vus=new Set();
+      for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const a=m.get(k(i,j));if(a)for(const v of a)vus.add(v)}
+      return vus}
+  };
+}
 function placerEtiquettes(pts,items,fs,rp){
-  const H=fs*1.15,larg=e=>e.length*fs*.6;
+  const H=fs*1.15,larg=e=>e.length*fs*.6,n=pts.length;
   const inter=(a,b)=>!(a[0]+a[2]<b[0]||b[0]+b[2]<a[0]||a[1]+a[3]<b[1]||b[1]+b[3]<a[1]);
-  const dansBoite=(q,b)=>q[0]>=b[0]&&q[0]<=b[0]+b[2]&&q[1]>=b[1]&&q[1]<=b[1]+b[3];
-  const n=pts.length,boites=[],res=[];
+  const cell=Math.max(2.5,fs*1.6);
+  const cEtiq=casier(cell),cPts=casier(cell),cSeg=casier(cell);
+  pts.forEach(p=>cPts.ajouter([p[0]-rp,p[1]-rp,2*rp,2*rp],p));
+  for(let j=0;j<n;j++){const q1=pts[j],q2=pts[(j+1)%n];
+    const L=Math.hypot(q2[0]-q1[0],q2[1]-q1[1]),k=Math.max(1,Math.min(20,Math.round(L/1.5)));
+    for(let t=0;t<k;t++){const s=(t+.5)/k,q=[q1[0]+(q2[0]-q1[0])*s,q1[1]+(q2[1]-q1[1])*s];
+      cSeg.ajouter([q[0],q[1],0,0],q)}}
+  const angles=n>70?[0,-45,45,-90,90,-135,135,180]:[0,-30,30,-60,60,-90,90,-130,130,180];
+  const ecarts=n>70?[0,fs*1.6,fs*3.4,fs*5.4]:[0,2.5,5,8];
+  const res=[];
   pts.forEach((p,i)=>{
     const d0=direction(pts,i),a0=Math.atan2(d0[1],d0[0]),W=larg(items[i].e);
     let meilleur=null;
-    for(const ex of [0,2.5,5,8])for(const ang of [0,-30,30,-60,60,-90,90,-130,130,180]){
+    for(const ex of ecarts)for(const ang of angles){
       const a=a0+ang*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a);
       const dist=rp+1+ex+(W/2)*Math.abs(dx)+(H/2)*Math.abs(dy);
       const x=p[0]+dx*dist,y=p[1]+dy*dist,b=[x-W/2,y-H/2,W,H];
       let score=ex*.6+Math.abs(ang)/60;
-      boites.forEach(o=>{if(inter(o,b))score+=20});
-      pts.forEach((q,j)=>{if(j!==i&&dansBoite(q,[b[0]-rp,b[1]-rp,b[2]+2*rp,b[3]+2*rp]))score+=12});
-      for(let j=0;j<n;j++){const q1=pts[j],q2=pts[(j+1)%n];for(let t=.1;t<1;t+=.1)
-        if(dansBoite([q1[0]+(q2[0]-q1[0])*t,q1[1]+(q2[1]-q1[1])*t],b)){score+=6;break}}
-      if(dedans([x,y],pts))score+=2;
+      for(const o of cEtiq.autour(b))if(inter(o,b))score+=20;
+      for(const q of cPts.autour(b))if(q!==p&&q[0]>=b[0]-rp&&q[0]<=b[0]+b[2]+rp&&q[1]>=b[1]-rp&&q[1]<=b[1]+b[3]+rp)score+=12;
+      for(const q of cSeg.autour(b))if(q[0]>=b[0]&&q[0]<=b[0]+b[2]&&q[1]>=b[1]&&q[1]<=b[1]+b[3]){score+=6;break}
       if(!meilleur||score<meilleur.score)meilleur={x,y,b,score};
     }
-    boites.push(meilleur.b);res.push(meilleur);
+    cEtiq.ajouter(meilleur.b,meilleur.b);res.push(meilleur);
   });
   return res;
 }
 
-/* ---------- État et rendu ---------- */
+/* ============================================================
+   5. État et rendu
+   ============================================================ */
 const NS='http://www.w3.org/2000/svg';
 const $=id=>document.getElementById(id);
 let exo=null,jeu=null;
 const reglages=()=>({rp:+$('rPt').value,tx:+$('rTx').value/100});
 function el(tag,attrs,txt){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(txt!=null)e.textContent=txt;return e}
+const secret=()=>$('surprise').checked&&!(jeu&&jeu.fini);
 
-function construireSVG({solution=false,interactif=false}={}){
-  const {dessin,items}=exo,pts=dessin.pts,n=pts.length,{rp,tx}=reglages();
-  const lmax=Math.max(...items.map(x=>x.e.length));
-  const fs=Math.min(n<=10?4.6:n<=16?3.9:n<=20?3.4:3,34/lmax)*tx;
-  const pos=placerEtiquettes(pts,items,fs,rp);
-  let x0=0,y0=0,x1=100,y1=100;pos.forEach(({b})=>{x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);x1=Math.max(x1,b[0]+b[2]);y1=Math.max(y1,b[1]+b[3])});
-  const m=4,l=Math.max(x1-x0,y1-y0)+2*m;
-  const svg=el('svg',{viewBox:`${x0-m-(l-(x1-x0)-2*m)/2} ${y0-m-(l-(y1-y0)-2*m)/2} ${l} ${l}`,xmlns:NS,'font-family':'Avenir Next, Segoe UI, system-ui, Arial, sans-serif'});
-  const g=el('g',{});svg.appendChild(g);
+function construireSVG({solution=false,interactif=false,colorier=false}={}){
+  const pts=exo.pts,n=pts.length,items=exo.items,{rp,tx}=reglages();
   const poly=pts.map(p=>p.join(',')).join(' ');
+  if(colorier){
+    const svg=el('svg',{viewBox:'-2 -2 104 104',xmlns:NS});
+    svg.appendChild(el('polygon',{points:poly,fill:'#fff',stroke:'#24262c','stroke-width':'1.4','stroke-linejoin':'round'}));
+    return svg;
+  }
+  const lmax=Math.max(...items.map(x=>x.e.length));
+  const fs=Math.min(4.8,16/Math.sqrt(n),26/lmax)*tx;
+  const pos=placerEtiquettes(pts,items,fs,rp);
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  pts.forEach(p=>{x0=Math.min(x0,p[0]-rp-2);y0=Math.min(y0,p[1]-rp-2);x1=Math.max(x1,p[0]+rp+2);y1=Math.max(y1,p[1]+rp+2)});
+  pos.forEach(({b})=>{x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);x1=Math.max(x1,b[0]+b[2]);y1=Math.max(y1,b[1]+b[3])});
+  const m=4;
+  const svg=el('svg',{viewBox:`${x0-m} ${y0-m} ${x1-x0+2*m} ${y1-y0+2*m}`,xmlns:NS,
+    'font-family':'Avenir Next, Segoe UI, system-ui, Arial, sans-serif'});
+  const g=el('g',{});svg.appendChild(g);
   if(solution){
     g.appendChild(el('polygon',{points:poly,fill:'#1f3a8a',opacity:'.09'}));
     g.appendChild(el('polygon',{points:poly,fill:'none',stroke:'#1f3a8a','stroke-width':'1.1','stroke-linejoin':'round'}));
   }
-  const lignes=el('g',{stroke:'#1f3a8a','stroke-width':'1.1','stroke-linecap':'round'});g.appendChild(lignes);
+  const lignes=el('g',{stroke:'#1f3a8a','stroke-width':Math.max(.5,1.1*Math.min(1,20/n+.4)),'stroke-linecap':'round'});
+  g.appendChild(lignes);
   const gp=el('g',{});g.appendChild(gp);
+  let perim=0;for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];perim+=Math.hypot(b[0]-a[0],b[1]-a[1])}
+  const zone=Math.max(1.6,Math.min(rp+3,perim/n*.45));
   pts.forEach((p,i)=>{
     if(i===0)gp.appendChild(el('circle',{cx:p[0],cy:p[1],r:rp+1.8,fill:'#ffd84d',stroke:'#2e7d4f','stroke-width':'.7'}));
     gp.appendChild(el('circle',{cx:p[0],cy:p[1],r:rp,fill:'#24262c',id:'pt'+i,class:'pt'}));
-    gp.appendChild(el('text',{x:pos[i].x,y:pos[i].y,'font-size':fs,'text-anchor':'middle','dominant-baseline':'central',fill:'#1f3a8a',
-      stroke:'#fffdf8','stroke-width':fs*.45,'paint-order':'stroke','font-weight':'600'},items[i].e));
-    if(interactif)gp.appendChild(el('circle',{cx:p[0],cy:p[1],r:Math.max(6,rp+3),fill:'transparent',class:'point','data-i':i}));
+    gp.appendChild(el('text',{x:pos[i].x,y:pos[i].y,'font-size':fs,'text-anchor':'middle','dominant-baseline':'central',
+      fill:'#1f3a8a',stroke:'#fffdf8','stroke-width':fs*.45,'paint-order':'stroke','font-weight':'600'},items[i].e));
+    if(interactif)gp.appendChild(el('circle',{cx:p[0],cy:p[1],r:zone,fill:'transparent',class:'point','data-i':i}));
   });
   svg._lignes=lignes;
   return svg;
@@ -325,23 +675,47 @@ function construireSVG({solution=false,interactif=false}={}){
 function texteConsigne(){
   const o=$('ordre').value==='asc'?'croissant (du plus petit au plus grand)':'décroissant (du plus grand au plus petit)';
   const t=$('type').value;
-  const debut=t==='nombres'?`Relie les points dans l'ordre ${o}.`:t==='fractions'?`Compare les fractions, puis relie les points dans l'ordre ${o}.`:`Calcule chaque résultat, puis relie les points dans l'ordre ${o} des résultats.`;
+  const debut=t==='nombres'?`Relie les points dans l'ordre ${o}.`
+    :t==='fractions'?`Compare les fractions, puis relie les points dans l'ordre ${o}.`
+    :`Calcule chaque résultat, puis relie les points dans l'ordre ${o} des résultats.`;
   return debut+' Commence par le point jaune et termine en revenant au point de départ.';
 }
 
+function message(txt){$('alerte').textContent=txt||''}
+
 function nouveau(){
-  const niveau=+$('niveau').value,type=$('type').value;
-  let dessin=DESSINS.find(d=>d.id===$('dessin').value);
-  if(!dessin){let pool=DESSINS.filter(d=>d.niveau===niveau);if(!pool.length)pool=DESSINS;dessin=pick(pool)}
-  const items=faireSerie(dessin.pts.length,type,niveau);
+  const type=$('type').value,niveau=+$('niveau').value;
+  let d=DESSINS.find(x=>x.id===$('dessin').value);
+  if(!d){const pool=DESSINS.filter(x=>x.cat!=='perso');d=pick(pool.length?pool:DESSINS)}
+  const nmax=maxPoints(d);
+  let n=Math.max(4,Math.min(+$('nPts').value||20,nmax));
+  const pts=echantillonner(contour(d),n);
+  n=pts.length;
+  majN(n);
+  majTaillePoints(pts);
+  let a=Math.round(+$('rgMin').value||0),b=Math.round(+$('rgMax').value||1);
+  if(a>b)[a,b]=[b,a];
+  const s=faireSerie(n,type,niveau,a,b);
+  const items=s.items;
   if($('ordre').value==='desc')items.reverse();
-  exo={dessin,items,type,niveau};jeu=null;
+  exo={dessin:d,pts,items,type,niveau:s.niveau};jeu=null;
+  const dits=[];
+  if(s.elargi){
+    $('rgMin').value=s.min;$('rgMax').value=s.max;
+    dits.push(`L'intervalle ${s.elargi[0]} → ${s.elargi[1]} ne donne pas ${n} résultats différents : il a été élargi à ${s.min} → ${s.max}.`);
+  }
+  if(s.monte){$('niveau').value=s.niveau;
+    dits.push(`Il n'y a pas ${n} résultats différents au niveau ${s.monte[0]} : le niveau est passé à ${s.monte[1]}.`);}
+  if(!dits.length&&SANS_INTERVALLE.has(type))dits.push("Les fractions ne suivent pas l'intervalle : elles dépendent du niveau.");
+  if(n>80)dits.push(`${n} points : imprime en A4, et préfère « Nombres entiers » pour que les étiquettes restent lisibles.`);
+  message(dits.join(' '));
   afficher();majGalerie();
 }
 
 function afficher(){
-  $('titre').textContent=`${exo.dessin.nom} — ${TYPES[exo.type].nom}`;
-  $('badge').textContent=`niveau ${exo.niveau} · ${exo.items.length} points`;
+  const nom=secret()?'Dessin mystère':exo.dessin.nom;
+  $('titre').textContent=`${nom} — ${TYPES[exo.type].nom}`;
+  $('badge').textContent=`${exo.items.length} points · résultats de ${fr(exo.items[0].v)} à ${fr(exo.items[exo.items.length-1].v)}`;
   $('consigne').textContent=texteConsigne();
   $('zone').replaceChildren(construireSVG({solution:$('voirSolution').checked}));
   $('etat').textContent='';$('etat').className='info';$('score').textContent='';
@@ -354,7 +728,7 @@ function jouer(reprise){
   const svg=construireSVG({interactif:true});
   $('zone').replaceChildren(svg);
   jeu={suivant:reprise?reprise.suivant:0,erreurs:reprise?reprise.erreurs:0,t0:reprise?reprise.t0:Date.now(),fini:false,svg};
-  const pts=exo.dessin.pts;
+  const pts=exo.pts;
   for(let i=0;i<jeu.suivant;i++){svg.querySelector('#pt'+i).classList.add('bon');
     if(i>0)svg._lignes.appendChild(el('line',{x1:pts[i-1][0],y1:pts[i-1][1],x2:pts[i][0],y2:pts[i][1]}))}
   svg.addEventListener('click',e=>{const c=e.target.closest('.point');if(c)clic(+c.dataset.i)});
@@ -364,7 +738,7 @@ function jouer(reprise){
 function majScore(){$('score').textContent=`${jeu.suivant} / ${exo.items.length} — erreurs : ${jeu.erreurs}`}
 function clic(i){
   if(!jeu||jeu.fini)return;
-  const pts=exo.dessin.pts,n=pts.length,pt=jeu.svg.querySelector('#pt'+i);
+  const pts=exo.pts,n=pts.length,pt=jeu.svg.querySelector('#pt'+i);
   if(i===jeu.suivant){
     pt.classList.remove('suivant');pt.classList.add('bon');
     if(i>0)jeu.svg._lignes.appendChild(el('line',{x1:pts[i-1][0],y1:pts[i-1][1],x2:pts[i][0],y2:pts[i][1],class:'trait'}));
@@ -374,7 +748,10 @@ function clic(i){
       jeu.svg._lignes.appendChild(el('line',{x1:pts[n-1][0],y1:pts[n-1][1],x2:pts[0][0],y2:pts[0][1],class:'trait'}));
       jeu.svg._lignes.appendChild(el('polygon',{points:pts.map(p=>p.join(',')).join(' '),fill:'#1f3a8a',opacity:'.09',stroke:'none'}));
       jeu.fini=true;const s=Math.round((Date.now()-jeu.t0)/1000);
-      $('etat').className='ok';$('etat').textContent=`Bravo, c'est un ${exo.dessin.nom.toLowerCase()} ! Terminé en ${s} s avec ${jeu.erreurs} erreur${jeu.erreurs>1?'s':''}.`;
+      $('etat').className='ok';
+      $('etat').textContent=`Bravo — c'est « ${exo.dessin.nom} » ! Terminé en ${s} s avec ${jeu.erreurs} erreur${jeu.erreurs>1?'s':''}.`
+        +(exo.dessin.info?' '+exo.dessin.info:'');
+      $('titre').textContent=`${exo.dessin.nom} — ${TYPES[exo.type].nom}`;
     }
   }else{
     jeu.erreurs++;pt.classList.add('faux');setTimeout(()=>pt.classList.remove('faux'),400);
@@ -392,57 +769,418 @@ function indice(){
   jeu.erreurs++;majScore();
 }
 
-/* ---------- Galerie ---------- */
-let filtre='tous';
+/* ============================================================
+   6. Galerie
+   ============================================================ */
+let filtre='animaux';
 function vignette(d){
-  const poly=d.pts.map(p=>p.join(',')).join(' ');
-  return `<svg viewBox="-4 -4 108 108" aria-hidden="true"><polygon points="${poly}" fill="#1f3a8a" opacity=".12"/><polygon points="${poly}" fill="none" stroke="#1f3a8a" stroke-width="1.6" stroke-linejoin="round"/>${d.pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.2" fill="#24262c"/>`).join('')}</svg>`;
+  const p=echantillonner(contour(d),Math.min(28,maxPoints(d)));
+  const poly=p.map(q=>q.join(',')).join(' ');
+  return `<svg viewBox="-4 -4 108 108" aria-hidden="true"><polygon points="${poly}" fill="#1f3a8a" opacity=".12"/>`
+    +`<polygon points="${poly}" fill="none" stroke="#1f3a8a" stroke-width="1.6" stroke-linejoin="round"/>`
+    +p.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2" fill="#24262c"/>`).join('')+'</svg>';
 }
 function construireGalerie(){
+  const cats=Object.entries(CATEGORIES).filter(([k])=>k!=='perso'||DESSINS.some(d=>d.cat==='perso'));
+  if(filtre==='perso'&&!DESSINS.some(d=>d.cat==='perso'))filtre='animaux';
   const o=$('onglets');
-  o.innerHTML=[['tous','Tous'],...Object.entries(CATEGORIES)].map(([k,v])=>`<button data-cat="${k}" aria-pressed="${k===filtre}">${v}</button>`).join('');
+  o.innerHTML=[['tous','Tous'],...cats].map(([k,v])=>`<button data-cat="${k}" aria-pressed="${k===filtre}">${v}</button>`).join('');
   o.onclick=e=>{const b=e.target.closest('button');if(!b)return;filtre=b.dataset.cat;construireGalerie()};
   const liste=DESSINS.filter(d=>filtre==='tous'||d.cat===filtre);
-  $('grille').innerHTML=liste.map(d=>`<button class="carte" data-id="${d.id}" aria-pressed="false">${vignette(d)}<span class="nom">${d.nom}</span><span class="meta"><span>${d.pts.length} pts</span><span class="niv" title="niveau ${d.niveau}">${'●'.repeat(d.niveau)}${'○'.repeat(5-d.niveau)}</span></span></button>`).join('');
-  $('grille').onclick=e=>{const c=e.target.closest('.carte');if(!c)return;$('dessin').value=c.dataset.id;$('niveau').value=DESSINS.find(d=>d.id===c.dataset.id).niveau;nouveau();
-    window.scrollTo({top:0,behavior:'smooth'})};
+  $('grille').innerHTML=liste.map(d=>`<div class="carte" role="button" tabindex="0" data-id="${d.id}" aria-pressed="false">`
+    +vignette(d)+`<span class="nom">${d.nom}</span>`
+    +`<span class="meta"><span>dès ${detail(d)} points</span></span>`
+    +(d.cat==='perso'?`<button class="jeter" data-jeter="${d.id}" title="Supprimer">✕</button>`:'')+`</div>`).join('');
+  $('grille').onclick=e=>{
+    const j=e.target.closest('[data-jeter]');
+    if(j){supprimerPerso(j.dataset.jeter);return}
+    const c=e.target.closest('.carte');if(!c)return;
+    choisirDessin(c.dataset.id);
+  };
+  $('grille').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const c=e.target.closest('.carte');
+    if(c){e.preventDefault();choisirDessin(c.dataset.id)}}};
   majGalerie();
 }
-function majGalerie(){document.querySelectorAll('.carte').forEach(c=>c.setAttribute('aria-pressed',exo&&c.dataset.id===exo.dessin.id))}
+function choisirDessin(id){
+  const d=DESSINS.find(x=>x.id===id);if(!d)return;
+  $('dessin').value=id;
+  const n=+$('nPts').value;
+  if(n<detail(d)||n>maxPoints(d))majN(Math.max(detail(d),Math.min(n,maxPoints(d))));
+  majBornesN();nouveau();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function majGalerie(){document.querySelectorAll('.carte').forEach(c=>c.setAttribute('aria-pressed',!!exo&&c.dataset.id===exo.dessin.id))}
 
-/* ---------- Export ---------- */
-function svgTexte(solution){
-  const s=construireSVG({solution});s.setAttribute('width','800');s.setAttribute('height','800');
+/* ============================================================
+   7. Atelier — dessiner, décalquer une image, coller un tracé
+   ============================================================ */
+const CLE='relier:perso';
+let atelier={mode:'dessin',brut:null,image:null,trace:[]};
+
+function chargerPerso(){try{return JSON.parse(localStorage.getItem(CLE)||'[]')}catch(e){return[]}}
+function ecrirePerso(l){try{localStorage.setItem(CLE,JSON.stringify(l));return true}catch(e){return false}}
+function injecterPerso(){
+  for(let i=DESSINS.length-1;i>=0;i--)if(DESSINS[i].cat==='perso')DESSINS.splice(i,1);
+  for(const d of chargerPerso())DESSINS.push({...d,cat:'perso'});
+  majListeDessins();
+}
+function supprimerPerso(id){
+  const d=DESSINS.find(x=>x.id===id);
+  if(!d||!confirm(`Supprimer « ${d.nom} » ?`))return;
+  ecrirePerso(chargerPerso().filter(x=>x.id!==id));
+  injecterPerso();
+  if(exo&&exo.dessin.id===id){$('dessin').value='';nouveau()}
+  construireGalerie();
+}
+
+/* Contour d'une image : masque, plus grosse tache, marching squares. */
+function masque(img,seuil,inverse){
+  const T=200,r=Math.min(T/img.width,T/img.height,1);
+  const c=document.createElement('canvas');
+  c.width=Math.max(8,Math.round(img.width*r));c.height=Math.max(8,Math.round(img.height*r));
+  const x=c.getContext('2d',{willReadFrequently:true});
+  x.drawImage(img,0,0,c.width,c.height);
+  const d=x.getImageData(0,0,c.width,c.height).data,n=c.width*c.height,m=new Uint8Array(n);
+  let transparents=0;for(let i=0;i<n;i++)if(d[i*4+3]<128)transparents++;
+  const parAlpha=transparents>n*.05;
+  for(let i=0;i<n;i++){
+    if(parAlpha){m[i]=d[i*4+3]>=128?1:0;continue}
+    const lum=(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2])/255;
+    m[i]=(inverse?lum>seuil:lum<seuil)?1:0;
+  }
+  // on repeint le masque : c'est lui, et pas l'image, qui sert d'aperçu —
+  // ainsi le fantôme et le contour tracé se superposent exactement.
+  const vue=x.createImageData(c.width,c.height);
+  for(let i=0;i<n;i++)if(m[i]){const o=i*4;vue.data[o]=31;vue.data[o+1]=58;vue.data[o+2]=138;vue.data[o+3]=48}
+  x.putImageData(vue,0,0);
+  return{m,w:c.width,h:c.height,canvas:c};
+}
+function plusGrosseTache(m,w,h){
+  const vu=new Int32Array(w*h).fill(-1),tailles=[];let nb=0;
+  const file=new Int32Array(w*h);
+  for(let d=0;d<w*h;d++){
+    if(!m[d]||vu[d]>=0)continue;
+    let t=0,a=0,b=0;file[b++]=d;vu[d]=nb;
+    while(a<b){const p=file[a++];t++;
+      const x=p%w,y=(p-x)/w;
+      const vo=[[1,0],[-1,0],[0,1],[0,-1]];
+      for(const[dx,dy]of vo){const nx=x+dx,ny=y+dy;
+        if(nx<0||ny<0||nx>=w||ny>=h)continue;
+        const q=ny*w+nx;if(m[q]&&vu[q]<0){vu[q]=nb;file[b++]=q}}}
+    tailles.push(t);nb++;
+  }
+  if(!nb)return null;
+  let best=0;for(let i=1;i<nb;i++)if(tailles[i]>tailles[best])best=i;
+  const out=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++)out[i]=vu[i]===best?1:0;
+  return out;
+}
+function contourMarching(m,w,h){
+  const at=(x,y)=>(x<0||y<0||x>=w||y>=h)?0:m[y*w+x];
+  let sx=-1,sy=-1;
+  for(let y=0;y<h&&sx<0;y++)for(let x=0;x<w;x++)if(at(x,y)){sx=x;sy=y;break}
+  if(sx<0)return null;
+  let x=sx,y=sy,px=0,py=0,garde=0;
+  const pts=[],depart=sx+','+sy;
+  do{
+    const etat=(at(x-1,y-1)?1:0)|(at(x,y-1)?2:0)|(at(x-1,y)?4:0)|(at(x,y)?8:0);
+    let nx=0,ny=0;
+    switch(etat){
+      case 1:case 5:case 13:ny=-1;break;
+      case 2:case 3:case 7:nx=1;break;
+      case 4:case 12:case 14:nx=-1;break;
+      case 8:case 10:case 11:ny=1;break;
+      case 6:ny=(px===-1)?1:-1;break;
+      case 9:nx=(py===-1)?-1:1;break;
+      default:return pts.length>12?pts:null;
+    }
+    pts.push([x,y]);px=nx;py=ny;x+=nx;y+=ny;
+  }while((x+','+y)!==depart&&++garde<w*h*4);
+  return pts.length>12?pts:null;
+}
+function contourImage(img,seuil,inverse){
+  const{m,w,h,canvas}=masque(img,seuil,inverse);
+  const gros=plusGrosseTache(m,w,h);
+  if(!gros)return{canvas,boite:null,contour:null};
+  // boîte de l'encre retenue : elle sert à recaler le fantôme sur le contour
+  let x0=1e9,y0=1e9,x1=-1,y1=-1;
+  for(let i=0;i<w*h;i++)if(gros[i]){const x=i%w,y=(i-x)/w;
+    if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  const brut=contourMarching(gros,w,h);
+  if(!brut)return{canvas,boite:null,contour:null};
+  const lissage=Math.min(300,Math.max(40,Math.floor(brut.length/6)));
+  return{canvas,boite:[x0,y0,x1-x0+1,y1-y0+1],
+    contour:cadrer(densifier(lisser(echantillonner(cadrer(brut,0),lissage),1),.3),5)};
+}
+/* Contour d'un tracé SVG. */
+function contourTrace(texte){
+  let d=null;
+  const tousLesD=[...texte.matchAll(/\sd\s*=\s*"([^"]+)"/g)].map(m=>m[1]);
+  const candidats=tousLesD.length?tousLesD:[texte.trim()];
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('style','position:absolute;width:0;height:0;overflow:hidden');
+  document.body.appendChild(svg);
+  let best=null,bl=-1;
+  for(const c of candidats){
+    for(const sous of decouperTrace(c)){
+      try{
+        const p=document.createElementNS(NS,'path');p.setAttribute('d',sous);svg.appendChild(p);
+        const L=p.getTotalLength();
+        if(L>bl&&L>1){bl=L;best=p.cloneNode()}
+        svg.removeChild(p);
+      }catch(e){}
+    }
+  }
+  if(!best){svg.remove();return null}
+  svg.appendChild(best);
+  const L=best.getTotalLength(),N=Math.max(60,Math.min(1200,Math.round(L)));
+  const pts=[];
+  for(let i=0;i<N;i++){const q=best.getPointAtLength(L*i/N);pts.push([q.x,q.y])}
+  svg.remove();
+  return cadrer(densifier(pts,.3),5);
+}
+function decouperTrace(d){
+  const parts=d.split(/(?=M)/).map(s=>s.trim()).filter(s=>/^M/.test(s));
+  return parts.length>1?[d,...parts]:[d];
+}
+
+function dessinAtelier(){
+  const svg=$('apercu');
+  svg.innerHTML='';
+  const c=atelier.brut;
+  if(atelier.mode==='dessin'&&atelier.trace.length>1&&!c){
+    const d=atelier.trace.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(' ');
+    svg.innerHTML=`<path d="${d}" fill="none" stroke="#3452b3" stroke-width="1.4" stroke-linecap="round"/>`;
+    return;
+  }
+  if(!c){$('alerteAtelier').textContent='';return}
+  const n=Math.max(4,Math.min(+$('rNa').value,Math.floor(c.length/2)));
+  const p=echantillonner(c,n),poly=p.map(q=>q.join(',')).join(' ');
+  svg.innerHTML=`<polygon points="${poly}" fill="#1f3a8a" opacity=".1"/>`
+    +`<polygon points="${poly}" fill="none" stroke="#1f3a8a" stroke-width="1"/>`
+    +p.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="1.7" fill="${i?'#24262c':'#e08a00'}"/>`).join('');
+  $('alerteAtelier').textContent=n<8?'Un contour très simple : quelques points suffisent.':'';
+}
+function ouvrirAtelier(){
+  atelier={mode:atelier.mode,brut:null,image:null,trace:[]};
+  $('nomPerso').value='';$('infoPerso').value='';$('alerteAtelier').textContent='';
+  const t=$('toile').getContext('2d');t.clearRect(0,0,400,400);
+  modeAtelier(atelier.mode);dessinAtelier();
+  $('atelier').showModal();
+}
+function modeAtelier(m){
+  atelier.mode=m;
+  document.querySelectorAll('#ongletsAtelier button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+  $('outilsDessin').hidden=m!=='dessin';$('outilsImage').hidden=m!=='image';$('outilsSvg').hidden=m!=='svg';
+  $('aideAtelier').textContent=m==='dessin'
+    ?"Trace le contour d'un seul trait, du doigt ou à la souris : il se referme tout seul."
+    :m==='image'
+    ?"Une silhouette sombre sur fond clair (ou un PNG détouré) donne le meilleur résultat. Le seuil règle ce qui compte comme du noir."
+    :"Colle un attribut d (M… Z) ou un fichier SVG entier : le plus long tracé est retenu.";
+  if(m==='image'&&atelier.image)relireImage();
+  else{$('toile').getContext('2d').clearRect(0,0,400,400);dessinAtelier()}
+}
+function relireImage(){
+  if(!atelier.image)return;
+  const{canvas,boite,contour:c}=contourImage(atelier.image,+$('rSeuil').value/100,$('inverse').checked);
+  const t=$('toile').getContext('2d');
+  t.clearRect(0,0,400,400);
+  if(boite){ // même cadrage que cadrer(...,5), à l'échelle de la toile (4 px pour 1)
+    const[bx,by,bw,bh]=boite,s=90/Math.max(bw,bh);
+    const ox=5+(90-bw*s)/2,oy=5+(90-bh*s)/2;
+    t.drawImage(canvas,bx,by,bw,bh,ox*4,oy*4,bw*s*4,bh*s*4);
+  }
+  atelier.brut=c;
+  $('alerteAtelier').textContent=c?'':"Aucune forme trouvée : essaie un autre seuil, ou coche « sujet clair ».";
+  dessinAtelier();
+}
+function garderPerso(){
+  if(!atelier.brut){$('alerteAtelier').textContent="Il n'y a pas encore de forme à enregistrer.";return}
+  const nom=($('nomPerso').value||'').trim();
+  if(!nom){$('alerteAtelier').textContent='Donne-lui un nom.';$('nomPerso').focus();return}
+  const liste=chargerPerso();
+  const id='p'+Date.now().toString(36);
+  const pts=echantillonner(atelier.brut,Math.min(160,Math.floor(atelier.brut.length/2)));
+  liste.push({id,nom,info:($('infoPerso').value||'').trim(),lisse:0,pts:pts.map(p=>[+p[0].toFixed(1),+p[1].toFixed(1)])});
+  if(!ecrirePerso(liste)){
+    $('alerteAtelier').textContent="La mémoire du navigateur est pleine : exporte tes dessins, puis supprimes-en.";return;
+  }
+  injecterPerso();construireGalerie();
+  $('atelier').close();
+  filtre='perso';construireGalerie();
+  choisirDessin(id);
+}
+
+/* ============================================================
+   8. Export, impression
+   ============================================================ */
+function svgTexte(mode){
+  const s=construireSVG(mode==='solution'?{solution:true}:mode==='colorier'?{colorier:true}:{});
+  // la taille suit la boîte du dessin : sinon un carré imposé recentre la
+  // figure au milieu d'une page vide à l'impression.
+  const[,,vw,vh]=s.getAttribute('viewBox').split(/\s+/).map(Number);
+  s.setAttribute('width','800');s.setAttribute('height',Math.round(800*vh/vw));
   return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(s);
 }
-function telecharger(nom,txt){
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'image/svg+xml'}));a.download=nom;a.click();
+function telecharger(nom,txt,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:type||'image/svg+xml'}));a.download=nom;a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
+/* Une silhouette large tient mieux en paysage : la règle @page est réécrite
+   avant l'impression (une variable CSS n'y serait pas lue). */
+function reglerPage(paysage){
+  let st=$('reglePage');
+  if(!st){st=document.createElement('style');st.id='reglePage';document.head.appendChild(st)}
+  st.textContent=`@media print{@page{size:A4 ${paysage?'landscape':'portrait'};margin:12mm}}`;
+}
 function imprimer(){
-  const t=`${exo.dessin.nom} — ${TYPES[exo.type].nom}, niveau ${exo.niveau}`;
-  const page=(titre,sol)=>`<div class="page"><h2>${titre}</h2><p>${sol?'Solution du dessin.':texteConsigne()}</p>${svgTexte(sol).replace(/^<\?xml[^>]*>\n/,'')}
-    <div class="pied"><span>Prénom : ______________________</span><span>Date : ____________</span></div></div>`;
-  $('impression').innerHTML=page('Points à relier — '+t,false)+page('Solution — '+t,true);
+  const cache=secret();
+  const t=(cache?'':exo.dessin.nom+' — ')+`${TYPES[exo.type].nom}, niveau ${exo.niveau}`;
+  const svgEx=svgTexte('exercice').replace(/^<\?xml[^>]*>\n/,'');
+  const svgSol=svgTexte('solution').replace(/^<\?xml[^>]*>\n/,'');
+  const lignes=`<div class="lignes">Ce dessin représente : ............................................................<br>
+    Recopie son nom : ............................................................<br>
+    Puis colorie-le avec soin.</div>`;
+  const pied=`<div class="pied"><span>Prénom : ______________________</span><span>Date : ____________</span></div>`;
+  const vb=(svgEx.match(/viewBox="([^"]+)"/)||[,'0 0 1 1'])[1].split(/\s+/).map(Number);
+  reglerPage(vb[2]/vb[3]>1.35);
+  $('impression').innerHTML=
+    `<div class="page"><h2>Points à relier — ${t}</h2><p>${texteConsigne()}</p>${svgEx}${lignes}${pied}</div>`
+    +`<div class="page"><h2>Solution — ${exo.dessin.nom}</h2><p>${exo.dessin.info||'Le tracé complet, dans l\'ordre des résultats.'}</p>${svgSol}${pied}</div>`;
   window.print();
 }
+function exporterPerso(){
+  const l=chargerPerso();
+  if(!l.length){message("Tu n'as pas encore de dessin à toi.");return}
+  telecharger('mes-dessins-a-relier.json',JSON.stringify(l,null,1),'application/json');
+}
+function importerPerso(f){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const venus=JSON.parse(r.result);
+      if(!Array.isArray(venus))throw 0;
+      const liste=chargerPerso(),connus=new Set(liste.map(d=>d.id));
+      let n=0;
+      for(const d of venus){
+        if(!d||!Array.isArray(d.pts)||d.pts.length<3||typeof d.nom!=='string')continue;
+        const id=connus.has(d.id)||!d.id?'p'+Date.now().toString(36)+(n++):d.id;
+        connus.add(id);
+        liste.push({id,nom:String(d.nom).slice(0,40),info:String(d.info||'').slice(0,120),lisse:+d.lisse||0,
+          pts:d.pts.slice(0,400).map(p=>[+p[0]||0,+p[1]||0])});
+      }
+      if(!ecrirePerso(liste)){message('La mémoire du navigateur est pleine.');return}
+      injecterPerso();filtre='perso';construireGalerie();
+      message(`${liste.length} dessin${liste.length>1?'s':''} dans « Mes dessins ».`);
+    }catch(e){message("Ce fichier n'est pas une bibliothèque de dessins.")}
+  };
+  r.readAsText(f);
+}
 
-/* ---------- Init ---------- */
+/* ============================================================
+   9. Mise en place
+   ============================================================ */
+function majListeDessins(){
+  const garde=$('dessin').value;
+  const groupes={};
+  for(const d of DESSINS)(groupes[d.cat]=groupes[d.cat]||[]).push(d);
+  $('dessin').innerHTML='<option value="">Au hasard</option>'+
+    Object.entries(CATEGORIES).filter(([k])=>groupes[k]).map(([k,v])=>
+      `<optgroup label="${v}">`+groupes[k].map(d=>`<option value="${d.id}">${d.nom}</option>`).join('')+'</optgroup>').join('');
+  if(garde&&DESSINS.some(d=>d.id===garde))$('dessin').value=garde;
+}
+function majN(n){
+  $('nPts').value=n;$('rN').value=Math.min(200,n);$('vN').textContent=n;
+}
+/* La taille des points suit l'écart réel entre eux : serré, ils rapetissent. */
+function majTaillePoints(pts){
+  const n=pts.length;let perim=0;
+  for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];perim+=Math.hypot(b[0]-a[0],b[1]-a[1])}
+  const rp=Math.max(.3,Math.min(1.7,perim/n*.22)).toFixed(2);
+  $('rPt').value=rp;$('vPt').textContent=fr(rp);
+}
+function majBornesN(){
+  const d=DESSINS.find(x=>x.id===$('dessin').value);
+  const max=d?maxPoints(d):200,min=d?Math.min(detail(d),max):4;
+  $('rN').max=max;$('nPts').max=max;
+  $('conseil').textContent=d?`lisible dès ${min}`:'4 à 200';
+  if(+$('nPts').value>max)majN(max);
+}
+
 for(const k in TYPES)$('type').append(new Option(TYPES[k].nom,k));
 $('type').value='add';
-DESSINS.forEach(d=>$('dessin').append(new Option(`${d.nom} (${d.pts.length} pts, niv. ${d.niveau})`,d.id)));
-$('btnNouveau').onclick=()=>{$('dessin').value='';nouveau()};
+injecterPerso();
+majListeDessins();
+majN(20);
+
+$('btnNouveau').onclick=()=>{$('dessin').value='';majBornesN();nouveau()};
 $('btnJouer').onclick=()=>jouer();
 $('btnIndice').onclick=indice;
 $('btnRecommencer').onclick=()=>{if(jeu)jouer();else afficher()};
-$('btnSvg').onclick=()=>telecharger(`relier-${exo.dessin.id}-exercice.svg`,svgTexte(false));
-$('btnSvgSol').onclick=()=>telecharger(`relier-${exo.dessin.id}-solution.svg`,svgTexte(true));
+$('btnSvg').onclick=()=>telecharger(`relier-${exo.dessin.id}-exercice.svg`,svgTexte('exercice'));
+$('btnSvgSol').onclick=()=>telecharger(`relier-${exo.dessin.id}-solution.svg`,svgTexte('solution'));
+$('btnSvgCol').onclick=()=>telecharger(`relier-${exo.dessin.id}-colorier.svg`,svgTexte('colorier'));
 $('btnPdf').onclick=imprimer;
 $('voirSolution').onchange=()=>{jeu=null;afficher()};
+$('surprise').onchange=()=>{if(!jeu)afficher();else redessiner()};
 $('rPt').oninput=()=>{$('vPt').textContent=fr($('rPt').value);redessiner()};
 $('rTx').oninput=()=>{$('vTx').textContent=$('rTx').value+' %';redessiner()};
-['type','niveau','ordre','dessin'].forEach(id=>$(id).onchange=nouveau);
-construireGalerie();nouveau();
+$('rN').oninput=()=>{majN(+$('rN').value)};
+$('rN').onchange=nouveau;
+$('nPts').onchange=()=>{majN(Math.max(4,Math.min(+$('nPts').value||20,+$('nPts').max)));nouveau()};
+['type','niveau','ordre'].forEach(id=>$(id).onchange=nouveau);
+$('dessin').onchange=()=>{majBornesN();nouveau()};
+['rgMin','rgMax'].forEach(id=>$(id).onchange=nouveau);
+
+/* Atelier */
+$('btnAtelier').onclick=ouvrirAtelier;
+$('ongletsAtelier').onclick=e=>{const b=e.target.closest('button');if(b)modeAtelier(b.dataset.mode)};
+$('btnGarder').onclick=garderPerso;
+$('rNa').oninput=()=>{$('vNa').textContent=$('rNa').value;dessinAtelier()};
+$('btnEffacer').onclick=()=>{atelier.brut=null;atelier.trace=[];dessinAtelier()};
+$('rSeuil').oninput=()=>{$('vSeuil').textContent=$('rSeuil').value+' %';relireImage()};
+$('inverse').onchange=relireImage;
+$('fichierImage').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();
+  img.onload=()=>{atelier.image=img;relireImage()};
+  img.onerror=()=>{$('alerteAtelier').textContent="Cette image n'a pas pu être lue."};
+  img.src=URL.createObjectURL(f);
+};
+$('btnLireSvg').onclick=()=>{
+  const c=contourTrace($('texteSvg').value||'');
+  atelier.brut=c;
+  $('alerteAtelier').textContent=c?'':"Aucun tracé lisible là-dedans.";
+  dessinAtelier();
+};
+/* dessin à main levée */
+(function(){
+  const sc=$('scene');
+  const versCent=e=>{const r=sc.getBoundingClientRect();
+    return[(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100]};
+  let trace=false;
+  sc.addEventListener('pointerdown',e=>{
+    if(atelier.mode!=='dessin')return;
+    e.preventDefault();trace=true;atelier.brut=null;atelier.trace=[versCent(e)];dessinAtelier();
+  });
+  window.addEventListener('pointermove',e=>{
+    if(!trace)return;
+    const p=versCent(e),d=atelier.trace[atelier.trace.length-1];
+    if(Math.hypot(p[0]-d[0],p[1]-d[1])>1){atelier.trace.push(p);dessinAtelier()}
+  });
+  window.addEventListener('pointerup',()=>{
+    if(!trace)return;trace=false;
+    if(atelier.trace.length<4){atelier.trace=[];dessinAtelier();return}
+    atelier.brut=cadrer(densifier(lisser(atelier.trace,2),.3),5);
+    atelier.trace=[];dessinAtelier();
+  });
+})();
+$('btnExportPerso').onclick=exporterPerso;
+$('btnImportPerso').onclick=()=>$('fichierJson').click();
+$('fichierJson').onchange=e=>{const f=e.target.files[0];if(f)importerPerso(f);e.target.value=''};
+
+majBornesN();construireGalerie();nouveau();
 </script>
 </body>
 </html>

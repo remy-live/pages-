@@ -17,7 +17,8 @@ la section « Outils en ligne » de la page.
   découpée en pièces se reconstitue si les calculs sont justes :
   https://remy-live.github.io/pages-/puzzle/
 - [`relier/`](relier/) — **Points à relier**, des fiches où l'ordre du tracé vient
-  des résultats des calculs :
+  des résultats des calculs : nombre de points et intervalle au choix, soixante
+  animaux, et un atelier pour en créer d'autres à partir d'une image :
   https://remy-live.github.io/pages-/relier/
 - [`visu-incidents/`](visu-incidents/) — **Visu-Incidents**, carte et tableau de
   bord des signalements portés aux registres santé et sécurité au travail :
