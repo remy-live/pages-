@@ -16,6 +16,9 @@ la section « Outils en ligne » de la page.
 - [`puzzle/`](puzzle/) — **Puzzle de calcul**, fabrique une fiche où une image
   découpée en pièces se reconstitue si les calculs sont justes :
   https://remy-live.github.io/pages-/puzzle/
+- [`relier/`](relier/) — **Points à relier**, des fiches où l'ordre du tracé vient
+  des résultats des calculs :
+  https://remy-live.github.io/pages-/relier/
 - [`visu-incidents/`](visu-incidents/) — **Visu-Incidents**, carte et tableau de
   bord des signalements portés aux registres santé et sécurité au travail :
   https://remy-live.github.io/pages-/visu-incidents/
