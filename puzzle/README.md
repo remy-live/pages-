@@ -58,6 +58,9 @@ La feuille du premier temps se manipule directement :
 - **Ctrl + molette**, ou les boutons `−` `+` au-dessus de la feuille, pour grossir
   l'affichage sans toucher au dessin — la feuille défile alors dans son cadre.
 
+La galerie se cherche : taper `paris`, `noel` ou `monument` filtre les
+silhouettes, accents facultatifs.
+
 **Plusieurs dessins** peuvent être posés sur la même feuille : le `+` de la bande
 en ajoute un, un clic sur une vignette — ou sur le dessin lui-même — choisit celui
 qu'on manipule, *Passer devant* règle l'ordre, *Retirer* en enlève un. La
@@ -68,8 +71,8 @@ silhouette cliquée dans la galerie remplace le dessin choisi.
 | Réglage | Ce qu'il change |
 |---|---|
 | **La feuille** | portrait ou paysage, plateau et pièces sur une ou deux feuilles, marges de 0 à 25 mm |
-| **Les cases** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces ; carrées, ou étirées pour remplir la feuille |
-| **Les dessins** | quarante-six silhouettes fournies, rangées par familles — vingt-deux animaux, objets, villes (New York, Paris, Londres), Halloween, Noël, Pâques — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
+| **Les cases** | de 2 à 14 colonnes et lignes, soit 4 à 196 pièces, avec des raccourcis 4 × 3 à 8 × 6 ; carrées, ou étirées pour remplir la feuille |
+| **Les dessins** | cinquante-six silhouettes fournies, rangées par familles et **cherchables par leur nom** — animaux, objets, villes, monuments, Halloween, Noël, Pâques — ou tes fichiers (SVG de préférence, sinon PNG/JPEG) |
 | **Les calculs** | sept générateurs, dont cinq réglables (opérations et intervalle), ou ta propre liste ; une graine de mélange (même graine = même fiche) |
 | **Rotation** | aucune, demi-tours, ou quarts de tour — avec l'option de garder les **nombres à l'endroit** |
 | **Finitions** | corrigé, consigne, titres de section, position et taille des nombres, halo blanc, fond gris |
@@ -110,6 +113,11 @@ division exacte.
 
 Sous les réglages, la page annonce en permanence **combien de résultats
 différents** ces bornes peuvent produire, et combien de cases il y a à remplir.
+
+Changer la grille **entraîne les calculs avec elle** : passer de 24 à 48 cases
+regénère la bonne quantité. Une liste tapée à la main, elle, n'est jamais
+écrasée — seul le bouton de l'avertissement la remplace, et seulement si on le
+clique.
 
 ### Ta propre liste
 
@@ -158,7 +166,10 @@ dessins entiers, décalés pour n'en laisser voir que la bonne portion — c'est
 l'équivalent de l'intersection faite dans LibreOffice, mais sans toucher aux
 fichiers source. Une image SVG reste donc vectorielle jusqu'au PDF.
 
-Les silhouettes fournies sont dessinées à la main dans le fichier, en SVG.
+Les silhouettes fournies sont dessinées à la main dans le fichier, en SVG. Leur
+cadre (`viewBox`) est calé sur la boîte réelle du tracé, marge constante : aucun
+dessin n'est rogné, et aucun ne flotte dans du vide qui donnerait des pièces
+blanches en bord de grille.
 
 Pour tester en local :
 
