@@ -121,7 +121,10 @@ jusqu'à ce que le tracé soit fini.
 
 **Imprimer / PDF** sort deux pages — la fiche puis sa solution — avec, sous le
 dessin, les lignes pour écrire le nom de l'animal, le recopier et penser à le
-colorier. L'orientation suit la figure : une silhouette large s'imprime en
+colorier. **Imprimer une série** en sort une par élève : mêmes réglages, mais
+des calculs différents à chaque fiche, numérotées « fiche 7 sur 25 », les
+solutions groupées à la fin, et l'option d'un dessin différent à chaque fois.
+Vingt-cinq fiches se fabriquent en un quart de seconde. L'orientation suit la figure : une silhouette large s'imprime en
 paysage. **SVG exercice**, **SVG solution** et **SVG à colorier** exportent le
 dessin seul, vectoriel ; le dernier ne contient que le contour, sans chiffres,
 prêt pour les crayons de couleur.
@@ -144,11 +147,20 @@ Les calculs sont tirés par un générateur à graine (*mulberry32* amorcé par 
 hachage FNV du texte de la graine) : c'est ce qui rend un lien reproductible.
 
 Le placement des étiquettes est calculé : pour chaque point, la normale
-extérieure au contour donne une direction de départ, puis une trentaine de
+extérieure au contour donne une direction de départ, puis une cinquantaine de
 positions candidates sont notées — chevauchement avec une autre étiquette, avec
 un point, avec un segment du tracé — et la moins mauvaise est retenue. Les
 candidats sont testés contre une grille d'occupation, ce qui tient encore à 200
 points.
+
+Avec des résultats à trois chiffres, une étiquette est plus large que l'écart
+entre deux points : il faut pouvoir la sortir loin, et un **trait de rappel**
+dit alors à quel point elle appartient. Il apparaît quand un autre point la
+revendique d'aussi près que le sien, ou quand elle s'en est éloignée de plus
+d'une hauteur de texte — pas quand elle est collée à son point, où il ne
+servirait à rien. Sur les quatre-vingt-quinze dessins à 16, 24 et 36 points,
+cela fait zéro étiquette qui en recouvre une autre, et zéro étiquette ambiguë
+sans son trait.
 
 Pour tester en local :
 
