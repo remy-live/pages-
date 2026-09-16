@@ -66,11 +66,12 @@ choix est trop maigre.
 
 ## Les calculs
 
-Onze types, chacun sur cinq niveaux :
+Douze types, chacun sur cinq niveaux :
 
 | | |
 |---|---|
 | **Nombres entiers** | sans calcul, pour le tri seul — le bon choix au-delà de 80 points |
+| **Compter de n en n** | une suite régulière : de 7 en 7, de 25 en 25 selon le niveau |
 | **Additions**, **Soustractions** | décomposent un résultat pris dans l'intervalle |
 | **Multiplications**, **Divisions** | tables du niveau, produit ou quotient dans l'intervalle |
 | **Mélange des 4 opérations** | tire au hasard parmi les quatre |
@@ -91,6 +92,10 @@ ornithorynque, échidné, binturong, ratel, capybara, wombat, fennec, coati,
 narval, lamantin, raie manta, poisson-lune, murène, seiche, macareux, kiwi,
 colibri, lucane, mante religieuse… Chacun porte une phrase à savoir, montrée
 quand la partie est gagnée et imprimée sur la page solution.
+
+La **recherche** au-dessus de la galerie cherche dans les quatre-vingt-quinze
+dessins, sans se soucier des accents ni des majuscules, et par famille aussi :
+taper « oiseau » les montre tous.
 
 ## L'atelier
 
@@ -117,7 +122,18 @@ dit dans quel sens chercher (« il te faut un résultat plus petit »). *Indice*
 fait clignoter le point attendu, au prix d'une erreur.
 
 **Cacher le nom** garde la surprise : la fiche s'appelle « Dessin mystère »
-jusqu'à ce que le tracé soit fini.
+jusqu'à ce que le tracé soit fini. Décochée, la fiche imprimée porte le nom
+**en lettres creuses à repasser** au crayon, puis une ligne pour le recopier
+seul — c'est le même texte, dessiné en trait pointillé au lieu d'être rempli,
+donc aucune police particulière n'est nécessaire.
+
+Quand la partie est gagnée, la page affiche un **code de fin** : trois lettres
+du nom et quatre caractères calculés sur la fiche elle-même (dessin, graine,
+nombre de points, type de calcul). L'élève le recopie sur son cahier ou
+l'envoie ; celui qui a partagé le lien voit le même code dans la boîte de
+partage et sait de quelle fiche il s'agit. Le temps et les erreurs sont
+affichés à côté, mais ils sont déclarés : le code dit de quelle fiche on
+parle, pas que personne n'a aidé.
 
 **Imprimer / PDF** sort deux pages — la fiche puis sa solution — avec, sous le
 dessin, les lignes pour écrire le nom de l'animal, le recopier et penser à le
