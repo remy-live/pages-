@@ -98,6 +98,22 @@ Cent une figures en treize familles : Animaux, Oiseaux, Mer, Petites bêtes,
 Véhicules. Beaucoup portent une phrase à savoir, montrée quand la partie est
 gagnée et imprimée sur la page solution.
 
+### Le décor, ce qui fait qu'un contour devient un animal
+
+Un point-à-relier est **un seul contour fermé** : sans détail intérieur, un
+quadrupède ressemble à n'importe quel quadrupède, et c'est la limite du format
+plus que celle du dessinateur. Les silhouettes d'origine contiennent pourtant
+ces détails — yeux, taches, rayures, écailles —, ils sont donc extraits à part
+et **imprimés sans être reliés**. Un rond devient un ours, une coccinelle prend
+ses points, le hibou ses yeux, la citrouille sa grimace.
+
+Le décor n'apparaît **pas sur l'exercice vierge** : la forme reste à découvrir.
+Il se montre là où il sert — dans la galerie où l'on choisit, sur la solution, à
+la fin de la partie, et sur la feuille à colorier. Vingt-six dessins qui n'en
+avaient pas ont reçu un œil placé à la main.
+
+### D'où viennent les tracés
+
 La moitié d'entre elles sont **décalquées des silhouettes du puzzle de calcul**
 du même dépôt : ce sont de vrais dessins vectoriels, avec oreilles, trompe et
 queue, là où des polygones écrits à la main donnaient une suite de blobs qui se
