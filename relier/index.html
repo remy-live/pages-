@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1f3a8a">
-<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : mode pas à pas ou interface complète, intervalle et nombre de points au choix (jusqu'à 200), douze types de calculs dont les suites, quatre-vingt-quinze dessins dont soixante animaux, un atelier pour créer les siens, et un lien pour partager une fiche.">
+<meta name="description" content="Fiches de points à relier où l'ordre vient des résultats : mode pas à pas ou interface complète, intervalle et nombre de points au choix (jusqu'à 200), douze types de calculs dont les suites, cent une figures dont des thèmes Halloween, Noël et Pâques, cinq niveaux de difficulté, un atelier pour créer les siens, et un lien pour partager une fiche.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='9' fill='%231f3a8a'/%3E%3Cpolyline points='8,34 14,12 24,30 30,8 38,26' fill='none' stroke='%23ffd84d' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='34' r='3.2'/%3E%3Ccircle cx='14' cy='12' r='3.2'/%3E%3Ccircle cx='24' cy='30' r='3.2'/%3E%3Ccircle cx='30' cy='8' r='3.2'/%3E%3Ccircle cx='38' cy='26' r='3.2'/%3E%3C/g%3E%3C/svg%3E">
 <title>Points à relier — calculs</title>
 <style>
@@ -41,6 +41,7 @@ button.vert{background:var(--vert);color:#fff;border-color:var(--vert)}button.ve
 .coche{display:flex;align-items:center;gap:8px;font-size:14px}.coche input{width:17px;height:17px;margin:0;accent-color:var(--encre);flex:none}
 .alerte{background:#fff6d8;border:1px solid #e8d48a;border-radius:10px;padding:8px 10px;font-size:13px;color:#6b5300}
 .alerte:empty{display:none}
+#fin[hidden]{display:none}
 #fin{margin-top:10px;padding:10px 12px;border:1px solid var(--vert);border-radius:12px;background:#f0f8f3;
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
 #fin b{font:600 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px;color:var(--vert)}
@@ -129,6 +130,10 @@ body[data-vue=guide][data-pas="3"] .pas[data-p="3"],body[data-vue=guide][data-pa
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .chips button{padding:9px 14px;border-radius:99px;font-size:14px;min-height:42px}
 .chips button[aria-pressed=true]{background:var(--encre);color:#fff;border-color:var(--encre)}
+.surmesure{align-self:center;font-size:13px;color:var(--gris);font-style:italic}
+.panneau .chips button{padding:7px 10px;font-size:13px;min-height:0}
+.carte.court{opacity:.62}
+.carte.court .meta{color:#b06a00}
 .nav{display:flex;gap:8px;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--bord)}
 .nav button{min-width:120px;min-height:46px}
 .boutons-larges{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
@@ -230,7 +235,9 @@ body[data-partage] .bandeau{display:flex}
 
     <div class="pas" data-p="2">
       <h2>Quels calculs&nbsp;?</h2>
-      <p class="aide">Chaque point porte un calcul ; on relie du plus petit résultat au plus grand.</p>
+      <p class="aide">Le plus simple : choisis un niveau, tout se règle d'un coup.</p>
+      <div class="chips" id="diffsG"></div>
+      <h3>Ou règle toi-même</h3>
       <div class="cartes-choix" id="typesG"></div>
       <h3>Niveau</h3>
       <div class="chips" id="niveauxG"></div>
@@ -270,6 +277,9 @@ body[data-partage] .bandeau{display:flex}
   </section>
 
   <aside class="panneau">
+    <h3>Difficulté</h3>
+    <div class="chips" id="diffs"></div>
+
     <h3>Dessin</h3>
     <label class="champ">Sujet<select id="dessin"></select></label>
     <label class="reglage"><span>Nombre de points <b id="vN">20</b></span>
@@ -440,107 +450,111 @@ function etoile(k,R,r){const p=[];for(let i=0;i<2*k;i++){const a=-Math.PI/2+i*Ma
 function coeur(n){const p=[];for(let i=0;i<n;i++){const t=i/n*2*Math.PI;p.push([16*Math.sin(t)**3,-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))])}return p}
 
 const CATEGORIES={animaux:'Animaux',oiseaux:'Oiseaux',mer:'Mer',bestioles:'Petites bêtes',
+  halloween:'Halloween',noel:'Noël',paques:'Pâques',monuments:'Monuments',villes:'Villes',
   nature:'Nature',formes:'Formes',objets:'Objets',vehicules:'Véhicules',perso:'Mes dessins'};
 
 const DESSINS=[
-  /* — formes, objets, véhicules, nature — */
-  {id:'losange',cat:'formes',nom:'Cerf-volant',pts:[[50,4],[80,30],[64,55],[50,96],[36,55],[20,30]]},
-  {id:'eclair',cat:'formes',nom:'Éclair',pts:[[60,2],[25,52],[46,52],[36,98],[78,42],[56,42],[70,2]]},
-  {id:'fleche',cat:'formes',nom:'Flèche',pts:[[10,38],[60,38],[60,18],[95,50],[60,82],[60,62],[10,62]]},
-  {id:'couronne',cat:'objets',nom:'Couronne',pts:[[10,84],[8,28],[30,52],[50,14],[70,52],[92,28],[90,84]]},
-  {id:'tasse',cat:'objets',nom:'Tasse',pts:[[16,28],[68,28],[68,40],[82,38],[90,50],[82,64],[68,62],[64,84],[22,84]]},
-  {id:'maison',cat:'objets',nom:'Maison',pts:[[20,90],[20,50],[50,25],[80,50],[80,90],[60,90],[60,70],[40,70],[40,90]]},
-  {id:'etoile5',cat:'formes',nom:'Étoile à 5 branches',pts:etoile(5,48,20)},
-  {id:'feuille',cat:'nature',nom:'Feuille',lisse:1,pts:[[50,4],[68,16],[84,34],[90,56],[82,78],[64,90],[52,86],[50,98],[46,86],[34,90],[16,78],[8,56],[14,34],[30,16]]},
-  {id:'bateau',cat:'vehicules',nom:'Bateau',pts:[[18,92],[5,72],[47,72],[47,18],[53,18],[53,25],[88,66],[53,66],[53,72],[95,72],[82,92]]},
-  {id:'fantome',cat:'objets',nom:'Fantôme',pts:[[50,6],[70,12],[82,30],[84,90],[74,80],[64,92],[54,80],[44,92],[34,80],[24,92],[16,80],[18,30],[30,12]]},
-  {id:'bonhomme',cat:'nature',nom:'Bonhomme de neige',lisse:1,pts:[[50,8],[64,14],[68,28],[60,38],[76,50],[84,70],[76,90],[24,90],[16,70],[24,50],[40,38],[32,28],[36,14]]},
-  {id:'coeur',cat:'formes',nom:'Cœur',lisse:1,pts:coeur(14)},
-  {id:'sapin',cat:'nature',nom:'Sapin',pts:[[50,5],[70,30],[60,30],[78,55],[65,55],[85,80],[57,80],[57,95],[43,95],[43,80],[15,80],[35,55],[22,55],[40,30],[30,30]]},
-  {id:'fusee',cat:'vehicules',nom:'Fusée',pts:[[50,4],[60,18],[65,40],[65,68],[80,84],[80,92],[62,82],[56,92],[44,92],[38,82],[20,92],[20,84],[35,68],[35,40],[40,18]]},
-  {id:'champignon',cat:'nature',nom:'Champignon',lisse:1,pts:[[50,10],[70,14],[85,28],[88,45],[70,50],[62,50],[65,88],[58,95],[42,95],[35,88],[38,50],[30,50],[12,45],[15,28],[30,14]]},
-  {id:'etoile8',cat:'formes',nom:'Étoile à 8 branches',pts:etoile(8,48,30)},
-  {id:'voiture',cat:'vehicules',nom:'Voiture',pts:[[6,72],[6,50],[24,50],[36,32],[66,32],[78,50],[94,50],[94,72],[80,72],[74,80],[64,80],[58,72],[42,72],[36,80],[26,80],[20,72]]},
-  {id:'camion',cat:'vehicules',nom:'Camion',pts:[[4,72],[4,40],[40,40],[40,28],[74,28],[86,44],[96,48],[96,72],[84,72],[78,80],[66,80],[60,72],[36,72],[30,80],[18,80],[12,72]]},
-  {id:'pomme',cat:'nature',nom:'Pomme',lisse:1,pts:[[50,18],[54,4],[62,2],[64,12],[80,16],[92,36],[88,62],[74,86],[58,94],[50,88],[42,94],[26,86],[12,62],[8,36],[20,16],[36,10]]},
-  {id:'cactus',cat:'nature',nom:'Cactus',pts:[[42,90],[42,50],[24,50],[22,28],[30,28],[32,42],[42,42],[42,14],[58,14],[58,34],[70,34],[72,18],[80,18],[78,44],[58,44],[58,90]]},
-  {id:'cle',cat:'objets',nom:'Clé',pts:[[10,44],[24,32],[40,36],[46,44],[86,44],[92,50],[86,58],[80,52],[74,58],[68,52],[62,58],[56,52],[46,56],[40,64],[24,68],[10,56]]},
-  {id:'avion',cat:'vehicules',nom:'Avion',pts:[[50,4],[56,12],[56,36],[94,60],[94,68],[56,58],[56,80],[70,90],[70,95],[50,90],[30,95],[30,90],[44,80],[44,58],[6,68],[6,60],[44,36],[44,12]]},
-  {id:'parapluie',cat:'objets',nom:'Parapluie',pts:[[50,6],[54,12],[92,44],[80,38],[70,44],[60,38],[54,44],[54,82],[50,90],[42,90],[38,82],[44,82],[46,86],[48,82],[48,44],[40,38],[30,44],[20,38],[8,44],[46,12]]},
-  {id:'etoile10',cat:'formes',nom:'Étoile à 10 branches',pts:etoile(10,48,34)},
-  {id:'etoile12',cat:'formes',nom:'Étoile à 12 branches',pts:etoile(12,48,38)},
-  {id:'grandcoeur',cat:'formes',nom:'Grand cœur',lisse:1,pts:coeur(26)},
-  {id:'soleil',cat:'nature',nom:'Soleil',pts:etoile(16,48,38)},
-  /* — animaux d'origine — */
-  {id:'poisson',cat:'mer',nom:'Poisson',lisse:1,pts:[[4,26],[22,36],[40,26],[60,27],[76,38],[92,50],[76,62],[60,73],[40,74],[22,64],[4,74],[12,50]]},
-  {id:'chat',cat:'animaux',nom:'Chat',lisse:1,pts:[[30,8],[40,22],[60,22],[70,8],[75,30],[68,42],[80,55],[85,75],[80,92],[20,92],[15,75],[20,55],[32,42],[25,30]]},
-  {id:'baleine',cat:'mer',nom:'Baleine',lisse:1,pts:[[6,44],[20,34],[42,28],[64,30],[80,38],[88,50],[86,62],[96,54],[98,78],[82,70],[70,76],[50,78],[30,74],[14,64],[4,56]]},
-  {id:'dauphin',cat:'mer',nom:'Dauphin',lisse:1,pts:[[4,52],[14,42],[30,36],[44,34],[52,20],[58,36],[74,40],[86,46],[96,40],[94,58],[86,54],[74,62],[62,70],[52,72],[46,80],[40,70],[26,68],[12,62]]},
-  {id:'papillon',cat:'bestioles',nom:'Papillon',lisse:1,pts:[[50,45],[35,18],[15,12],[6,30],[14,50],[6,68],[14,86],[32,84],[50,62],[68,84],[86,86],[94,68],[86,50],[94,30],[85,12],[65,18]]},
-  {id:'canard',cat:'oiseaux',nom:'Canard',lisse:1,pts:[[22,16],[36,12],[46,22],[44,38],[52,48],[72,44],[94,30],[92,52],[80,70],[54,76],[28,68],[12,56],[16,42],[24,38],[16,30],[4,26],[14,22]]},
-  {id:'lapin',cat:'animaux',nom:'Lapin',lisse:1,pts:[[30,4],[42,2],[47,30],[53,30],[58,2],[70,4],[64,34],[74,42],[78,58],[84,72],[90,84],[84,94],[16,94],[10,84],[16,72],[22,58],[26,42],[36,34]]},
-  {id:'elephant',cat:'animaux',nom:'Éléphant',lisse:1,pts:[[24,36],[40,24],[62,22],[80,30],[92,46],[94,66],[86,68],[86,92],[74,92],[72,74],[60,74],[58,92],[46,92],[44,74],[32,74],[30,92],[18,92],[16,72],[10,84],[2,92],[4,80],[8,58],[12,44]]},
-  {id:'dino',cat:'animaux',nom:'Dinosaure',lisse:1,pts:[[4,22],[16,18],[22,26],[15,32],[24,46],[34,58],[48,54],[62,50],[78,56],[92,72],[98,80],[84,70],[80,80],[84,95],[72,95],[66,80],[56,82],[50,95],[38,95],[40,80],[28,72],[16,66],[10,46],[3,30]]},
-  {id:'tortue',cat:'mer',nom:'Tortue',lisse:1,pts:[[4,44],[12,36],[22,40],[26,48],[34,34],[48,24],[64,26],[78,36],[86,50],[88,62],[96,68],[98,78],[90,74],[82,84],[72,84],[68,72],[58,74],[50,72],[44,74],[34,72],[30,84],[20,84],[14,72],[12,58],[6,56]]},
-  /* — les soixante nouveaux, à découvrir en reliant — */
-  {id:'pangolin',cat:'animaux',nom:"Pangolin",lisse:1,info:"Le seul mammifère couvert d'écailles ; il se roule en boule pour se protéger.",pts:[[4,58],[14,50],[22,46],[27,41],[34,40],[48,30],[66,27],[82,35],[92,47],[110,52],[128,60],[132,66],[116,66],[96,61],[86,66],[88,84],[78,84],[76,66],[60,70],[46,70],[36,68],[38,84],[28,84],[26,66],[18,62]]},
-  {id:'tatou',cat:'animaux',nom:"Tatou",lisse:1,info:"Sa carapace est faite de plaques osseuses ; certains se roulent en boule parfaite.",pts:[[6,56],[14,48],[20,44],[19,30],[27,42],[33,44],[44,26],[66,21],[86,29],[94,46],[110,58],[126,74],[116,70],[96,60],[86,64],[88,82],[80,82],[78,64],[58,66],[40,63],[42,82],[34,82],[32,62],[18,60]]},
-  {id:'okapi',cat:'animaux',nom:"Okapi",lisse:1,info:"Cousin de la girafe, découvert seulement en 1901 dans les forêts du Congo.",pts:[[6,30],[16,20],[20,6],[26,18],[33,6],[36,20],[46,26],[58,33],[86,33],[98,40],[105,56],[100,72],[100,94],[92,94],[90,70],[84,60],[72,58],[60,58],[58,94],[50,94],[52,58],[44,50],[36,32],[14,34]]},
-  {id:'fourmilier',cat:'animaux',nom:"Fourmilier",lisse:1,info:"Sa langue mesure 60 cm et attrape 30 000 fourmis par jour.",pts:[[2,74],[20,66],[36,58],[48,48],[58,40],[70,34],[86,32],[100,38],[110,28],[124,16],[138,14],[136,30],[128,46],[116,56],[106,60],[100,66],[102,88],[92,88],[90,66],[76,66],[62,64],[62,88],[52,88],[52,62],[44,62],[30,68],[16,76],[4,78]]},
-  {id:'ornithorynque',cat:'animaux',nom:"Ornithorynque",lisse:1,info:"Mammifère à bec de canard : il pond des œufs et détecte ses proies à l'électricité.",pts:[[2,52],[16,44],[28,44],[38,40],[56,36],[76,38],[96,44],[116,54],[130,66],[122,70],[104,64],[92,62],[86,72],[76,72],[78,60],[60,62],[42,62],[34,72],[24,70],[28,58],[16,58],[4,58]]},
-  {id:'tapir',cat:'animaux',nom:"Tapir",lisse:1,info:"Sa petite trompe lui sert à attraper les feuilles ; les bébés sont rayés.",pts:[[4,42],[12,32],[22,26],[28,18],[36,26],[52,26],[74,28],[92,36],[98,50],[102,44],[104,56],[96,62],[96,88],[88,88],[86,64],[70,62],[54,62],[44,62],[42,88],[34,88],[34,60],[22,54],[12,50],[6,50]]},
-  {id:'suricate',cat:'animaux',nom:"Suricate",lisse:1,info:"Il monte la garde debout pendant que le groupe cherche à manger.",pts:[[18,26],[24,14],[26,4],[32,10],[40,4],[48,2],[52,12],[50,22],[46,30],[52,44],[58,58],[60,72],[72,82],[86,92],[94,98],[86,98],[74,90],[62,84],[58,92],[48,94],[40,94],[34,90],[30,74],[28,58],[30,44],[34,30],[30,28]]},
-  {id:'fennec',cat:'animaux',nom:"Fennec",lisse:1,info:"Le plus petit renard du monde : ses grandes oreilles évacuent la chaleur du désert.",pts:[[16,44],[10,16],[22,26],[34,30],[46,28],[56,20],[54,4],[66,26],[74,34],[86,42],[96,54],[92,66],[94,88],[86,88],[84,66],[70,66],[54,68],[44,68],[42,88],[34,88],[34,66],[24,60],[18,54]]},
-  {id:'lemurien',cat:'animaux',nom:"Lémurien",lisse:1,info:"Le maki catta ne vit qu'à Madagascar ; sa queue annelée fait sa taille.",pts:[[12,16],[8,2],[18,10],[26,4],[32,6],[38,0],[42,14],[40,26],[50,38],[56,56],[70,66],[86,62],[96,50],[98,58],[88,72],[72,80],[58,84],[46,94],[32,92],[22,84],[18,68],[16,52],[18,38],[14,28]]},
-  {id:'capybara',cat:'animaux',nom:"Capybara",lisse:1,info:"Le plus gros rongeur du monde : il vit dans l'eau et pèse 60 kg.",pts:[[6,44],[14,34],[24,28],[26,20],[32,28],[48,26],[70,28],[88,36],[94,50],[96,84],[88,84],[86,58],[68,60],[50,60],[40,58],[38,84],[30,84],[30,56],[18,52],[8,52]]},
-  {id:'wombat',cat:'animaux',nom:"Wombat",lisse:1,info:"Il creuse des terriers de 20 m et ses crottes sont… cubiques.",pts:[[8,50],[14,38],[22,32],[24,22],[32,30],[48,26],[70,28],[86,34],[94,46],[96,60],[92,80],[84,80],[82,62],[64,64],[46,64],[38,62],[36,80],[28,80],[28,60],[16,58],[8,58]]},
-  {id:'echidne',cat:'animaux',nom:"Échidné",lisse:1,info:"Couvert de piquants, il pond des œufs comme l'ornithorynque.",pts:[[4,66],[18,58],[26,50],[24,38],[34,46],[38,34],[46,44],[52,30],[60,42],[70,30],[76,44],[86,36],[90,50],[100,46],[100,60],[108,60],[100,70],[94,78],[84,76],[70,78],[52,78],[36,76],[22,74],[8,72]]},
-  {id:'ratel',cat:'animaux',nom:"Ratel",lisse:1,info:"Le blaireau à miel : réputé le plus intrépide des animaux.",pts:[[6,54],[16,46],[24,42],[26,34],[34,42],[50,38],[72,38],[88,44],[96,54],[112,62],[122,72],[112,72],[96,64],[88,66],[90,84],[82,84],[80,66],[62,68],[44,68],[40,84],[32,84],[32,66],[20,62],[8,62]]},
-  {id:'binturong',cat:'animaux',nom:"Binturong",lisse:1,info:"Ce « chat-ours » d'Asie sent la barbe à papa et sa queue sert de cinquième main.",pts:[[6,46],[14,36],[22,32],[22,22],[30,30],[46,28],[68,30],[86,36],[96,46],[112,44],[124,54],[122,68],[110,70],[104,60],[94,58],[90,80],[82,80],[80,60],[62,62],[44,62],[40,80],[32,80],[32,58],[18,54],[8,54]]},
-  {id:'coati',cat:'animaux',nom:"Coati",lisse:1,info:"Cousin du raton laveur, il fouille le sol avec son museau mobile, queue dressée.",pts:[[4,54],[16,46],[26,40],[30,32],[38,40],[54,38],[70,40],[80,34],[82,18],[88,4],[96,8],[92,22],[90,40],[92,56],[86,70],[86,88],[78,88],[76,70],[60,70],[46,70],[42,88],[34,88],[34,68],[22,62],[8,60]]},
-  {id:'narval',cat:'mer',nom:"Narval",lisse:1,info:"Sa « corne » est en fait une dent qui pousse tout droit, longue de 3 m.",pts:[[2,44],[30,50],[42,42],[58,38],[78,38],[98,42],[116,50],[126,36],[136,54],[126,68],[114,56],[96,60],[76,64],[58,64],[52,64],[58,76],[46,74],[44,62],[34,58],[32,52]]},
-  {id:'lamantin',cat:'mer',nom:"Lamantin",lisse:1,info:"Ce gros herbivore paisible brise 50 kg d'herbes d'eau par jour.",pts:[[10,44],[22,36],[38,32],[58,32],[78,36],[96,44],[112,44],[124,54],[128,66],[118,76],[104,72],[86,78],[66,80],[48,78],[36,74],[36,88],[26,86],[26,72],[16,62],[10,54]]},
-  {id:'raie',cat:'mer',nom:"Raie manta",lisse:1,info:"Elle « vole » sous l'eau avec 7 m d'envergure et se nourrit de plancton.",pts:[[2,40],[24,30],[40,26],[44,16],[50,12],[52,22],[58,22],[60,12],[66,16],[70,26],[86,30],[98,42],[86,52],[72,58],[62,64],[58,60],[58,80],[60,98],[54,98],[52,80],[50,62],[42,66],[30,58],[16,52]]},
-  {id:'poulpe',cat:'mer',nom:"Poulpe",lisse:1,info:"Trois cœurs, un sang bleu, et il change de couleur en une seconde.",pts:[[18,36],[20,20],[34,6],[50,2],[66,6],[80,20],[82,36],[94,46],[88,58],[96,74],[86,72],[80,56],[78,64],[82,84],[72,80],[70,60],[66,70],[64,92],[56,88],[58,64],[50,72],[44,92],[38,86],[44,62],[36,68],[26,86],[20,80],[30,58],[22,60],[10,72],[6,62],[16,48]]},
-  {id:'meduse',cat:'mer',nom:"Méduse",lisse:1,info:"Sans cerveau ni squelette : elle est faite de 95 % d'eau.",pts:[[8,44],[12,24],[28,8],[50,4],[72,8],[88,24],[92,44],[84,50],[86,68],[80,90],[72,96],[72,84],[78,66],[76,48],[68,44],[66,62],[60,86],[52,94],[52,80],[58,60],[56,46],[48,50],[44,66],[38,90],[30,94],[32,80],[38,62],[36,46],[28,50],[24,68],[18,88],[12,92],[14,78],[20,60],[18,46]]},
-  {id:'crabe',cat:'mer',nom:"Crabe",lisse:1,info:"Il marche de côté et ses yeux sont montés sur deux petites tiges.",pts:[[28,38],[34,26],[40,24],[42,34],[58,34],[60,24],[66,26],[72,38],[82,28],[92,18],[96,26],[90,32],[96,38],[88,44],[78,40],[86,50],[94,58],[88,62],[80,52],[84,64],[90,74],[84,78],[76,66],[78,72],[80,84],[74,86],[70,68],[60,64],[50,66],[40,64],[30,68],[26,84],[20,86],[22,72],[24,66],[16,76],[10,74],[16,64],[20,52],[12,60],[6,58],[14,50],[22,40],[12,44],[4,38],[10,32],[4,24],[8,18],[18,28]]},
-  {id:'hippocampe',cat:'mer',nom:"Hippocampe",lisse:1,info:"Chez lui, c'est le mâle qui porte les œufs et met bas.",pts:[[4,26],[22,20],[30,12],[34,2],[40,10],[46,4],[48,14],[54,26],[60,40],[64,58],[60,74],[50,86],[36,92],[26,84],[28,74],[38,72],[36,80],[32,82],[34,86],[42,86],[50,80],[52,68],[46,56],[42,42],[34,32],[20,30]]},
-  {id:'requinmarteau',cat:'mer',nom:"Requin-marteau",lisse:1,info:"Sa tête en T écarte ses yeux : il voit presque tout autour de lui.",pts:[[14,8],[16,2],[30,0],[44,4],[56,4],[70,0],[84,2],[86,8],[78,14],[64,18],[60,30],[86,40],[78,48],[62,44],[60,60],[56,76],[62,86],[66,98],[52,84],[48,98],[44,86],[42,76],[40,60],[38,44],[22,48],[14,40],[40,30],[36,18],[22,14]]},
-  {id:'poissonlune',cat:'mer',nom:"Poisson-lune",lisse:1,info:"Une tête qui nage : 1 000 kg pour un corps sans vraie queue.",pts:[[6,44],[12,30],[22,18],[36,10],[44,4],[48,18],[56,8],[62,2],[66,14],[72,26],[76,42],[84,46],[88,52],[80,58],[74,66],[68,82],[62,94],[56,82],[48,96],[42,86],[34,88],[24,78],[14,64],[8,54]]},
-  {id:'seiche',cat:'mer',nom:"Seiche",lisse:1,info:"Elle parle par vagues de couleurs sur sa peau et crache de l'encre.",pts:[[50,2],[64,8],[74,24],[86,30],[88,50],[84,66],[78,60],[76,66],[68,74],[72,80],[62,78],[64,90],[56,84],[54,94],[48,84],[44,94],[40,84],[32,90],[34,78],[24,80],[28,74],[20,62],[14,66],[10,50],[12,30],[22,24],[26,10],[36,4]]},
-  {id:'etoiledemer',cat:'mer',nom:"Étoile de mer",lisse:2,info:"Si elle perd un bras, il repousse — et parfois refait une étoile entière.",pts:[[50,2],[58,26],[62,34],[96,34],[70,52],[66,60],[78,94],[50,74],[44,74],[22,94],[34,60],[30,52],[4,34],[38,34],[42,26]]},
-  {id:'murene',cat:'mer',nom:"Murène",lisse:1,info:"Elle a une seconde mâchoire dans la gorge pour tirer ses proies.",pts:[[4,40],[16,32],[30,30],[46,36],[60,50],[74,66],[88,74],[98,70],[96,80],[84,86],[68,80],[52,66],[38,52],[26,44],[14,46],[8,52],[6,60],[12,66],[6,68],[2,58],[2,48]]},
-  {id:'toucan',cat:'oiseaux',nom:"Toucan",lisse:1,info:"Son bec énorme est creux et léger : il lui sert de radiateur.",pts:[[2,26],[18,18],[34,12],[44,10],[52,14],[60,26],[70,44],[78,64],[88,78],[96,90],[86,90],[76,76],[68,84],[56,84],[52,92],[44,94],[46,86],[38,90],[32,92],[34,84],[34,74],[30,58],[28,44],[34,38],[22,36],[10,32]]},
-  {id:'flamant',cat:'oiseaux',nom:"Flamant rose",lisse:1,info:"Il devient rose en mangeant des crevettes, et dort sur une patte.",pts:[[6,18],[14,8],[24,8],[30,16],[34,30],[36,46],[46,54],[60,52],[74,56],[84,66],[94,62],[96,70],[86,76],[74,80],[70,88],[68,98],[62,98],[64,88],[64,80],[56,78],[52,88],[48,96],[40,96],[44,86],[46,76],[40,66],[28,48],[26,30],[18,18],[8,22]]},
-  {id:'manchot',cat:'oiseaux',nom:"Manchot",lisse:1,info:"Il plonge à 500 m de profondeur et couve son œuf sur ses pieds.",pts:[[50,2],[62,8],[66,20],[74,22],[70,26],[68,34],[82,54],[86,74],[76,70],[74,84],[86,92],[88,96],[70,96],[56,94],[44,94],[30,96],[14,96],[16,92],[28,84],[26,70],[16,74],[20,54],[32,34],[34,20],[38,8]]},
-  {id:'macareux',cat:'oiseaux',nom:"Macareux",lisse:1,info:"Le « perroquet de mer » creuse son nid dans la falaise.",pts:[[6,26],[20,18],[30,14],[42,16],[50,26],[58,44],[64,64],[74,76],[66,80],[56,82],[52,92],[44,94],[46,84],[38,88],[30,90],[34,80],[26,68],[22,50],[22,34],[14,34]]},
-  {id:'hibou',cat:'oiseaux',nom:"Hibou",lisse:1,info:"Ses plumes étouffent le bruit : il vole sans qu'on l'entende.",pts:[[26,10],[34,16],[42,10],[50,6],[58,10],[66,16],[74,10],[72,22],[80,34],[82,54],[76,72],[66,84],[60,92],[66,96],[52,94],[48,96],[34,96],[40,92],[34,84],[24,72],[18,54],[20,34],[28,22]]},
-  {id:'colibri',cat:'oiseaux',nom:"Colibri",lisse:1,info:"Ses ailes battent 70 fois par seconde et il vole à reculons.",pts:[[2,30],[22,26],[30,20],[40,20],[48,26],[56,14],[72,6],[80,12],[66,24],[56,32],[66,36],[78,44],[92,44],[96,50],[84,52],[90,58],[78,56],[70,50],[58,52],[46,50],[36,44],[28,38],[24,32],[14,34]]},
-  {id:'cygne',cat:'oiseaux',nom:"Cygne",lisse:1,info:"Il garde le même partenaire toute sa vie et pèse jusqu'à 15 kg.",pts:[[8,20],[16,14],[24,12],[30,18],[34,32],[34,48],[48,44],[66,44],[82,52],[94,44],[96,52],[88,60],[76,68],[58,72],[40,72],[26,66],[22,54],[24,38],[22,24],[14,24]]},
-  {id:'autruche',cat:'oiseaux',nom:"Autruche",lisse:1,info:"Elle court à 70 km/h et pond le plus gros œuf du monde.",pts:[[6,12],[14,6],[22,8],[26,16],[34,32],[42,50],[56,52],[72,58],[82,72],[92,70],[90,80],[78,86],[74,94],[76,98],[66,98],[64,88],[58,84],[56,94],[58,98],[48,98],[48,86],[46,78],[40,64],[30,44],[24,28],[16,16],[8,16]]},
-  {id:'kiwi',cat:'oiseaux',nom:"Kiwi",lisse:1,info:"Cet oiseau de Nouvelle-Zélande ne vole pas et sent avec le bout de son bec.",pts:[[2,40],[20,44],[32,42],[44,34],[62,26],[80,32],[92,48],[94,66],[84,80],[74,86],[76,96],[68,96],[66,84],[56,84],[52,94],[44,94],[46,82],[36,76],[28,64],[24,52],[16,48]]},
-  {id:'heron',cat:'oiseaux',nom:"Héron",lisse:1,info:"Il reste immobile des heures avant de harponner un poisson.",pts:[[2,20],[18,14],[28,12],[34,18],[44,10],[38,20],[40,34],[44,50],[58,52],[74,56],[90,66],[96,76],[84,74],[72,72],[68,86],[70,98],[62,98],[62,84],[58,74],[52,86],[54,98],[46,98],[48,84],[44,72],[36,58],[34,42],[32,26],[22,20],[8,24]]},
-  {id:'pelican',cat:'oiseaux',nom:"Pélican",lisse:1,info:"Sa poche sous le bec contient trois seaux d'eau.",pts:[[2,22],[24,18],[44,16],[52,22],[56,34],[70,44],[86,58],[96,68],[86,74],[70,76],[54,78],[50,90],[42,92],[44,80],[36,86],[28,88],[32,76],[28,64],[26,54],[14,48],[4,32]]},
-  {id:'abeille',cat:'bestioles',nom:"Abeille",lisse:1,info:"Pour un pot de miel, la ruche visite quatre millions de fleurs.",pts:[[50,4],[58,8],[62,2],[66,4],[60,10],[64,16],[70,22],[86,18],[98,26],[94,38],[80,34],[72,36],[76,50],[74,70],[64,86],[50,92],[36,86],[26,70],[24,50],[28,36],[20,34],[6,38],[2,26],[14,18],[30,22],[36,16],[40,10],[34,4],[38,2],[42,8]]},
-  {id:'libellule',cat:'bestioles',nom:"Libellule",lisse:1,info:"Elle chasse en vol et attrape 95 % de ses proies.",pts:[[50,2],[58,8],[56,16],[74,10],[92,14],[96,22],[80,26],[62,24],[78,30],[94,38],[92,48],[76,44],[60,34],[56,50],[56,74],[54,94],[50,98],[46,94],[44,74],[44,50],[40,34],[24,44],[8,48],[6,38],[22,30],[38,24],[20,26],[4,22],[8,14],[26,10],[44,16],[42,8]]},
-  {id:'scorpion',cat:'bestioles',nom:"Scorpion",lisse:1,info:"Il brille en bleu sous une lampe à ultraviolets.",pts:[[2,44],[14,34],[24,42],[18,50],[28,54],[38,52],[50,48],[48,34],[42,24],[36,16],[30,10],[40,16],[50,24],[58,34],[64,46],[68,50],[78,54],[80,62],[68,68],[52,70],[38,68],[26,70],[14,76],[4,72],[12,62],[20,58]]},
-  {id:'araignee',cat:'bestioles',nom:"Araignée",lisse:1,info:"Sa soie est plus résistante que l'acier à poids égal.",pts:[[34,44],[20,26],[8,14],[14,26],[28,40],[26,44],[10,38],[2,32],[4,42],[20,50],[22,56],[6,60],[2,70],[12,66],[24,64],[28,70],[18,82],[14,94],[24,84],[34,74],[44,78],[56,78],[66,74],[76,84],[86,94],[76,82],[72,70],[78,64],[88,66],[98,70],[94,60],[78,56],[78,50],[96,42],[98,32],[90,38],[74,44],[72,40],[86,26],[92,14],[80,26],[66,44],[58,42],[50,38],[42,40]]},
-  {id:'escargot',cat:'bestioles',nom:"Escargot",lisse:1,info:"Il avance sur un tapis de bave et porte sa maison sur le dos.",pts:[[2,88],[10,80],[18,70],[24,58],[20,40],[25,38],[30,54],[36,38],[41,36],[38,56],[46,60],[48,46],[48,30],[56,18],[70,12],[84,16],[92,30],[92,46],[84,60],[72,70],[60,72],[66,84],[50,90],[30,90],[14,90]]},
-  {id:'lucane',cat:'bestioles',nom:"Lucane",lisse:1,info:"Ses « bois » de cerf sont en fait des mâchoires géantes.",pts:[[36,4],[42,16],[46,10],[48,18],[52,18],[54,10],[58,16],[64,4],[62,16],[56,24],[62,28],[60,36],[68,40],[72,52],[76,70],[70,86],[58,94],[42,94],[30,86],[24,70],[28,52],[32,40],[40,36],[38,28],[44,24]]},
-  {id:'mante',cat:'bestioles',nom:"Mante religieuse",lisse:1,info:"Sa tête pivote à 180° et ses pattes se replient comme des couteaux.",pts:[[10,10],[22,2],[30,10],[26,20],[34,30],[46,26],[58,20],[64,26],[52,32],[42,38],[46,44],[54,56],[68,66],[84,72],[94,84],[84,88],[70,80],[56,70],[48,80],[40,92],[38,80],[44,66],[36,62],[30,74],[22,86],[24,72],[30,56],[26,44],[20,30],[16,18]]},
-  {id:'gecko',cat:'bestioles',nom:"Gecko",lisse:1,info:"Des millions de poils sous ses doigts lui font escalader les vitres.",pts:[[50,2],[60,8],[62,18],[78,20],[92,12],[88,24],[74,30],[66,34],[64,46],[80,54],[92,66],[80,62],[66,58],[60,66],[58,80],[56,96],[50,98],[44,96],[42,80],[40,66],[34,58],[20,62],[8,66],[20,54],[36,46],[34,34],[26,30],[12,24],[8,12],[22,20],[38,18],[40,8]]},
-  {id:'grenouille',cat:'bestioles',nom:"Grenouille",lisse:1,info:"Elle boit par la peau et avale en clignant des yeux.",pts:[[50,4],[62,8],[68,18],[74,14],[78,22],[70,26],[86,32],[96,28],[90,38],[78,40],[82,54],[94,62],[98,78],[88,74],[84,86],[76,78],[72,64],[62,72],[50,74],[38,72],[28,64],[24,78],[12,86],[2,78],[6,62],[18,54],[18,40],[10,38],[4,28],[14,32],[22,26],[14,22],[20,14],[26,18],[32,8]]},
-  {id:'crocodile',cat:'bestioles',nom:"Crocodile",lisse:1,info:"Il change de dents toute sa vie : environ 3 000 au total.",pts:[[50,2],[56,6],[58,14],[60,22],[58,30],[74,32],[84,26],[76,38],[62,40],[64,52],[80,58],[88,52],[78,64],[64,66],[62,78],[58,90],[54,98],[46,98],[42,90],[38,78],[36,66],[22,64],[12,52],[20,58],[36,52],[36,40],[24,38],[16,26],[26,32],[40,30],[40,22],[42,14],[44,6]]},
-  {id:'cobra',cat:'bestioles',nom:"Cobra",lisse:1,info:"Il déploie son capuchon en dressant les côtes de son cou.",pts:[[46,2],[56,4],[58,12],[76,22],[86,42],[80,58],[66,52],[64,66],[74,78],[90,86],[96,94],[74,96],[50,94],[30,88],[20,80],[28,74],[44,82],[54,76],[50,64],[40,56],[26,58],[18,40],[28,20],[40,10]]},
-  {id:'herisson',cat:'animaux',nom:"Hérisson",lisse:1,info:"Il porte 6 000 piquants et se roule en boule au moindre danger.",pts:[[2,66],[12,58],[20,52],[24,38],[30,48],[36,34],[42,46],[50,32],[58,44],[66,32],[74,44],[82,36],[88,50],[94,60],[92,72],[80,78],[72,78],[74,88],[66,88],[64,78],[48,80],[36,80],[38,88],[30,88],[28,78],[18,74],[8,70]]},
-  {id:'chauvesouris',cat:'animaux',nom:"Chauve-souris",lisse:1,info:"Elle voit avec ses oreilles, en écoutant l'écho de ses cris.",pts:[[44,14],[46,22],[40,22],[28,16],[12,10],[2,18],[14,24],[4,34],[20,32],[10,44],[28,42],[22,54],[36,44],[40,56],[44,70],[50,76],[56,70],[60,56],[64,44],[78,54],[72,42],[90,44],[80,34],[96,32],[86,24],[98,18],[88,10],[72,16],[60,22],[54,22],[56,14]]},
-  {id:'renard',cat:'animaux',nom:"Renard",lisse:1,info:"Il entend une souris sous 30 cm de neige et plonge tête la première.",pts:[[2,46],[14,40],[22,34],[20,18],[30,30],[42,28],[44,12],[52,32],[62,38],[78,42],[90,36],[98,46],[96,62],[84,66],[74,60],[72,70],[74,86],[66,86],[64,70],[50,72],[38,70],[40,86],[32,86],[32,68],[26,58],[18,52],[8,50]]},
-  {id:'koala',cat:'animaux',nom:"Koala",lisse:1,info:"Il dort 20 heures par jour ; ses empreintes ressemblent aux nôtres.",pts:[[26,22],[16,12],[4,18],[2,34],[12,46],[24,44],[28,52],[20,64],[18,82],[28,94],[50,98],[72,94],[82,82],[80,64],[72,52],[76,44],[88,46],[98,34],[96,18],[84,12],[74,22],[66,12],[50,8],[34,12]]},
-  {id:'girafe',cat:'animaux',nom:"Girafe",lisse:1,info:"Sept vertèbres au cou, comme nous, mais chacune longue de 25 cm.",pts:[[4,14],[14,6],[18,0],[22,8],[26,2],[30,10],[34,18],[48,36],[60,54],[74,58],[86,66],[94,72],[92,84],[86,76],[82,72],[84,94],[76,94],[74,70],[62,70],[56,94],[48,94],[50,68],[44,58],[34,40],[26,24],[18,18],[8,18]]},
-  {id:'chameau',cat:'animaux',nom:"Chameau",lisse:1,info:"Ses bosses sont des réserves de graisse, pas d'eau.",pts:[[4,22],[12,14],[20,12],[24,20],[34,30],[44,18],[54,30],[64,18],[76,30],[86,42],[92,48],[90,58],[84,50],[82,54],[84,88],[76,88],[74,56],[60,58],[52,88],[44,88],[46,56],[38,46],[30,34],[26,24],[18,24]]},
-  {id:'phoque',cat:'mer',nom:"Phoque",lisse:1,info:"Il dort dans l'eau, une narine au-dessus de la surface.",pts:[[6,30],[16,22],[28,20],[44,24],[62,34],[78,48],[90,58],[98,50],[100,66],[96,76],[88,66],[74,72],[60,74],[64,88],[50,92],[46,78],[34,72],[20,58],[10,44]]},
-  {id:'orque',cat:'mer',nom:"Orque",lisse:1,info:"Chaque famille d'orques a son propre dialecte de sifflements.",pts:[[4,50],[18,42],[36,38],[52,36],[62,16],[74,34],[88,40],[98,46],[104,34],[112,52],[104,68],[96,56],[84,58],[66,62],[50,64],[40,72],[30,82],[36,68],[26,64],[12,58]]},
-  {id:'ours',cat:'animaux',nom:"Ours",lisse:1,info:"Il court à 50 km/h et sent une odeur à trois kilomètres.",pts:[[8,34],[14,22],[12,12],[24,18],[32,12],[36,24],[44,28],[60,26],[78,34],[90,50],[88,68],[82,84],[70,84],[68,68],[54,72],[42,74],[34,86],[24,84],[26,66],[20,54],[12,44]]},
+  {id:'chat',cat:'animaux',nom:"Chat",info:"Il dort les deux tiers de sa vie et retombe presque toujours sur ses pattes.",c:'OA4QjoRjoQ0APUwO1kPWgQnMTX4VoMTIgRYwOZgMqYLboMN4KuMK-cM-wQ-4T-wV-cduckecm-QqeEt90wtYyc40Lw0K8zZ8x5UwY8t4krIcqIkp44sZYuZ0vKIv6wv7ou8Is8kp88oc8ocAnqwmZ8kZQiIsgogeYMf38iXckGok2Akk8jEIhzojDslg0kBAihMhRYaCgci4aS4XC8Xi0ZigWiERxUOw4'},
+  {id:'lapin',cat:'paques',nom:"Lapin",info:"Ses dents poussent toute sa vie : il doit les user en rongeant.",c:'XA0VxEVBcUioVDkV0UXlcYF8XmEWWoV3kW4QXogY4wZI4W5MVJgTKESqMRbEQrsQskRdMR9kP94P-MROgUuwXesZ-4gO4jO0luwpOgqeIpdsptUq9UstUus4vMUur4tbkrrcqLYoqcoKMnqAlpgjZIhY0jIckX8knAjmUjGIiF0kEwlTgmCclhgkhIjRAiBEghcfSQeTEd0EdVUdFYc0kcjUbh8aRMZA4'},
+  {id:'souris',cat:'animaux',nom:"Souris",info:"Son cœur bat 600 fois par minute.",c:'NCIIygGTAFDYDUcDVQEWIFWkGm4I3UI3kFIsD5kD6UFLUH8MI8YMs4QtQW9getci9Mm84rMMuLYvaUvZ0xJw1Js3Jg5pE7IY7XU62s5WU3GEz2QzWgzW01XI3Hg3IE14g0Isw4wu44u5Qt4srH0oHMnG8oW4q2ktWAu1UvUsvD8tjIsi0oiQlCIiCUey0dzIcT4cEodl0emQb2MYl8ZVUZUcYToWC4SSU'},
+  {id:'elephant',cat:'animaux',nom:"Éléphant",info:"Sa trompe compte 40 000 muscles ; la nôtre en a 600 dans tout le corps.",c:'pz0mUUklIi04eEYaUMVEUQUsNlMK2IIGgFWoDXQD3gFnEIG4KncMYUNI4M7ANLgOr0Qr4R7wTLUTJYVJcVbUWbwY74a7gbKcbZgdpcd7QfLwhL4irwjbYjpUi44mn8oocmool5Al7Qmrsob4qb0rrcr6Ur48sI0wI0zoc0I4zp8yK4zbQ1bo47w7bc7bE6a04q83K84qE4444Hw3HY3WI11MyEYvEMsT0'},
+  {id:'ours',cat:'animaux',nom:"Ours",info:"Il court à 50 km/h et sent une odeur à trois kilomètres.",c:'LRYJBgHB0FiMDy0DTYDUIDkYEEoE1AGVcH1sIF4HGwGnoGokG5YH6QIakIq0JrYKrwL8MO88P9IRNYStkWN4aOMeeQhuQnOEr9kttYudMv84xckysMzb80Lw1rI3KM35Q4IQ33I3mw2l021s4Vc5lE6E47EY7j06y46Sk5CI4iA2xs0hcxRYvxctxoqyQqScpiYoSQjB8dR4ZSEWyMVCYUCYTiMRx0Pxg'},
+  {id:'cheval',cat:'animaux',nom:"Cheval",info:"Il dort debout, et ses yeux voient presque tout autour de lui.",c:'ySgwiotzAsjQrUEoFUnFkk1chFMbVMYFUV1cR14O2gOGsLmkHWYDWgEWsG3QJYMKI4MX4M3oNX0N4UQ5ISpcSJsSMoTdEVdIW8wW50ZZ4ZcoZ84bNIctEdswdqAhZ8iMois8j9IltAmc0mbUmZ0n5co5YoqAossptAqtIsNAs80tLIsZUr5MqZEs4ctoEuHktnEtm4vmg2Gg5Gc6GU7GE7lc6Do3i00yk'},
+  {id:'vache',cat:'animaux',nom:"Vache",info:"Elle mâche 40 000 fois par jour et a quatre estomacs.",c:'dTAajEWjYUjsTzwTD4RkMREYP0wOlQNFQNVAN0gMUUIz8HD4FEADkUDUoDlEEVcF1wGWEGGoG3AHXMIXcK3oMnwNI0OJoO6EQ64RrIULwXsQZ8cd8oiMomsUocIpr4qbwsLcuK0uqowpsxooyH0zno1Xk4HA4mg4GA5Fs6lY7FM7k07EY6EE4D42D80kEyUUwkoxlExlQwFQvE4u0stUUqTsoDYkzIhDA'},
+  {id:'oiseau',cat:'oiseaux',nom:"Oiseau",info:"Ses os sont creux : c'est ce qui lui permet de voler.",c:'pjsnD8k0kkUwjlIf04ak4WFISVkRV0PmMOmYN2QM2ELV0I1YH1MHFEFkwDUYEVcFGEFmcGXgD5gEJoFZkGZcJJQKZMPI0P44Q5ISJYTZoYqEYqUXbwXr8Yb8Z6sbKIgKIgqMgqciL0ir8jb0jLciaoiKUh6Aj54mpgpJAqIsrYErnEuG4u2ww2MxGcxmg0GQ02M2WE3l861k7lc2FI1FAxk0wUYu0Aszw'},
+  {id:'hibou',cat:'oiseaux',nom:"Hibou",info:"Ses plumes étouffent le bruit : il vole sans qu'on l'entende.",c:'MhANyAOykPjMQTsQEAPEQO0YOEoNkwLWAKHMJ4MKJwLrEMbgNsIOcYPMsP88S9sT94UeAVOIWOQZOkaOob-whO4k-olukpeIqOAqt4rtwutEwccwsUxMIybgza80pw05E1Ig0340nMzmIxU8xEwwkkwEcvkQuj8uTsvDMwScxRsyRAyQ0uRUrxoniIniYoyopSwmygiyIhCIdiIYiYVSwWSgXiQUR0PBI'},
+  {id:'poussin',cat:'paques',nom:"Poussin",info:"Il casse sa coquille tout seul avec une petite dent sur son bec.",c:'ng0mw8lBQjBogxkfRUeBIcw4dRkZx0YiAWCoUTMTUMTVEUV4TWESWUQWwPXEOXYN3sNIAMI8MaMN7IOrcSMcTMoVM4XtMXdcV-YVusWe4XuwZN0Ztcb9ghtkktYlNkmucne0ou0pOsoN8ndYpNArMssMgtcQur4vrow7Ex6gypgyIUwHUu24tGYvGIxl4v1os1crFUrU4rD4qjcpS0oSgniUmyImh0nw0'},
+  {id:'poisson',cat:'mer',nom:"Poisson",info:"Il respire l'oxygène de l'eau grâce à ses branchies.",c:'kTQgjoez4dUMaEUUkYRkkMFAKlQHlwGGID3ADYEEY4FpYHZ4IqEKKUMKoRrIXrYbrYeLog8IkcYn8Um7slrQlLIk64nqkpqQqqIrp8t5Yu5Ev4swIoyZAzZM0JY2Zw4aI5KQ6Kc7Ko7ao66I6JU4X46GY7VI7U86VI5VU4lg21012Azmcymox2wwnAv3AvW0uGcrlwqlgp1YolMmk8kkslEglkYmz8nzU'},
+  {id:'baleine',cat:'mer',nom:"Baleine",info:"Son chant s'entend à des centaines de kilomètres sous l'eau.",c:'jkkf0odEwbE4ZFAXlIS1wR14QmIPGoN2gLGEKmAGVUFVIEVEDV0DW0EnwFIAIIoJYUL30NngN4QO4wNpIMZYLZkJ54IKMGKoF6wIbAMLEPa0QqoSaITJ4UaAXaYZ6kfq4ka8oq4tasxKcy6Q2Jw3Jk5ZI35UzJwvZ4sJ0p5wpZgp5YupgyJczZU3Y84I06Ik7IY7no6m452k42Q3V82Vw1FkyFMr0wnUo'},
+  {id:'tortue',cat:'mer',nom:"Tortue",info:"Sa carapace est faite de ses côtes soudées : elle ne peut pas en sortir.",c:'bkkX0sXEwUk8Q1YPlkOF0NWENGML2gLmoLG4KXMKHgJYII5EGpMGJQEZcDZ0DaEDaMN6UOKkPq4QrERbETLEVa4Vq0WakWqMVp0UZsSZkQZsPZwO5wN5cP5YdJYuJYt5gtJ0tKM1qM4qE4Jk3Jc4ZQ5JI55A7Ig7n063U6nQ4W01Ww0G0zm8yHQw20wmswGgvWQslor1gq1Uo1EoVAn08mk4lEwjUsiko'},
+  {id:'crabe',cat:'mer',nom:"Crabe",info:"Il marche de côté et ses yeux sont montés sur deux petites tiges.",c:'KTcHjsFEIDVADl0FWcIm0Lm8L3kNIYM44Hp0GKgD7kD70FL8G7cJaMN50OagMLgNsMPbQUpsX5sd54lJ0pZss6cvrwwMMyrY1bU3L84b447o1qAxZMxIYy3ozW03Ww5mY7Vs7VI50I2TkyzcwDkvzwwkgz0k10w2VI2Vs1F4y18w1kv08rkkm0MhT8bEAVUYRE8O1QOFkMF8JV4IVoIU8J0oOEkOUIOTk'},
+  {id:'grenouille',cat:'bestioles',nom:"Grenouille",info:"Elle boit par la peau et avale en clignant des yeux.",c:'Si4OzQNDwMEgM1oOGEOGUMW0KXgJIgJJIJJ4H5wGZ4EKcDbMDr4FMgHcwKssMMYLMAKMAHb0G7EIqgJaUKqUNLAQLgU78X8IcsQhsUo8Etbox680KU2qk4LE3r008AzsAysY0cs2804ss6MY7rk7a06KQ4Z425w1p41pU1oUz3UxGgwmIxV4ylAyEExDovDItS8py4njElDgj0AjFAeVAblAaz8YzUVy4'},
+  {id:'papillon',cat:'bestioles',nom:"Papillon",info:"Il goûte les fleurs avec ses pattes.",c:'VB8UCEUCQWCUYicbjAcjUdzwdT8bDsXzYUDUQjYMjsI0QGU4ElkDWYDXME4EF4cJpAMZQPJYMZ0KqkKbULcMPdMTtoXNsZ9kc9Qf8wiNQlNopdss9gv9IyMozsE0bQ0awy6Aw5gvpUzZM3Yw6IE7m87F841A10M00EwzkuDYrjUnjUkDoh0AhD4hTkji8likoyUqyQqSAniAkyQhy4fzofDocy4bCgZiM'},
+  {id:'abeille',cat:'bestioles',nom:"Abeille",info:"Pour un pot de miel, la ruche visite quatre millions de fleurs.",c:'hzseUAdz4cDwYjwVj8SkUREYQEkOlQN2IOmgNWgKmcImMHVkGlIG08GEgEkcD0oDU4EVMFFUGWAHmsGm0D3wDYsDpMFZ4GKEIaYK6kN6gQ6ERaESqcUa4WbMYLcZbgdL0g78kb8ob0s7kw7Ezqg1Z02JI25M5Zk7Z06ZM6Y87Ig7IY5Yo3402ZE2I41IM0H4yHYxHMuW0smgt2YvGAvVkuFArkYqkQlzw'},
+  {id:'coccinelle',cat:'bestioles',nom:"Coccinelle",info:"Elle mange cent pucerons par jour.",c:'VQ0UREURcUxsWBwZCAZiQXTEXD0XkcYk8YFET1cRVwN2cMG4LHIJ3oJIAHpEHaEH60KMIMc4NtMP9sQ90VucW-kbOwd-0d54eE0gk0g18g-0j-wn-kpect90u9syc4zsk08I3Ks3Zg2og14E0HUwWUsVopVUm1EmE8nEcnjwnTElCQliAnRspRwqRkqhMpw4ow0ng4mhQjB4ghsdxsbh4axwZhkYBQXA4'},
+  {id:'araignee',cat:'halloween',nom:"Araignée",info:"Sa soie est plus résistante que l'acier à poids égal.",c:'eTQbzgZ0AY1AZFkYFoR0oMj8FU4ElIFVYG1MM0cXGAWGoQmwK20D4ADYUEocLnQUHQVXUOZUMJoGbQHLgILcOJ4V40WZEXJcR7QTcYUsYT7UWqUY58caggKojaYmZ4qrEp8Iq8Yr8MtLInpcoo4qpAyqU3rg4bUypkpYQx3Q44Q7IY7oMzm0tWwnmIsFUyUg4VU51U6FA2Ecw0AuEcmVsl1AlkYkT0hjU'},
+  {id:'dinosaure',cat:'bestioles',nom:"Dinosaure",info:"Les oiseaux sont les derniers dinosaures encore vivants.",c:'2jAyzUwz0wUgulUtlssWEqWgpmgnmUjWEeGAYWQT2sQXgPX8PIMPI4MYwHoQD3oDXkFoYJJML5kNJsSaAUKQUcQV8kXsoYsgZcIZq0bK0cbIcsQdcgfMogckhcQhq4k60lMQmsoocopsYqMAqKoqKUsKEsKgsL4s8cvMow8YxcIxagxJ8v5wuJsvpMwYcvn0wHoxHUym4zWk1l03k050c60M7jw6zY5jI'},
+  {id:'arbre',cat:'nature',nom:"Arbre",c:'dw0YhIXRUVxkUCESiwRzgQDwOEENUILUsKlAJloJWgKHYK3sL4ENIUOYoRY4S5ETZgVaUXq0YrAXrEZ7kccIc8wc94XucV-0f-4o-4o-gj-ciNgitEkskmcQnMEmcAjcEisIiMQjrQmq4nqwoaopqQq54rJsrpcsI8vIww4gxoUy4Ez3w0Xg1mg1V00VEzk0y0gxUMuz0uTsszksCoqyMphwoBcmxQjg8'},
+  {id:'fusee',cat:'vehicules',nom:"Fusée",c:'fA0dxQdRccxocB0bSMaSwZjEYT4YEMX0gXFsW2MWn4VYUUokUI0TZASpMR5gRZsP6MRK4SLgSr0TL8TrwT7oU7UV60W6cXpcaZ0ackccoc9seOcfe4gughOQidQi8kkb0kaQnJcoKcoqsprIqLUq7orr8sL0tLItq4t6su6MuqAtZor5IrY8qosqIgpYQoYAn3Yn1om0Umj8lDEkCcih0iBohhghBQfg0'},
+  {id:'voilier',cat:'vehicules',nom:"Voilier",c:'exUeC0cS0bjIaDgZD0YUEXkQWEsVFAU1MUVUTlkS14Sl8SGERmURGkP3APXMOnoMYoL5ALJYKJ8JqYIrEILgH7wHcIHMkGtIGdUHeMbuMe-she4iOY3eM4-I4NU4NI3883so3cg28E2bo17M1Ko0aM0KAz50zJcypIxosw4UvHku3YuXMt3AtGssmkr2UrmMrWEql0qFsplgo1UoVInU0lkck0MiDwhQ0'},
+  {id:'avion',cat:'vehicules',nom:"Avion",c:'eQ0cxEcRIbRgZygZS0ZDQYkMYUoXE4VlMUFgSF4Q2MOGwMXMLHYJnsGoYEowDZEDaoDq0HqgLKIO50SpgW5IYpAYqAYsAWscTNMR9cRNkRe4YecfOAhOIiuMleYm-cpuot-ktdkrtMoMcmMAmKYmJAnZErZYsJgv502qY6Ks7a07p07JA4IY2H803sznYx3EwmwtmIsF0olInU0mEglzslCsjhgihQgQ0'},
+  {id:'maison',cat:'objets',nom:"Maison",c:'fSMeCccysby8ajMaTMYzgXzwWkAWEEVEUT0kSU0RFEP1YOloNV4MWIMGIK2cKmcJmsJWsIW8G3QGnQFXgEHwDYAJ4AKYAKdQKtcYNgYp0Zp0mJ0mKEnNg0dc0dU0YM0oA6oA7oA6305nk4nU4HQ23A2m81Ww0Gcy2Mxl8wFou1Yt1ItVEsk4sE0rEkq0gp0UpkQoUAnDwmzwlzgljgkTQjS8iCsgycfiM'},
+  {id:'ampoule',cat:'objets',nom:"Ampoule",c:'ew0axAXhUVhkVBoUB0SyESCMQioPy0Pi4OjUNzoNEEMkoMlEMlkNGUPnsQX8SYoSosT5IUZYVaAVqgWqkW7QWrsXL8YMMX88YdMbdQcN0cuMeOofOwg-4ieskOUk9cn9QpNEpMIpsAqbwqbYp7IpK8pKUpZ4qpQr4wsYssoktoMuYAu3wwHMwm4xWgyFgyEwx0UwzcuictiMrx0qhkoxUnxMnBIlxAiQ0'},
+  {id:'etoile',cat:'formes',nom:"Étoile",c:'fQ8eBgdxwcCgbi0aTgaDsYUgW1UWlcRloQFsNlwMV0E2EEGkOJEQJkQ5wQqAQK0O8oOtAOdUN-IN-YNusPegP-YR-MSeEUt0XNcZtIbc8cM0eckfcYg8khssis0jc8ldIntcotoqN0r-AsuIu-YvugxOsxOYw-IwdUwNAv8ouq0uKAt5wuZkwpE7mI2F8xl0u1srFkoFYmkslUAkjojjEiioiCYgxwfxQ'},
+  {id:'coeur',cat:'formes',nom:"Cœur",c:'Qx4Ox8MiIKScIysGzMFToEUIDVMDWID28FHsFoAGYQHIkHo0J5gKJoMqUN6gQLIQrMSroUL8VMIXMkYcwZM4btYctkdtwedwfdkgdYh9Eis8jc0kcolMgmMUnMIn8Ao70p7kq7cr7MuawwKYyZ00ZQ2I03oQ5H06XI7WQ7lc6kk6EU5kE2DE0CswyQtyArB4mR8iCUhScgCseDUdjUdDMcC0biwXyIUR4'},
+  {id:'newyork',cat:'villes',nom:"New York",c:'UVwT2YTWwTJ0SoYSIMQYMQIYP50PXQOWgOGUNXQNZsMZ0Lo4JZ0I4AHIAG50GZoE4kEIkD50DaARqE6aE7Z065I3I82p00oY0YUz4czp0zHkyXIxXIwnkwJ0wIEt4QtZ0sooqZ0p3cpXUoWkoG8m3YmJ0mHwlnckXgj3sjp0jJ0ioggoggZ0f5sfG4eG8dHMcp0cH0ZX4Y50Y4oWokWZ0V5oVmwVGUUlo'},
+  {id:'paris',cat:'villes',nom:"Paris",c:'nVsnGInGQm28mXAmHImnQl4MkYQloYlIoj5Yip4f5sfJIc5Icp4cosc4gbocXogX4sX5kWZ4V4kUIoVI8RZ4Ro0SooQokP54NpYNJMMo4L4sK4sJoUH4sHY0GosGI8FJQEp4DZ8EKIfqI7qE7J46Hc2ns2J40ZIzIoxoYxYEw4Iv4cu40upIt5UtZ4rpYqowqIkpoYq4UqoMpHUpXIom8oGYoWQoWIn1k'},
+  {id:'londres',cat:'villes',nom:"Londres",c:'G1oF2kFHEFp0DZ4KaIsaI7aE6545Jo6Zg5Zc5IE4Hk3nM3Xg2IQyIQyX8w3YwnMvH8vYYu5ct5gvZotp4tIcsIQq4Yqp4p4IoYAn5cmZ4k2gjp0aJ4Z5McZAeYYenocm4aGkXWoVW8T30VI0X5MYZ4SY4R4gRYkQ40QYkP4gPo0PIkOYgOYwN40NokNIgMo0L4gLY0K40KIgJo4JZ4InYI3MIXAImgHFk'},
+  {id:'ville',cat:'villes',nom:"Ville",c:'aGUZmkYmoYZIYHoXnkVHoU5MUXUU3ITGwR28Q3MQXUQZMQJEPoQMoQMZMMHELnAInEIpEIZIIX0En0EH8EJMDZURJYtJY7ZY7ZM65I63g4Hc3nk3pI3ZM3IczoUzpIzH0wnswJEv5Ivm8uG4t2gtWksG4r5ArZMrYEpH4on8opMoZIn28mmwmWslm0kXAkZMj5EjnQgXUgJIf5AfoIcoIcpMcZIb2ka2Q'},
+  {id:'citrouille',cat:'halloween',nom:"Citrouille",c:'diAaSMYycWi4WDEVjQUDETC8PS0NC8LzEKzQKDYIjoHUEGkUF0sFU8ElYEFwEGADmwDX0DY0EJsEJ4FKoFq4F7EGrYHboIMAJ8gLs4MdENNMPdcSNoWdobtUetQhtUj9Ymtgpdot9kw9QyNEzM818Q2sA3L03bo4rI5aw6p465o7Yw7nc62E5lE5Ew2T01DczDIwy4tS0qzAqDIozMoS8mSgliYjSIhyA'},
+  {id:'fantome',cat:'halloween',nom:"Fantôme",c:'dQ0bw4aw8XxIXhMWBYVhcUxkTxwRiYQyoQS0QC8PjEPDUPDcOT4OEENUsNFENHwNMcNe0OOsPeYQuIR90S9sTtwVOEWeUXuoYOsZe0a-gceMeN0fNkgdsh-EjOUj-clewmOwnegn-gpOMqN8qt4r9steAuuQvOUwekxu0xnoxU0xEgw0QwDsvzcvjUvDEui4uS0uCotSYqRsphkoBUnhQnRQmBIlBAjw8'},
+  {id:'chauvesouris',cat:'halloween',nom:"Chauve-souris",info:"Elle voit avec ses oreilles, en écoutant l'écho de ses cris.",c:'aU8ZVUXmIWWEUFkT14T2cPWILGAEGAD2QFGgGXAHHgJn8Ln8NoIOoYNYsKpQKJkN5gRpsU6MXawZp4a5AboYcY4eJUg5QiY8jYUkJIlaEnawn6orp4upky5g05gyo0v4kxIIzX81H83no4m46WU7mE3F8vWIq2crFsqVoomEnmQmFokU4jFwimonGwlXIjHgiXMhW8fG4dm8b3YbXkX24XmwcGocGEak8'},
+  {id:'sorciere',cat:'halloween',nom:"Chapeau de sorcière",c:'kyUjigjSoiS8hjYgkkgFEfVwfF8e2MeGweG8d3Mc4IcYscI4bpYXJYW5oV6YVK8PK8Ha8DbAD7gGsIHMQI8cKckL8wNs4PtAWtQZdUbNUjtUldUodQvNAxM4ycw1cg28U38M4sE67g7LY7rA368s68r6IrJYppYpZIo40oIUnoAnHsmXUmHAlWkk2QkF4j1oklUlVEmUwm0knUYoEIoz8pjUpS4oysniY'},
+  {id:'sapindenoel',cat:'noel',nom:"Sapin de Noël",c:'fQ0ciEYSQYCkbDYVlYalcZV4ZGEYWQXGwWm8VnQUnsT38ToEVYgYIsXY8W5EWJUU5wTqMS6cSKsRq0QbUPrkOcAVsAcMAatgVdsUuEUOcYO4le4rOsquYp98pdkitgmMAvsAvbourYuLMta8s6wrqYppoo5cnpAnI0moksYgroMrIAp3oonEn24mmclmAlF4kFclVYoE8nEklkAjjUkjAkyMiiIhx4gRQ'},
+  {id:'bonhommedeneige',cat:'noel',nom:"Bonhomme de neige",c:'aBAaCUXi4ZTAZzIYjsYUgZVEa1kaFsY18X2UWnAWXMVnIQWoNGULWIKWQKmgPHARHMT3cWHsWoIX40Y5IXZcVp8UKkTLgTcgU9YVtoX-QauoeO4iuwmuUoOAp9Yq80rsIrrMpqAo5wmZQmJInIwoYApHssHYuHIvHEz2k0WY0WMzmIyGQsG4o3MoXMnWglV4kFoj1kllAmUclzklDMnDAnCUlSUkg0fQ0'},
+  {id:'renne',cat:'noel',nom:"Renne",info:"Ses bois repoussent chaque année, et ses sabots claquent quand il marche.",c:'Kg0KhMLxwJyIGx8GSgLC8PzcQD4N0AM0MNUoSkwVlwXV8XmYVW8Sm0QWkNmoMG8LHgK4gNJoPqQR7AUcYYtgbegeO0ieslOImNgp8ksLotKgv6IyZcz4cz3kxWsuWkrnApG4nWcol4rFAr00xkkyEUxkEuz8uzYvjM4So4SA1CIyxw0BMzw0xQ4sy0nkImkgnEwmlkk18elsal8YV8XlIYEoX0QVUENQ4'},
+  {id:'panier',cat:'paques',nom:"Panier",c:'chkZRsYRwXhwVh8UCITCQRicRCgQSoPysOi4LDwKj8KEIJUcIkwHVsHGEHGQG20DnIEHwE4oFpcGJ4GqQGqcHbEHrQIL8IsYI8wJdMJtkKOELeEVeE0eE09w09k1dI1s818w2MU2cI2rw27k3q44aE45k5JM5ow54Y6IM6YA6no3203mc3Fg1kg00Q0D8zTswzEwS8vSwuiotygtScriQqCEnR0jBoiBk'},
+  {id:'toureiffel',cat:'monuments',nom:"Tour Eiffel",info:"Elle grandit de 15 cm l'été : le fer se dilate à la chaleur.",c:'eQ8dxUcRcch0dR4dSEczEcEUZ0YZU0aU8alEalQaF0Z2cZ2kZmwYocXowXY0XI8WpES5QTZwU5wTqYTakTKwSbMRrwRMcQtAQNwP-MOOQNusXO4su4xOcveQu90udMtb8tL4srgsbMsLEr68rqsrakq6Qp50qZwr5kq5Eno4nYwm4omIIl4AlGok2UkVgkFAlE8lUgjEYikMhiQhR8hh0iRshxUghMfw0'},
+  {id:'statueliberte',cat:'monuments',nom:"Statue de la Liberté",info:"Elle est arrivée de France en 350 morceaux, dans 214 caisses.",c:'bw0aRoXxQXhQaCsaTUbDwc0Id0QbUgaE4Y1cYGIS24TnsVngW3QXXUWZIXpoYZ0Z58arcbMoVc0UtsSuAUO4re4rtwpNAks0jMokZ8l50nZgnpQnYknIAmW0l14omAplMqkIrjAsCsrCYqSQoBsmyUmColy0oywnz4nUYm04mFgl1wllwklEikggEQhEIjDwkDIjSUiiAixojhQiBcghgfQ0exEdhsbw0'},
+  {id:'bigben',cat:'monuments',nom:"Big Ben",info:"Big Ben est le nom de la cloche, pas de la tour.",c:'eg8ehYeBgdxkdhodRwdB8ciAcSIcCMbyYbicbCkayoaiwaS8aDAZzEZTMZDUZDYYzcYjkYToXzwXj0Xz4YUEX1cV1oWWIXWcXaQWuUVOYUuwae4ke4qOwpuUneMnbUnYUn2Io2AoFcmVQmj4nD4mz0mjsmTomDglzcljUlTQlDIkzEkjAkC0jysjiojSgjCciiQiSMiCEhx8hR0hBsgxoghkgRcgBUfg0'},
+  {id:'colisee',cat:'monuments',nom:"Colisée",info:"Cinquante mille spectateurs, et un toit de toile tiré à la main.",c:'bjcZzcYDgWDkVDkTjoSjsSDsRTwRTwQjwQT0Pz0PT4Nz8Nj8NEAMkELkILEMKUQJ0UJ0UI0cIEgH0kHEwGk4GVAGFIF1UGlIIE8IU8IlAIVAH1IHVMHFUGlcGVoGFwF6ED7cDcAdsM0sM7ro5rc43M5F841441M4lE4U83Eo2kk2Ug10c00U0kQz0MzUIyEExUAwz8vT4vD0uT0uDwpjknzgmzglTglDc'},
+  {id:'pyramide',cat:'monuments',nom:"Pyramides",info:"Deux millions de blocs, posés il y a 4 500 ans.",c:'XEQV0oVkwVU0TlYS1sSF8R2ERGQQGoPm0PG8OXMOHQNnYNHoMn0L4ELYMKYgJo0JI8IpIH5YHJoGp0FaMFKUEakEKoDasDbMfbY57Y7q47Ks6Kg5KQ46I3p02pk1pQ0o8zYoyYUxIAwHwuHMs3cqoEpoUooonY8mZQl5QlZAko0j4kjIUioIhXohHkgHQfG4eWsdmcdGQcWAblwa1kaVYaFQZE4YUoX0g'},
+  {id:'tourdepise',cat:'monuments',nom:"Tour de Pise",info:"Elle penche depuis le début : le sol était trop mou d'un côté.",c:'hQ4gxkgR8eyEeCgdi0dTUczwckQcFIblobWEanEaXYZ4AZY4ZJYYp4YqEYaYX64XrUXb0WssWs8WNoWdsZN0bN4dOAfeEguIgeMP-QPuYP-4eu4tu4uuYoeMnt4n9coc8osko8QpboprIp6kqKQqpsq5QrI0roYr30sXYsm4tGAtlgt1EuEkvDUuzQuTIuiwuCktSguBotxYsxQqxMoxImxAlA8jA4hw0'},
+  {id:'tajmahal',cat:'monuments',nom:"Taj Mahal",info:"Vingt mille ouvriers et mille éléphants pour le bâtir.",c:'ejEejwekQc0Ub0ga0kaEsX1MW1oWlwV2UVmcVnAVnMVXoVHwUoUTYoP4oP64PrcMK4MGwL2ILmALV0K1cJ1cJl4JFwIF8H2IHG0Im0I7cGLcF8MD8MDcoTcw58w7sU5cM47k2rc12k1V801c0Fczl0zGEymoynQxrcvLcu4st4oqYkqIApnspXkpXEpWwpGcoV0oFsn1kk0skUojkgi0cgUQgT8gDsfi4'},
+  {id:'moulin',cat:'monuments',nom:"Moulin à vent",c:'iw0iRkhC8gjkgEIfkIfEMd0kck4bFQaVIZFAXEsWEkVUcTUMRD4OzoNTcNDoLkgKFIK1QN1YQ1kV10YV8YmEXGgWG0VHIWHIWZwVqEU6gWawWtwSeMROwX-4lO4tu4tuYpuMoa4oYAo3op3wsIAuIUwYoxIsyIUy380nAwm0tmoq2goWUnGQmWIk1wjlUi1IjE4jkkkkIljkmzEoCgpCAph0pxkmhMjQ0'},
+  {id:'chateaufort',cat:'monuments',nom:"Château fort",c:'eioejEdzIdzccTccDMajEaVAaXEZnEZXcXHgXHIVXEVHcS3gS3IRHEQ1UPFQO1sNVwM1sM1UK1QKlsI1wIlUGlQGVQGcUDsYDdAf9E7dE7s87MY4sU4lQ4FQ2lU2Vw0lw0lQyVUyFwwVwwFQuFQt30s34sXMsXEqnMqngoXgoXMmXEmXckngkXYkj0mD0lzEkjEkTYjDcijMhDEhDMgzcfTYfjMgDIfio'},
+  {id:'losange',cat:'formes',nom:"Cerf-volant",lisse:0,pts:[[50,4],[80,30],[64,55],[50,96],[36,55],[20,30]]},
+  {id:'eclair',cat:'formes',nom:"Éclair",lisse:0,pts:[[60,2],[25,52],[46,52],[36,98],[78,42],[56,42],[70,2]]},
+  {id:'fleche',cat:'formes',nom:"Flèche",lisse:0,pts:[[10,38],[60,38],[60,18],[95,50],[60,82],[60,62],[10,62]]},
+  {id:'etoile5',cat:'formes',nom:"Étoile à 5 branches",lisse:0,pts:[[50,2],[61.75570504584947,33.819660112501055],[95.65071278216737,35.16718427000252],[69.02113032590307,56.180339887498945],[78.2136921100387,88.83281572999748],[50,70],[21.786307889961293,88.83281572999748],[30.97886967409693,56.18033988749895],[4.349287217832625,35.16718427000253],[38.24429495415053,33.819660112501055]]},
+  {id:'etoile8',cat:'formes',nom:"Étoile à 8 branches",lisse:0,pts:[[50,2],[61.4805029709527,22.283614024661397],[83.94112549695429,16.058874503045722],[77.7163859753386,38.51949702904731],[98,50],[77.7163859753386,61.48050297095269],[83.94112549695429,83.94112549695427],[61.4805029709527,77.7163859753386],[50,98],[38.51949702904731,77.7163859753386],[16.058874503045722,83.94112549695429],[22.283614024661404,61.480502970952706],[2,50.00000000000001],[22.2836140246614,38.5194970290473],[16.058874503045715,16.058874503045722],[38.51949702904729,22.283614024661404]]},
+  {id:'etoile10',cat:'formes',nom:"Étoile à 10 branches",lisse:0,pts:[[50,2],[60.50657780874821,17.664078445964783],[78.2136921100387,11.167184270002522],[77.5065778087482,30.015301422055913],[95.65071278216737,35.16718427000252],[84,50],[95.65071278216737,64.83281572999748],[77.5065778087482,69.98469857794409],[78.2136921100387,88.83281572999748],[60.50657780874821,82.33592155403522],[50,98],[39.4934221912518,82.33592155403522],[21.786307889961293,88.83281572999748],[22.493422191251792,69.98469857794409],[4.349287217832632,64.83281572999748],[16,50.00000000000001],[4.349287217832625,35.16718427000253],[22.49342219125178,30.015301422055916],[21.786307889961286,11.16718427000253],[39.49342219125178,17.664078445964783]]},
+  {id:'etoile12',cat:'formes',nom:"Étoile à 12 branches",lisse:0,pts:[[50,2],[59.83512371389579,13.294818601015407],[74,8.430780618346944],[76.87005768508881,23.129942314911197],[91.56921938165306,26],[86.70518139898459,40.16487628610422],[98,50],[86.70518139898459,59.83512371389578],[91.56921938165306,74],[76.87005768508881,76.8700576850888],[74,91.56921938165306],[59.8351237138958,86.70518139898459],[50,98],[40.16487628610421,86.70518139898459],[26.00000000000001,91.56921938165306],[23.129942314911208,76.87005768508882],[8.430780618346951,74.00000000000001],[13.294818601015407,59.83512371389578],[2,50.00000000000001],[13.2948186010154,40.164876286104224],[8.430780618346944,25.999999999999993],[23.129942314911187,23.129942314911197],[25.99999999999998,8.430780618346958],[40.16487628610418,13.294818601015415]]},
+  {id:'grandcoeur',cat:'formes',nom:"Grand cœur",lisse:1,pts:[[0,-5],[0.2192973384875124,-6.129877255199268],[1.6058425681330069,-8.784136126367839],[4.665536435314917,-11.235027635836063],[8.918543733573648,-11.84826052574091],[13.079087600400053,-10.002792643459564],[15.652571459918306,-6.245439678881321],[15.652571459918306,-1.693066444072782],[13.079087600400053,2.758758522259202],[8.918543733573648,6.805190158973348],[4.665536435314917,10.49851080353719],[1.605842568133008,13.755573819594325],[0.21929733848751218,16.120567005193678],[2.9386816277228384e-47,17],[-0.21929733848751148,16.120567005193685],[-1.6058425681330015,13.755573819594332],[-4.665536435314919,10.498510803537187],[-8.918543733573644,6.8051901589733514],[-13.079087600400047,2.758758522259206],[-15.652571459918306,-1.6930664440727679],[-15.652571459918306,-6.245439678881325],[-13.079087600400053,-10.002792643459564],[-8.918543733573651,-11.848260525740908],[-4.665536435314924,-11.235027635836065],[-1.605842568133005,-8.78413612636784],[-0.21929733848751248,-6.129877255199269]]},
+  {id:'couronne',cat:'objets',nom:"Couronne",lisse:0,pts:[[10,84],[8,28],[30,52],[50,14],[70,52],[92,28],[90,84]]},
+  {id:'tasse',cat:'objets',nom:"Tasse",lisse:0,pts:[[16,28],[68,28],[68,40],[82,38],[90,50],[82,64],[68,62],[64,84],[22,84]]},
+  {id:'cle',cat:'objets',nom:"Clé",lisse:0,pts:[[10,44],[24,32],[40,36],[46,44],[86,44],[92,50],[86,58],[80,52],[74,58],[68,52],[62,58],[56,52],[46,56],[40,64],[24,68],[10,56]]},
+  {id:'parapluie',cat:'objets',nom:"Parapluie",lisse:0,pts:[[50,6],[54,12],[92,44],[80,38],[70,44],[60,38],[54,44],[54,82],[50,90],[42,90],[38,82],[44,82],[46,86],[48,82],[48,44],[40,38],[30,44],[20,38],[8,44],[46,12]]},
+  {id:'feuille',cat:'nature',nom:"Feuille",lisse:1,pts:[[50,4],[68,16],[84,34],[90,56],[82,78],[64,90],[52,86],[50,98],[46,86],[34,90],[16,78],[8,56],[14,34],[30,16]]},
+  {id:'champignon',cat:'nature',nom:"Champignon",lisse:1,pts:[[50,10],[70,14],[85,28],[88,45],[70,50],[62,50],[65,88],[58,95],[42,95],[35,88],[38,50],[30,50],[12,45],[15,28],[30,14]]},
+  {id:'pomme',cat:'nature',nom:"Pomme",lisse:1,pts:[[50,18],[54,4],[62,2],[64,12],[80,16],[92,36],[88,62],[74,86],[58,94],[50,88],[42,94],[26,86],[12,62],[8,36],[20,16],[36,10]]},
+  {id:'cactus',cat:'nature',nom:"Cactus",lisse:0,pts:[[42,90],[42,50],[24,50],[22,28],[30,28],[32,42],[42,42],[42,14],[58,14],[58,34],[70,34],[72,18],[80,18],[78,44],[58,44],[58,90]]},
+  {id:'soleil',cat:'nature',nom:"Soleil",lisse:0,pts:[[50,2],[57.41343223661288,12.730159344677247],[68.36880475352432,5.65378243945824],[71.11166885474489,18.40415473250328],[83.94112549695429,16.058874503045722],[81.59584526749671,28.888331145255115],[94.34621756054176,31.63119524647569],[87.26984065532275,42.58656776338712],[98,50],[87.26984065532275,57.41343223661288],[94.34621756054176,68.3688047535243],[81.59584526749673,71.11166885474488],[83.94112549695429,83.94112549695427],[71.11166885474488,81.59584526749673],[68.36880475352432,94.34621756054176],[57.413432236612884,87.26984065532275],[50,98],[42.58656776338712,87.26984065532275],[31.63119524647569,94.34621756054176],[28.888331145255126,81.59584526749673],[16.058874503045722,83.94112549695429],[18.404154732503276,71.11166885474489],[5.653782439458247,68.36880475352433],[12.730159344677247,57.413432236612884],[2,50.00000000000001],[12.730159344677247,42.58656776338712],[5.65378243945824,31.631195246475677],[18.404154732503272,28.888331145255126],[16.058874503045715,16.058874503045722],[28.888331145255115,18.40415473250328],[31.631195246475663,5.653782439458247],[42.58656776338711,12.730159344677247]]},
+  {id:'sapin',cat:'nature',nom:"Sapin",lisse:0,pts:[[50,5],[70,30],[60,30],[78,55],[65,55],[85,80],[57,80],[57,95],[43,95],[43,80],[15,80],[35,55],[22,55],[40,30],[30,30]]},
+  {id:'bateau',cat:'vehicules',nom:"Bateau",lisse:0,pts:[[18,92],[5,72],[47,72],[47,18],[53,18],[53,25],[88,66],[53,66],[53,72],[95,72],[82,92]]},
+  {id:'voiture',cat:'vehicules',nom:"Voiture",lisse:0,pts:[[6,72],[6,50],[24,50],[36,32],[66,32],[78,50],[94,50],[94,72],[80,72],[74,80],[64,80],[58,72],[42,72],[36,80],[26,80],[20,72]]},
+  {id:'camion',cat:'vehicules',nom:"Camion",lisse:0,pts:[[4,72],[4,40],[40,40],[40,28],[74,28],[86,44],[96,48],[96,72],[84,72],[78,80],[66,80],[60,72],[36,72],[30,80],[18,80],[12,72]]},
+  {id:'canard',cat:'oiseaux',nom:"Canard",lisse:1,pts:[[22,16],[36,12],[46,22],[44,38],[52,48],[72,44],[94,30],[92,52],[80,70],[54,76],[28,68],[12,56],[16,42],[24,38],[16,30],[4,26],[14,22]]},
+  {id:'flamant',cat:'oiseaux',nom:"Flamant rose",info:"Il devient rose en mangeant des crevettes, et dort sur une patte.",lisse:1,pts:[[6,18],[14,8],[24,8],[30,16],[34,30],[36,46],[46,54],[60,52],[74,56],[84,66],[94,62],[96,70],[86,76],[74,80],[70,88],[68,98],[62,98],[64,88],[64,80],[56,78],[52,88],[48,96],[40,96],[44,86],[46,76],[40,66],[28,48],[26,30],[18,18],[8,22]]},
+  {id:'manchot',cat:'oiseaux',nom:"Manchot",info:"Il plonge à 500 m de profondeur et couve son œuf sur ses pieds.",lisse:1,pts:[[50,2],[62,8],[66,20],[74,22],[70,26],[68,34],[82,54],[86,74],[76,70],[74,84],[86,92],[88,96],[70,96],[56,94],[44,94],[30,96],[14,96],[16,92],[28,84],[26,70],[16,74],[20,54],[32,34],[34,20],[38,8]]},
+  {id:'cygne',cat:'oiseaux',nom:"Cygne",info:"Il garde le même partenaire toute sa vie et pèse jusqu'à 15 kg.",lisse:1,pts:[[8,20],[16,14],[24,12],[30,18],[34,32],[34,48],[48,44],[66,44],[82,52],[94,44],[96,52],[88,60],[76,68],[58,72],[40,72],[26,66],[22,54],[24,38],[22,24],[14,24]]},
+  {id:'autruche',cat:'oiseaux',nom:"Autruche",info:"Elle court à 70 km/h et pond le plus gros œuf du monde.",lisse:1,pts:[[6,12],[14,6],[22,8],[26,16],[34,32],[42,50],[56,52],[72,58],[82,72],[92,70],[90,80],[78,86],[74,94],[76,98],[66,98],[64,88],[58,84],[56,94],[58,98],[48,98],[48,86],[46,78],[40,64],[30,44],[24,28],[16,16],[8,16]]},
+  {id:'heron',cat:'oiseaux',nom:"Héron",info:"Il reste immobile des heures avant de harponner un poisson.",lisse:1,pts:[[2,20],[18,14],[28,12],[34,18],[44,10],[38,20],[40,34],[44,50],[58,52],[74,56],[90,66],[96,76],[84,74],[72,72],[68,86],[70,98],[62,98],[62,84],[58,74],[52,86],[54,98],[46,98],[48,84],[44,72],[36,58],[34,42],[32,26],[22,20],[8,24]]},
+  {id:'colibri',cat:'oiseaux',nom:"Colibri",info:"Ses ailes battent 70 fois par seconde et il vole à reculons.",lisse:1,pts:[[2,30],[22,26],[30,20],[40,20],[48,26],[56,14],[72,6],[80,12],[66,24],[56,32],[66,36],[78,44],[92,44],[96,50],[84,52],[90,58],[78,56],[70,50],[58,52],[46,50],[36,44],[28,38],[24,32],[14,34]]},
+  {id:'raie',cat:'mer',nom:"Raie manta",info:"Elle « vole » sous l'eau avec 7 m d'envergure et se nourrit de plancton.",lisse:1,pts:[[2,40],[24,30],[40,26],[44,16],[50,12],[52,22],[58,22],[60,12],[66,16],[70,26],[86,30],[98,42],[86,52],[72,58],[62,64],[58,60],[58,80],[60,98],[54,98],[52,80],[50,62],[42,66],[30,58],[16,52]]},
+  {id:'poulpe',cat:'mer',nom:"Poulpe",info:"Trois cœurs, un sang bleu, et il change de couleur en une seconde.",lisse:1,pts:[[18,36],[20,20],[34,6],[50,2],[66,6],[80,20],[82,36],[94,46],[88,58],[96,74],[86,72],[80,56],[78,64],[82,84],[72,80],[70,60],[66,70],[64,92],[56,88],[58,64],[50,72],[44,92],[38,86],[44,62],[36,68],[26,86],[20,80],[30,58],[22,60],[10,72],[6,62],[16,48]]},
+  {id:'meduse',cat:'mer',nom:"Méduse",info:"Sans cerveau ni squelette : elle est faite de 95 % d'eau.",lisse:1,pts:[[8,44],[12,24],[28,8],[50,4],[72,8],[88,24],[92,44],[84,50],[86,68],[80,90],[72,96],[72,84],[78,66],[76,48],[68,44],[66,62],[60,86],[52,94],[52,80],[58,60],[56,46],[48,50],[44,66],[38,90],[30,94],[32,80],[38,62],[36,46],[28,50],[24,68],[18,88],[12,92],[14,78],[20,60],[18,46]]},
+  {id:'hippocampe',cat:'mer',nom:"Hippocampe",info:"Chez lui, c'est le mâle qui porte les œufs et met bas.",lisse:1,pts:[[4,26],[22,20],[30,12],[34,2],[40,10],[46,4],[48,14],[54,26],[60,40],[64,58],[60,74],[50,86],[36,92],[26,84],[28,74],[38,72],[36,80],[32,82],[34,86],[42,86],[50,80],[52,68],[46,56],[42,42],[34,32],[20,30]]},
+  {id:'requinmarteau',cat:'mer',nom:"Requin-marteau",info:"Sa tête en T écarte ses yeux : il voit presque tout autour de lui.",lisse:1,pts:[[14,8],[16,2],[30,0],[44,4],[56,4],[70,0],[84,2],[86,8],[78,14],[64,18],[60,30],[86,40],[78,48],[62,44],[60,60],[56,76],[62,86],[66,98],[52,84],[48,98],[44,86],[42,76],[40,60],[38,44],[22,48],[14,40],[40,30],[36,18],[22,14]]},
+  {id:'etoiledemer',cat:'mer',nom:"Étoile de mer",info:"Si elle perd un bras, il repousse — et parfois refait une étoile entière.",lisse:2,pts:[[50,2],[58,26],[62,34],[96,34],[70,52],[66,60],[78,94],[50,74],[44,74],[22,94],[34,60],[30,52],[4,34],[38,34],[42,26]]},
+  {id:'orque',cat:'mer',nom:"Orque",info:"Chaque famille d'orques a son propre dialecte de sifflements.",lisse:1,pts:[[4,50],[18,42],[36,38],[52,36],[62,16],[74,34],[88,40],[98,46],[104,34],[112,52],[104,68],[96,56],[84,58],[66,62],[50,64],[40,72],[30,82],[36,68],[26,64],[12,58]]},
+  {id:'phoque',cat:'mer',nom:"Phoque",info:"Il dort dans l'eau, une narine au-dessus de la surface.",lisse:1,pts:[[6,30],[16,22],[28,20],[44,24],[62,34],[78,48],[90,58],[98,50],[100,66],[96,76],[88,66],[74,72],[60,74],[64,88],[50,92],[46,78],[34,72],[20,58],[10,44]]},
+  {id:'murene',cat:'mer',nom:"Murène",info:"Elle a une seconde mâchoire dans la gorge pour tirer ses proies.",lisse:1,pts:[[4,40],[16,32],[30,30],[46,36],[60,50],[74,66],[88,74],[98,70],[96,80],[84,86],[68,80],[52,66],[38,52],[26,44],[14,46],[8,52],[6,60],[12,66],[6,68],[2,58],[2,48]]},
+  {id:'dauphin',cat:'mer',nom:"Dauphin",lisse:1,pts:[[4,52],[14,42],[30,36],[44,34],[52,20],[58,36],[74,40],[86,46],[96,40],[94,58],[86,54],[74,62],[62,70],[52,72],[46,80],[40,70],[26,68],[12,62]]},
+  {id:'libellule',cat:'bestioles',nom:"Libellule",info:"Elle chasse en vol et attrape 95 % de ses proies.",lisse:1,pts:[[50,2],[58,8],[56,16],[74,10],[92,14],[96,22],[80,26],[62,24],[78,30],[94,38],[92,48],[76,44],[60,34],[56,50],[56,74],[54,94],[50,98],[46,94],[44,74],[44,50],[40,34],[24,44],[8,48],[6,38],[22,30],[38,24],[20,26],[4,22],[8,14],[26,10],[44,16],[42,8]]},
+  {id:'scorpion',cat:'bestioles',nom:"Scorpion",info:"Il brille en bleu sous une lampe à ultraviolets.",lisse:1,pts:[[2,44],[14,34],[24,42],[18,50],[28,54],[38,52],[50,48],[48,34],[42,24],[36,16],[30,10],[40,16],[50,24],[58,34],[64,46],[68,50],[78,54],[80,62],[68,68],[52,70],[38,68],[26,70],[14,76],[4,72],[12,62],[20,58]]},
+  {id:'gecko',cat:'bestioles',nom:"Gecko",info:"Des millions de poils sous ses doigts lui font escalader les vitres.",lisse:1,pts:[[50,2],[60,8],[62,18],[78,20],[92,12],[88,24],[74,30],[66,34],[64,46],[80,54],[92,66],[80,62],[66,58],[60,66],[58,80],[56,96],[50,98],[44,96],[42,80],[40,66],[34,58],[20,62],[8,66],[20,54],[36,46],[34,34],[26,30],[12,24],[8,12],[22,20],[38,18],[40,8]]},
+  {id:'crocodile',cat:'bestioles',nom:"Crocodile",info:"Il change de dents toute sa vie : environ 3 000 au total.",lisse:1,pts:[[50,2],[56,6],[58,14],[60,22],[58,30],[74,32],[84,26],[76,38],[62,40],[64,52],[80,58],[88,52],[78,64],[64,66],[62,78],[58,90],[54,98],[46,98],[42,90],[38,78],[36,66],[22,64],[12,52],[20,58],[36,52],[36,40],[24,38],[16,26],[26,32],[40,30],[40,22],[42,14],[44,6]]},
+  {id:'escargot',cat:'bestioles',nom:"Escargot",info:"Il avance sur un tapis de bave et porte sa maison sur le dos.",lisse:1,pts:[[2,88],[10,80],[18,70],[24,58],[20,40],[25,38],[30,54],[36,38],[41,36],[38,56],[46,60],[48,46],[48,30],[56,18],[70,12],[84,16],[92,30],[92,46],[84,60],[72,70],[60,72],[66,84],[50,90],[30,90],[14,90]]},
+  {id:'suricate',cat:'animaux',nom:"Suricate",info:"Il monte la garde debout pendant que le groupe cherche à manger.",lisse:1,pts:[[18,26],[24,14],[26,4],[32,10],[40,4],[48,2],[52,12],[50,22],[46,30],[52,44],[58,58],[60,72],[72,82],[86,92],[94,98],[86,98],[74,90],[62,84],[58,92],[48,94],[40,94],[34,90],[30,74],[28,58],[30,44],[34,30],[30,28]]},
+  {id:'fennec',cat:'animaux',nom:"Fennec",info:"Le plus petit renard du monde : ses grandes oreilles évacuent la chaleur du désert.",lisse:1,pts:[[16,44],[10,16],[22,26],[34,30],[46,28],[56,20],[54,4],[66,26],[74,34],[86,42],[96,54],[92,66],[94,88],[86,88],[84,66],[70,66],[54,68],[44,68],[42,88],[34,88],[34,66],[24,60],[18,54]]},
+  {id:'echidne',cat:'animaux',nom:"Échidné",info:"Couvert de piquants, il pond des œufs comme l'ornithorynque.",lisse:1,pts:[[4,66],[18,58],[26,50],[24,38],[34,46],[38,34],[46,44],[52,30],[60,42],[70,30],[76,44],[86,36],[90,50],[100,46],[100,60],[108,60],[100,70],[94,78],[84,76],[70,78],[52,78],[36,76],[22,74],[8,72]]},
+  {id:'herisson',cat:'animaux',nom:"Hérisson",info:"Il porte 6 000 piquants et se roule en boule au moindre danger.",lisse:1,pts:[[2,66],[12,58],[20,52],[24,38],[30,48],[36,34],[42,46],[50,32],[58,44],[66,32],[74,44],[82,36],[88,50],[94,60],[92,72],[80,78],[72,78],[74,88],[66,88],[64,78],[48,80],[36,80],[38,88],[30,88],[28,78],[18,74],[8,70]]},
+  {id:'girafe',cat:'animaux',nom:"Girafe",info:"Sept vertèbres au cou, comme nous, mais chacune longue de 25 cm.",lisse:1,pts:[[4,14],[14,6],[18,0],[22,8],[26,2],[30,10],[34,18],[48,36],[60,54],[74,58],[86,66],[94,72],[92,84],[86,76],[82,72],[84,94],[76,94],[74,70],[62,70],[56,94],[48,94],[50,68],[44,58],[34,40],[26,24],[18,18],[8,18]]},
+  {id:'chameau',cat:'animaux',nom:"Chameau",info:"Ses bosses sont des réserves de graisse, pas d'eau.",lisse:1,pts:[[4,22],[12,14],[20,12],[24,20],[34,30],[44,18],[54,30],[64,18],[76,30],[86,42],[92,48],[90,58],[84,50],[82,54],[84,88],[76,88],[74,56],[60,58],[52,88],[44,88],[46,56],[38,46],[30,34],[26,24],[18,24]]},
+  {id:'oeuf',cat:'paques',nom:"Œuf de Pâques",lisse:1,pts:[[50,4],[64,8],[76,20],[84,36],[88,56],[84,74],[74,88],[60,96],[40,96],[26,88],[16,74],[12,56],[16,36],[24,20],[36,8]]},
+  {id:'cadeau',cat:'noel',nom:"Cadeau",lisse:0,pts:[[14,96],[14,38],[28,38],[24,26],[28,14],[38,14],[46,26],[50,34],[54,26],[62,14],[72,14],[76,26],[72,38],[86,38],[86,96]]},
+  {id:'phare',cat:'monuments',nom:"Phare",info:"Sa lampe tourne pour qu'on la voie clignoter de loin.",lisse:0,pts:[[50,2],[56,8],[56,14],[64,14],[64,26],[60,26],[66,38],[66,44],[62,44],[70,90],[78,90],[78,98],[22,98],[22,90],[30,90],[38,44],[34,44],[34,38],[40,26],[36,26],[36,14],[44,14],[44,8]]},
 ];
 
 /* ============================================================
@@ -563,21 +577,33 @@ function densifier(p,pas){
   return out;
 }
 function cadrer(p,marge){
-  const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]);
-  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  // boucle plutôt que Math.min(...p) : un contour décalqué compte des milliers
+  // de points, et les passer en arguments épuisait la pile.
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const q of p){
+    if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];
+    if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];
+  }
   const s=(100-2*marge)/Math.max(x1-x0,y1-y0,1e-6);
   const ox=marge+(100-2*marge-(x1-x0)*s)/2,oy=marge+(100-2*marge-(y1-y0)*s)/2;
   return p.map(([x,y])=>[+(ox+(x-x0)*s).toFixed(2),+(oy+(y-y0)*s).toFixed(2)]);
 }
-/* Douglas-Peucker sur une polyligne ouverte : indices conservés. */
+/* Douglas-Peucker sur une polyligne ouverte : indices conservés.
+   Pile explicite plutôt que récursion — un contour décalqué sur une image
+   fine compte des milliers de points, et la récursion y épuisait la pile. */
 function dpIdx(p,i0,i1,eps,garde){
-  const a=p[i0],b=p[i1],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;
-  let dmax=-1,imax=-1;
-  for(let i=i0+1;i<i1;i++){
-    const d=Math.abs(dy*(p[i][0]-a[0])-dx*(p[i][1]-a[1]))/L;
-    if(d>dmax){dmax=d;imax=i}
+  const pile=[[i0,i1]];
+  while(pile.length){
+    const[a,b]=pile.pop();
+    if(b<=a+1)continue;
+    const A=p[a],B=p[b],dx=B[0]-A[0],dy=B[1]-A[1],L=Math.hypot(dx,dy)||1;
+    let dmax=-1,imax=-1;
+    for(let i=a+1;i<b;i++){
+      const d=Math.abs(dy*(p[i][0]-A[0])-dx*(p[i][1]-A[1]))/L;
+      if(d>dmax){dmax=d;imax=i}
+    }
+    if(dmax>eps){garde.push(imax);pile.push([a,imax],[imax,b])}
   }
-  if(dmax>eps){dpIdx(p,i0,imax,eps,garde);garde.push(imax);dpIdx(p,imax,i1,eps,garde)}
 }
 /* Simplifie un contour fermé : indices des sommets gardés. */
 function simplifierEps(p,eps){
@@ -603,6 +629,8 @@ function simplifier(p,n){
 /* Contour dense d'un dessin (mis en cache). */
 function contour(d){
   if(!d._dense){
+    // les silhouettes décalquées voyagent encodées : trois caractères par point
+    if(!d.pts&&d.c)d.pts=decoderPts(d.c);
     let p=d.pts.map(q=>q.slice());
     if(d.lisse)p=lisser(p,d.lisse);
     d._dense=cadrer(densifier(p,.3),5);
@@ -1000,8 +1028,9 @@ function nouveau(){
   if(s.monte){$('niveau').value=s.niveau;
     dits.push(`Il n'y a pas ${n} résultats différents au niveau ${s.monte[0]} : le niveau est passé à ${s.monte[1]}.`);}
   if(!dits.length&&SANS_INTERVALLE.has(type))dits.push("Les fractions ne suivent pas l'intervalle : elles dépendent du niveau.");
+  if(n<detail(d))dits.push(`${d.nom} demande plutôt ${detail(d)} points pour rester reconnaissable ; à ${n} il sera grossier.`);
   if(n>80)dits.push(`${n} points : imprime en A4, et préfère « Nombres entiers » pour que les étiquettes restent lisibles.`);
-  if(!silence){message(dits.join(' '));afficher();majGalerie();majGuide()}
+  if(!silence){message(dits.join(' '));afficher();majGalerie();majGuide();majDifficultes()}
 }
 
 function afficher(){
@@ -1087,7 +1116,8 @@ function construireGalerie(){
     :(filtre==='tous'||d.cat===filtre));
   const htmlOnglets=[['tous','Tous'],...cats]
     .map(([k,v])=>`<button data-cat="${k}" aria-pressed="${!q&&k===filtre}">${v}</button>`).join('');
-  const htmlCartes=liste.map(d=>`<div class="carte" role="button" tabindex="0" data-id="${d.id}" aria-pressed="false">`
+  const nPts=+$('nPts').value||20;
+  const htmlCartes=liste.map(d=>`<div class="carte${detail(d)>nPts?' court':''}" role="button" tabindex="0" data-id="${d.id}" aria-pressed="false">`
     +vignette(d)+`<span class="nom">${d.nom}</span>`
     +`<span class="meta"><span>dès ${detail(d)} points</span></span>`
     +(d.cat==='perso'?`<button class="jeter" data-jeter="${d.id}" title="Supprimer">✕</button>`:'')+`</div>`).join('')
@@ -1113,12 +1143,42 @@ function choisirDessin(id){
   const d=DESSINS.find(x=>x.id===id);if(!d)return;
   $('dessin').value=id;
   const n=+$('nPts').value;
-  if(n<detail(d)||n>maxPoints(d))majN(Math.max(detail(d),Math.min(n,maxPoints(d))));
+  if(n>maxPoints(d))majN(maxPoints(d));   // on ne remonte pas : la difficulté choisie prime
   majBornesN();nouveau();
   if(document.body.dataset.vue==='guide'&&pasCourant===1)allerA(2);
   else window.scrollTo({top:0,behavior:'smooth'});
 }
 function majGalerie(){document.querySelectorAll('.carte').forEach(c=>c.setAttribute('aria-pressed',!!exo&&c.dataset.id===exo.dessin.id))}
+
+/* Un seul choix règle le nombre de points, le type de calcul, le niveau et
+   l'intervalle : trois réglages à accorder, c'est trois occasions de se
+   tromper. Les réglages fins restent dessous pour qui veut. */
+const DIFFICULTES=[
+  {id:'gs', nom:'GS – CP',   quoi:'Compter jusqu\'à 20',      n:10, t:'nombres',  l:1, a:1,   b:20},
+  {id:'cp', nom:'CP – CE1',  quoi:'Petites additions',        n:16, t:'add',      l:1, a:1,   b:20},
+  {id:'ce', nom:'CE1 – CE2', quoi:'Additions et tables',      n:24, t:'melange',  l:2, a:1,   b:100},
+  {id:'cm', nom:'CM1 – CM2', quoi:'Les quatre opérations',    n:36, t:'melange',  l:4, a:1,   b:200},
+  {id:'co', nom:'Collège',   quoi:'Relatifs et priorités',    n:48, t:'relatifs', l:4, a:-50, b:50},
+];
+function difficulteCourante(){
+  const n=+$('nPts').value,t=$('type').value,l=+$('niveau').value,
+        a=Math.round(+$('rgMin').value),b=Math.round(+$('rgMax').value);
+  const d=DIFFICULTES.find(x=>x.n===n&&x.t===t&&x.l===l&&x.a===a&&x.b===b);
+  return d?d.id:'';
+}
+function appliquerDifficulte(id){
+  const d=DIFFICULTES.find(x=>x.id===id);if(!d)return;
+  $('type').value=d.t;$('niveau').value=d.l;$('rgMin').value=d.a;$('rgMax').value=d.b;
+  majBornesN();majN(Math.min(d.n,+$('nPts').max||200));
+  graine=nouvelleGraine();nouveau();
+}
+function majDifficultes(){
+  const cour=difficulteCourante();
+  const html=DIFFICULTES.map(d=>`<button data-diff="${d.id}" aria-pressed="${d.id===cour}" `
+    +`title="${d.quoi} — ${d.n} points">${d.nom}</button>`).join('')
+    +(cour?'':`<span class="surmesure">sur mesure</span>`);
+  for(const id of['diffs','diffsG']){const e=$(id);if(e&&e.innerHTML!==html)e.innerHTML=html}
+}
 
 /* ============================================================
    6 bis. Deux interfaces : pas à pas, ou tous les réglages
@@ -1697,6 +1757,8 @@ $('btnLireSvg').onclick=()=>{
 $('btnAccueil').onclick=()=>vue('accueil');
 $('btnBascule').onclick=()=>vue(document.body.dataset.vue==='guide'?'expert':'guide');
 document.querySelectorAll('.grandchoix').forEach(b=>b.onclick=()=>vue(b.dataset.vers));
+for(const id of['diffs','diffsG'])$(id).onclick=e=>{
+  const b=e.target.closest('button');if(b)appliquerDifficulte(b.dataset.diff)};
 $('fil').onclick=e=>{const li=e.target.closest('li');if(li)allerA(+li.dataset.p)};
 $('gRetour').onclick=()=>allerA(pasCourant-1);
 $('gSuivant').onclick=()=>allerA(pasCourant+1);
@@ -1758,7 +1820,7 @@ $('btnExportPerso').onclick=exporterPerso;
 $('btnImportPerso').onclick=()=>$('fichierJson').click();
 $('fichierJson').onchange=e=>{const f=e.target.files[0];if(f)importerPerso(f);e.target.value=''};
 
-majBornesN();construireGalerie();
+majBornesN();majDifficultes();construireGalerie();
 
 /* Un lien partagé passe avant tout : il rouvre la fiche telle quelle. */
 const venu=lireLien();
