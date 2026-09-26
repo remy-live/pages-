@@ -38,6 +38,16 @@ départ, marqué en jaune, et révèle le dessin.
 Les résultats d'une même fiche sont **tous différents** : sans ça, deux points
 seraient interchangeables et le tracé pourrait partir de travers.
 
+## Le niveau de difficulté
+
+Cinq boutons — **GS-CP, CP-CE1, CE1-CE2, CM1-CM2, Collège** — règlent d'un coup
+le nombre de points, le type de calcul, le niveau et l'intervalle. Trois
+réglages à accorder, c'est trois occasions de se tromper. Dès qu'on touche un
+réglage à la main, la pastille passe à « sur mesure » : rien n'est verrouillé.
+
+La galerie grise les dessins qui demandent plus de points que le niveau choisi,
+et la page le dit plutôt que de remonter le curseur dans le dos de l'utilisateur.
+
 ## Le nombre de points, au choix
 
 Les dessins ne sont pas des listes de points figées : ce sont des **contours**.
@@ -83,15 +93,25 @@ Douze types, chacun sur cinq niveaux :
 
 ## Les dessins
 
-Quatre-vingt-quinze figures, dont **soixante animaux** rangés en quatre
-familles — Animaux, Oiseaux, Mer, Petites bêtes — plus les formes, objets,
-véhicules et éléments de nature d'origine.
+Cent une figures en treize familles : Animaux, Oiseaux, Mer, Petites bêtes,
+**Halloween**, **Noël**, **Pâques**, Monuments, Villes, Nature, Formes, Objets,
+Véhicules. Beaucoup portent une phrase à savoir, montrée quand la partie est
+gagnée et imprimée sur la page solution.
 
-Le choix penche vers les espèces qu'on croise peu : pangolin, tatou, okapi,
-ornithorynque, échidné, binturong, ratel, capybara, wombat, fennec, coati,
-narval, lamantin, raie manta, poisson-lune, murène, seiche, macareux, kiwi,
-colibri, lucane, mante religieuse… Chacun porte une phrase à savoir, montrée
-quand la partie est gagnée et imprimée sur la page solution.
+La moitié d'entre elles sont **décalquées des silhouettes du puzzle de calcul**
+du même dépôt : ce sont de vrais dessins vectoriels, avec oreilles, trompe et
+queue, là où des polygones écrits à la main donnaient une suite de blobs qui se
+ressemblaient tous. Le décalque emprunte le chemin de l'atelier — on binarise
+la silhouette, on bouche les trous, on ferme les craquelures, on garde la plus
+grosse tache et on suit son bord. Une fermeture progressive soude au passage
+les morceaux détachés : la voile d'un bateau, les bois d'un renne.
+
+Chaque figure est jugée **à la taille d'une vignette de galerie**, pas en grand :
+une silhouette qui se lit en 400 px peut n'être qu'une tache en 130. Celles qui
+ne passaient pas ce test ont été retirées plutôt que gardées pour le nombre.
+
+Les tracés décalqués sont rangés encodés — trois caractères par point, comme
+dans un lien de partage — ce qui tient la page sous 130 ko.
 
 La **recherche** au-dessus de la galerie cherche dans les quatre-vingt-quinze
 dessins, sans se soucier des accents ni des majuscules, et par famille aussi :
