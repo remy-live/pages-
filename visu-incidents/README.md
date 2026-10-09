@@ -174,9 +174,19 @@ structures ne s'y ajoutent pas, sans quoi les taux par territoire seraient
 faussés.
 
 **Qualité des données** — l'outil signale et laisse exporter les signalements
-venus de structures hors annuaire, ceux sans date exploitable, et les
-établissements de l'annuaire dépourvus de coordonnées. Rien ne disparaît
-silencieusement.
+venus de structures hors annuaire, ceux sans date exploitable, ceux dont la date
+est invraisemblable, et les établissements de l'annuaire dépourvus de
+coordonnées. Rien ne disparaît silencieusement.
+
+Les dates hors de l'intervalle 2000 – année prochaine sont écartées : une
+coquille de saisie du genre « 207 » pour « 2007 » devenait sinon la borne basse
+de la période, ajoutait une ligne au calendrier et étirait la frise sur des
+siècles.
+
+**Remettre à zéro** — « Retirer le registre » vide les signalements et conserve
+l'annuaire, les marques de relance, les notes et les réglages. « Oublier les
+fichiers » retire en plus l'annuaire déposé, celui intégré à la page reprenant
+sa place.
 
 **Fiche à envoyer** — depuis la fiche d'un établissement, un PDF d'une page ou
 un texte à coller dans un courriel, ne contenant **que** les signalements de cet
@@ -201,8 +211,8 @@ premier chargement, faute de point de comparaison.
 une mention neutre, exports compris. Un registre est nominatif par nature ; une
 statistique portée devant une instance n'a pas à l'être.
 
-**Tous les établissements concernés** — le rapport se termine par une annexe
-exhaustive : chaque établissement touché, du plus signalé au moins signalé,
+**Tous les établissements concernés** — le rapport **et l'article** se terminent
+par une annexe exhaustive : chaque établissement touché, du plus signalé au moins signalé,
 avec sa commune, son département, son nombre de signalements et combien ne sont
 pas clos. Les priorités n'en retiennent que quatorze ; l'annexe les recense
 tous, y compris ceux qui n'ont qu'un seul signalement.
