@@ -76,8 +76,24 @@ def main() -> int:
     html = re.sub(r'<link rel="stylesheet" href="([^"]+)"\s*/?>', css_tag, html)
     html = re.sub(r'<script src="([^"]+)"></script>', js_tag, html)
 
-    if re.search(r'(?:href|src)="vendor/', html):
-        print("Attention : des références à vendor/ subsistent.", file=sys.stderr)
+    # Les polices sont référencées depuis le <style> de la page elle-même, et
+    # vivent hors du dossier : sans cette passe, le fichier autonome les perdrait.
+    def repl_police(match: "re.Match[str]") -> str:
+        raw = match.group(1).strip("\"'")
+        if raw.startswith(("data:", "http:", "https:", "//")):
+            return match.group(0)
+        asset = (HERE / raw).resolve()
+        if not asset.is_file():
+            return match.group(0)
+        mime = "font/woff2" if asset.suffix == ".woff2" else "application/octet-stream"
+        payload = base64.b64encode(asset.read_bytes()).decode("ascii")
+        inlined.append(raw)
+        return f"url(data:{mime};base64,{payload})"
+
+    html = re.sub(r'url\((["\']?\.\./[^)]+)\)', repl_police, html)
+
+    if re.search(r'(?:href|src)="vendor/', html) or re.search(r'url\(["\']?\.\./', html):
+        print("Attention : des références externes subsistent.", file=sys.stderr)
         return 1
 
     html = html.replace(

@@ -14,6 +14,21 @@
 <link rel="stylesheet" href="vendor/MarkerCluster.css">
 
 <style>
+/* Polices servies par le dépôt, comme pour les autres outils : aucun appel à un
+   tiers, et l'allure tient sur un réseau qui filtre les CDN. */
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;
+  src:url("../polices/barlow-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;
+  src:url("../polices/barlow-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;
+  src:url("../polices/barlow-condensed-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;
+  src:url("../polices/barlow-condensed-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url("../polices/ibm-plex-mono-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;
+  src:url("../polices/ibm-plex-mono-latin-500-normal.woff2") format("woff2")}
+
 /* ------------------------------------------------------------------
    Jetons de couleur.
    Palette catégorielle et encres validées (contrastes + daltonisme).
@@ -83,7 +98,7 @@
 [hidden]{display:none !important}
 html,body{height:100%}
 body{
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   background:var(--plane); color:var(--ink);
   font-size:14px; line-height:1.45;
   overflow:hidden;
@@ -91,6 +106,15 @@ body{
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 button{font:inherit;color:inherit}
 h1,h2,h3,h4{font-weight:650; line-height:1.2}
+/* Les titres et les chiffres prennent la condensée : plus d'allure, et de la
+   place gagnée là où les libellés sont longs. */
+.pane-head h1,.group > h2,.kpi .v,.chartbox h3,.prio .nm,.topitem .nm{
+  font-family:"Barlow Condensed","Barlow",system-ui,sans-serif; letter-spacing:.01em}
+.pane-head h1{font-size:19px; font-weight:700; text-transform:uppercase}
+.kpi .v{font-size:25px; font-weight:700}
+.chartbox h3{font-size:14px; font-weight:700}
+.rk,.cal-a,.cal-m,.file-state,.badge,.facet-list .opt .n{
+  font-family:"IBM Plex Mono",ui-monospace,monospace}
 
 /* ---------------- Ossature ---------------- */
 .app{
@@ -262,6 +286,10 @@ body.tiles-dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness
 .chartbox h3{font-size:12.5px; margin-bottom:2px}
 .chartbox .cap{font-size:11.5px; color:var(--ink-muted); margin-bottom:6px}
 .chartwrap{position:relative; height:150px}
+#chartSel{position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair;
+  background:transparent; border-radius:3px; touch-action:none}
+#chartSel.tracant{background:color-mix(in srgb, var(--accent) 16%, transparent);
+  border:1px solid var(--accent)}
 .chartwrap.tall{height:190px}
 
 /* Barres horizontales natives (formes catégorielles) */
@@ -378,6 +406,51 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
   .prio,.kpi,.inc,.notice{break-inside:avoid}
   .facet,.row,.chartwrap{display:none !important}
 }
+
+
+/* ---- Calendrier année × mois ---- */
+#calendrier{overflow-x:auto}   /* filet de sécurité : jamais de case rognée */
+.cal{display:grid; grid-template-columns:auto repeat(12,1fr); gap:2px; align-items:center; min-width:0}
+.cal-m{font-size:9px; color:var(--ink-muted); text-align:center; letter-spacing:-.02em}
+.cal-a{font-size:10px; color:var(--ink-2); padding-right:5px; white-space:nowrap; text-align:right}
+.cal-c{
+  aspect-ratio:1; min-height:17px; border:1px solid var(--hairline); border-radius:3px;
+  font:500 9px/1 "IBM Plex Mono",monospace; color:var(--ink); cursor:pointer; padding:0;
+  display:grid; place-items:center;
+}
+.cal-c:hover{outline:2px solid var(--accent); outline-offset:-1px}
+.cal-c.on{outline:2px solid var(--ink); outline-offset:-1px; font-weight:600}
+@media (max-width:460px){
+  /* Trop étroit pour douze nombres : la teinte porte la grandeur, l'infobulle
+     et le libellé vocal donnent le chiffre exact. */
+  .cal{gap:1.5px}
+  .cal-c{min-height:13px; font-size:0; border-radius:2px}
+  .cal-m{font-size:7.5px}
+  .cal-a{font-size:9px; padding-right:3px}
+}
+
+/* ---- Frise d'établissement ---- */
+.frise{margin-top:8px}
+.frise svg{width:100%; height:26px; display:block}
+.frise-b{display:flex; justify-content:space-between; font-size:10px;
+  color:var(--ink-muted); font-family:"IBM Plex Mono",monospace}
+
+/* ---- Étiquettes de filtres actifs ---- */
+.puces{display:flex; flex-wrap:wrap; gap:5px; max-width:min(520px,70vw)}
+.puce{
+  display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:550;
+  background:var(--surface); border:1px solid var(--hairline); border-radius:20px;
+  padding:3px 5px 3px 10px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink-2);
+}
+.puce:hover{background:var(--surface-2); color:var(--ink)}
+.puce b{font-weight:650; color:var(--ink)}
+.puce i{font-style:normal; width:15px; height:15px; border-radius:50%; display:grid;
+  place-items:center; background:var(--surface-2); font-size:11px; line-height:1}
+.puce:hover i{background:var(--grid)}
+
+/* ---- Choix de la maille ---- */
+.maille{display:flex; gap:6px; align-items:center; margin-top:6px}
+.maille select{flex:1}
 
 /* Barre mobile */
 #mobilebar{display:none}
@@ -538,7 +611,18 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button id="vwHeat" aria-pressed="false">Densité</button>
           <button id="vwUrgence" aria-pressed="false">Urgence</button>
         </div>
-        <label class="check" style="margin-top:6px"><input type="checkbox" id="chkDimTiles"> Atténuer le fond de carte</label>
+        <div class="maille">
+          <label for="selMaille" style="font-size:12px;color:var(--ink-2);white-space:nowrap">Regrouper par</label>
+          <select id="selMaille">
+            <option value="etab">Établissement</option>
+            <option value="commune">Commune</option>
+            <option value="circo">Circonscription</option>
+            <option value="dept">Département</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" id="chkTaux">
+          Rapporter au nombre d'établissements</label>
+        <label class="check"><input type="checkbox" id="chkDimTiles"> Atténuer le fond de carte</label>
       </section>
 
       <!-- 5. Export -->
@@ -590,6 +674,10 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
       </div>
     </div>
 
+    <div class="map-overlay tl" style="top:10px;left:58px;right:96px">
+      <div class="puces" id="puces"></div>
+    </div>
+
     <div class="map-overlay tr">
       <button class="btn icon" id="btnFit" title="Recadrer sur les résultats" aria-label="Recadrer sur les résultats">⤢</button>
       <button class="btn icon" id="openDash" title="Afficher la synthèse" aria-label="Afficher la synthèse">▤</button>
@@ -620,8 +708,24 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         <div class="chartbox" style="margin-top:14px">
           <h3>Signalements par mois</h3>
           <p class="cap" id="capMonth">Cliquez une barre pour n'afficher que ce mois.</p>
-          <div class="chartwrap"><canvas id="chMonth"></canvas></div>
+          <div class="chartwrap"><canvas id="chMonth"></canvas><div id="chartSel"></div></div>
           <button class="btn sm" id="btnClearMonth" hidden style="margin-top:6px">Retirer le filtre du mois</button>
+        </div>
+
+        <div class="chartbox" style="margin-top:16px">
+          <h3>Calendrier</h3>
+          <p class="cap">
+            <label class="check" style="padding:0">
+              <input type="checkbox" id="chkScolaire"> Raisonner en années scolaires
+            </label>
+          </p>
+          <div id="calendrier"></div>
+        </div>
+
+        <div class="chartbox" style="margin-top:16px" id="blocTerritoires" hidden>
+          <h3 id="titreTerritoires">Territoires</h3>
+          <p class="cap" id="capTerritoires"></p>
+          <div class="toplist" id="listeTerritoires"></div>
         </div>
 
         <div class="chartbox" style="margin-top:16px">
@@ -796,6 +900,19 @@ function parseNum(value) {
   return parseFloat(String(value).replace(',', '.'));
 }
 
+/** « GRANDVILLIERS (0602086S) » → « GRANDVILLIERS ». Le code n'apporte rien à l'écran. */
+const nettoyerCirco = (v) => String(v || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+/* Un registre scolaire se lit par année scolaire : la découper en années
+   civiles coupe chaque rentrée en deux. */
+const anneeScolaire = (d) => (d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1);
+const libelleAnneeScolaire = (a) => `${a}-${String(a + 1).slice(2)}`;
+/** Rang du mois dans l'année retenue : 0 = septembre en année scolaire. */
+const rangMois = (d, scolaire) => (scolaire ? (d.getMonth() + 4) % 12 : d.getMonth());
+const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+                     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const moisDuRang = (r, scolaire) => MOIS_COURTS[scolaire ? (r + 8) % 12 : r];
+
 const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 const monthDate = (key) => { const [y, m] = key.split('-'); return new Date(+y, +m - 1, 1); };
 
@@ -935,6 +1052,19 @@ async function buildStandaloneInBrowser() {
       // et réinséreraient la balise au lieu de la remplacer.
       html = html.replace(tag, () => `<style>\n${css}\n</style>`);
       say('Bibliothèques…');
+    }
+
+    // Les polices sont déclarées dans le <style> de la page : sans cette passe,
+    // le fichier produit perdrait son allure.
+    for (const [ref, raw] of [...html.matchAll(/url\((["']?\.\.\/[^)]+)\)/g)]) {
+      const chemin = raw.trim().replace(/^["']|["']$/g, '');
+      const blob = await fetch(new URL(chemin, location.href)).then((r) => (r.ok ? r.blob() : null));
+      if (!blob) continue;
+      const dataUrl = await new Promise((res) => {
+        const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob);
+      });
+      html = html.replace(ref, () => `url(${dataUrl})`);
+      say('Polices…');
     }
 
     // Scripts : bibliothèques puis annuaire, qui remplace celui de la page.
@@ -1124,6 +1254,9 @@ const state = {
     selected: {},                          // clé de facette -> Set de valeurs
   },
   view: Prefs.get('view', 'cluster'),
+  maille: Prefs.get('maille', 'etab'),
+  taux: Prefs.get('taux', false),
+  scolaire: Prefs.get('scolaire', true),
   selectedUai: null,
   diff: null,
 };
@@ -1156,6 +1289,7 @@ const FACET_DEFS = [
   { key: 'etat', label: 'État du signalement' },
   { key: 'family', label: 'Famille de risque' },
   { key: 'risk', label: 'Risque détaillé' },
+  { key: 'circo', label: 'Circonscription' },
   { key: 'dept', label: 'Département' },
   { key: 'nature', label: "Type d'établissement" },
 ];
@@ -1226,6 +1360,7 @@ async function buildModel() {
       observations: parseInt(readI(row, "Nombre d'observations"), 10) || 0,
       etabLabel: readI(row, 'Etablissement', 'Établissement'),
       commune: readI(row, 'Commune'),
+      circo: nettoyerCirco(readI(row, 'Circonscription')),
       month: monthKey(date),
     };
 
@@ -1238,8 +1373,25 @@ async function buildModel() {
     state.incidents.push(inc);
   }
 
-  for (const e of state.etabs.values()) e.incidents.sort((a, b) => a.date - b.date);
+  for (const e of state.etabs.values()) {
+    e.incidents.sort((a, b) => a.date - b.date);
+    // La circonscription figure au registre, pas à l'annuaire : on la remonte
+    // sur l'établissement, en gardant la plus fréquente de ses signalements.
+    const vues = new Map();
+    for (const i of e.incidents) if (i.circo) vues.set(i.circo, (vues.get(i.circo) || 0) + 1);
+    e.circo = vues.size ? [...vues].sort((a, b) => b[1] - a[1])[0][0] : '';
+  }
   state.incidents.sort((a, b) => a.date - b.date);
+
+  // Combien d'établissements l'annuaire compte-t-il par territoire ? C'est le
+  // dénominateur sans lequel la carte ne montre que la densité d'écoles.
+  state.refTerritoire = { commune: new Map(), dept: new Map() };
+  for (const e of state.etabs.values()) {
+    for (const cle of ['commune', 'dept']) {
+      const v = e[cle];
+      if (v) state.refTerritoire[cle].set(v, (state.refTerritoire[cle].get(v) || 0) + 1);
+    }
+  }
 
   buildFacets();
   buildMonths();
@@ -1254,6 +1406,7 @@ function buildFacets() {
     etat: (i) => i.state,
     family: (i) => i.family,
     risk: (i) => i.risk,
+    circo: (i) => i.circo || 'Hors circonscription',
     dept: (i) => i.dept,
     nature: (i) => i.nature,
   };
@@ -1321,13 +1474,15 @@ function computeFiltered() {
     if (!f.selected.etat.has(inc.state)) return false;
     if (!f.selected.family.has(inc.family)) return false;
     if (!f.selected.risk.has(inc.risk)) return false;
+    if (!f.selected.circo.has(inc.circo || 'Hors circonscription')) return false;
     if (!f.selected.dept.has(inc.dept)) return false;
     if (!f.selected.nature.has(inc.nature)) return false;
     if (q) {
       // On cherche aussi sur le libellé tel qu'il figure dans le registre et sur
       // l'UAI : les deux fichiers ne nomment pas toujours l'établissement pareil.
       const hay = norm([inc.etab.name, inc.etabLabel, inc.uai, inc.etab.commune,
-                        inc.commune, inc.risk, inc.state, inc.reporter, inc.number].join(' '));
+                        inc.commune, inc.circo, inc.risk, inc.state,
+                        inc.reporter, inc.number].join(' '));
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -1453,6 +1608,54 @@ function renderMap() {
     return;
   }
 
+  // Maille territoriale : un cercle par territoire, au barycentre de ses
+  // établissements, plutôt qu'un point par établissement.
+  if (state.maille !== 'etab' && state.view !== 'urgence') {
+    const eligibles = state.taux ? territoires.filter((g) => g.tauxFiable) : territoires;
+    const valeurs = eligibles.map(valeurMaille).filter((v) => v > 0).sort((a, b) => a - b);
+    const max = valeurs.length ? valeurs[valeurs.length - 1] : 1;
+    // Échelle propre aux territoires : réutiliser celle des établissements
+    // écrasait tout vers la teinte la plus pâle.
+    const paliers = ['--d1', '--d2', '--d3', '--d4', '--d5', '--d6', '--d7'];
+    const seuils = paliers.slice(1).map((_, i) =>
+      valeurs[Math.floor(((i + 1) / paliers.length) * valeurs.length)] || 0);
+    const teinte = (v) => {
+      let i = 0;
+      while (i < seuils.length && v >= seuils[i]) i++;
+      return token(paliers[Math.min(i, paliers.length - 1)]);
+    };
+    for (const g of territoires) {
+      if (!Number.isFinite(g.lat) || !Number.isFinite(g.lon)) continue;
+      const faible = state.taux && !g.tauxFiable;
+      const v = valeurMaille(g);
+      const marker = L.circleMarker([g.lat, g.lon], {
+        radius: faible ? 3.5 : 5 + 14 * Math.sqrt(Math.max(0, v) / max),
+        fillColor: faible ? token('--d0') : teinte(v),
+        fillOpacity: faible ? 0.45 : 0.78,
+        color: token('--surface'), weight: 1.5, viCount: g.count,
+      });
+      marker.bindPopup(
+        `<span class="pname">${esc(g.nom)}</span><span class="pmeta">` +
+        `<b>${fmtInt(g.count)}</b> signalement${g.count > 1 ? 's' : ''}<br>` +
+        `${fmtInt(g.etabs.size)} établissement${g.etabs.size > 1 ? 's' : ''} concerné${g.etabs.size > 1 ? 's' : ''}` +
+        (g.denom ? ` sur ${fmtInt(g.denom)}` : '') +
+        (g.taux != null ? `<br>soit ${esc(g.taux.toFixed(1).replace('.', ','))} par établissement`
+          + (g.tauxFiable ? '' : ` <i>(trop peu d'établissements pour conclure)</i>`) : '') +
+        '</span>');
+      marker.on('click', () => {
+        if (state.maille === 'commune') { $('#qText').value = g.cle; state.filters.text = g.cle; refresh(); }
+        else toggleFacetValue(state.maille, g.cle);
+      });
+      pointLayer.addLayer(marker);
+    }
+    map.addLayer(pointLayer);
+    renderLegend({ used: paliers, max,
+      libelle: state.taux ? `Signalements par établissement · ${MAILLES[state.maille].label.toLowerCase()}`
+                          : `Signalements par ${MAILLES[state.maille].label.toLowerCase()}`,
+      formate: state.taux ? (v) => v.toFixed(1).replace('.', ',') : fmtInt }, false);
+    return;
+  }
+
   const urgence = state.view === 'urgence';
   const niveaux = urgence ? urgencyByUai() : null;
   const target = urgence ? pointLayer : (state.view === 'cluster' ? clusterLayer : pointLayer);
@@ -1524,19 +1727,118 @@ function renderLegend(scale, isHeat) {
   $('#legendScale').style.flexWrap = '';
 
   const used = scale.used || [];
+  const formate = scale.formate || fmtInt;
   $('#legendScale').innerHTML = used
     .map((v) => `<span class="sw" style="background:${token(v)}"></span>`).join('');
-  const labels = ['1'];
-  labels.push(scale.max ? fmtInt(scale.max) : '');
-  $('#legendLabels').innerHTML = `<span>${labels[0]}</span><span>${labels[1]}</span>`;
-  $('#legendZero').hidden = isHeat || !current.places.some((p) => p.count === 0);
-  $('#legend .t').textContent = isHeat ? 'Densité de signalements' : 'Signalements par établissement';
+  $('#legendLabels').innerHTML =
+    `<span>${esc(formate(scale.min || 1))}</span><span>${esc(scale.max ? formate(scale.max) : '')}</span>`;
+  $('#legendZero').hidden = isHeat || state.maille !== 'etab'
+    || !current.places.some((p) => p.count === 0);
+  $('#legend .t').textContent = isHeat ? 'Densité de signalements'
+    : (scale.libelle || 'Signalements par établissement');
 }
 
 function fitToResults() {
   const pts = current.places.map((p) => [p.etab.lat, p.etab.lon]);
   if (!pts.length) return;
   map.fitBounds(L.latLngBounds(pts).pad(0.12), { maxZoom: 13 });
+}
+
+/* ---------------------- Mailles territoriales ---------------------- */
+/* La carte par établissement montre des volumes, donc surtout les endroits où
+   il y a beaucoup d'écoles. Rapporter au nombre d'établissements du territoire
+   change la lecture : c'est l'intensité, non la densité scolaire. */
+
+const MAILLES = {
+  etab:    { label: 'Établissement',   cle: (e) => e.uai,     nom: (e) => e.name },
+  commune: { label: 'Commune',         cle: (e) => e.commune, nom: (e) => e.commune },
+  circo:   { label: 'Circonscription', cle: (e) => e.circo || 'Hors circonscription',
+             nom: (e) => e.circo || 'Hors circonscription' },
+  dept:    { label: 'Département',     cle: (e) => e.dept,    nom: (e) => e.dept },
+};
+
+/**
+ * Regroupe les établissements affichés selon la maille choisie.
+ * `denom` est le nombre d'établissements que l'annuaire compte sur ce
+ * territoire ; il n'existe pas pour la circonscription, absente de l'annuaire,
+ * et le taux n'est alors pas calculé plutôt que calculé faux.
+ */
+function agregerParMaille(places, maille) {
+  const def = MAILLES[maille];
+  const groupes = new Map();
+  for (const p of places) {
+    const cle = def.cle(p.etab) || '—';
+    let g = groupes.get(cle);
+    if (!g) {
+      g = { cle, nom: def.nom(p.etab) || '—', count: 0, etabs: new Set(),
+            incidents: [], lat: 0, lon: 0, n: 0 };
+      groupes.set(cle, g);
+    }
+    g.count += p.count;
+    g.etabs.add(p.etab.uai);
+    g.incidents.push(...p.incidents);
+    g.lat += p.etab.lat; g.lon += p.etab.lon; g.n++;
+  }
+  const ref = state.refTerritoire && state.refTerritoire[maille];
+  const out = [...groupes.values()].map((g) => {
+    g.lat /= g.n; g.lon /= g.n;
+    g.denom = ref ? (ref.get(g.cle) || g.etabs.size) : null;
+    g.taux = g.denom ? g.count / g.denom : null;
+    // Un rapport calculé sur un ou deux établissements n'est pas une intensité,
+    // c'est du bruit : une commune d'une seule école à trois signalements
+    // devancerait sinon toute une ville.
+    g.tauxFiable = g.taux != null && g.denom >= MIN_DENOM;
+    return g;
+  });
+  out.sort((a, b) => {
+    if (state.taux) {
+      if (a.tauxFiable !== b.tauxFiable) return a.tauxFiable ? -1 : 1;
+      if (a.tauxFiable) return b.taux - a.taux || a.nom.localeCompare(b.nom, 'fr');
+    }
+    return b.count - a.count || a.nom.localeCompare(b.nom, 'fr');
+  });
+  return out;
+}
+
+/** En deçà, le rapport signalements / établissements n'est pas interprétable. */
+const MIN_DENOM = 3;
+
+/** Valeur portée à l'écran selon qu'on raisonne en volume ou en intensité. */
+const valeurMaille = (g) => (state.taux && g.tauxFiable ? g.taux : g.count);
+const libelleValeur = (g) => (state.taux && g.tauxFiable
+  ? g.taux.toFixed(1).replace('.', ',')
+  : fmtInt(g.count));
+
+let territoires = [];
+
+function renderTerritoires() {
+  const bloc = $('#blocTerritoires');
+  if (state.maille === 'etab' || !territoires.length) { bloc.hidden = true; return; }
+  bloc.hidden = false;
+  const def = MAILLES[state.maille];
+  const sansTaux = territoires.every((g) => g.taux == null);
+  const fiables = territoires.filter((g) => g.tauxFiable);
+  const liste = state.taux && !sansTaux ? fiables : territoires;
+  const ecartes = state.taux && !sansTaux ? territoires.length - fiables.length : 0;
+
+  $('#titreTerritoires').textContent = def.label + 's';
+  $('#capTerritoires').textContent = state.taux && !sansTaux
+    ? `Signalements rapportés au nombre d'établissements du territoire.`
+      + ` Seuls ceux d'au moins ${MIN_DENOM} établissements figurent ici`
+      + (ecartes ? ` — ${fmtInt(ecartes)} écartés, trop petits pour qu'un rapport ait un sens.` : '.')
+    : sansTaux && state.taux
+      ? "La circonscription ne figure pas à l'annuaire : le taux n'est pas calculable."
+      : 'Nombre de signalements. Cliquez pour filtrer.';
+
+  $('#listeTerritoires').innerHTML = liste.slice(0, 12).map((g, i) => `
+    <button class="topitem" data-terr="${esc(g.cle)}">
+      <span class="rk">${i + 1}</span>
+      <span class="nm">${esc(g.nom)}</span>
+      <span class="ct">${esc(libelleValeur(g))}</span>
+      <span class="sub">${fmtInt(g.count)} signalement${g.count > 1 ? 's' : ''} ·
+        ${fmtInt(g.etabs.size)} établissement${g.etabs.size > 1 ? 's' : ''} concerné${g.etabs.size > 1 ? 's' : ''}${
+        g.denom ? ` sur ${fmtInt(g.denom)}` : ''}</span>
+    </button>`).join('');
 }
 
 /* ------------------------------- Synthèse ------------------------------- */
@@ -1647,9 +1949,10 @@ function renderSynthesis() {
       },
     },
   });
+  brancherSelectionGraphique(keys);
   $('#capMonth').textContent = state.filters.month
     ? `Filtré sur ${MONTH_FMT.format(monthDate(state.filters.month))}.`
-    : 'Cliquez une barre pour n\'afficher que ce mois.';
+    : 'Cliquez une barre pour isoler un mois, ou glissez pour choisir une période.';
   $('#btnClearMonth').hidden = !state.filters.month;
 
   /* --- Tableau équivalent (obligatoire : certaines teintes passent sous 3:1) --- */
@@ -2268,13 +2571,13 @@ function pdfTuile(doc, x, y, w, h, valeur, libelle, note, couleur) {
   }
 }
 
-function pdfBarres(doc, y, entrees, couleurDe, largeur = UTILE) {
+function pdfBarres(doc, y, entrees, couleurDe, largeur = UTILE, formater = fmtInt) {
   const max = Math.max(...entrees.map((e) => e[1]), 1);
   for (const [libelle, n] of entrees) {
     doc.setFontSize(8.5); doc.setTextColor(...PDF_C.encre);
     doc.text(doc.splitTextToSize(libelle, largeur - 24)[0], A4.marge, y);
     doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_C.encre2);
-    doc.text(fmtInt(n), A4.marge + largeur, y, { align: 'right' });
+    doc.text(formater(n), A4.marge + largeur, y, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     y += 1.8;
     doc.setFillColor(...PDF_C.trait);
@@ -2284,6 +2587,52 @@ function pdfBarres(doc, y, entrees, couleurDe, largeur = UTILE) {
     y += 7.4;
   }
   return y;
+}
+
+/** Le calendrier, redessiné dans le PDF plutôt que capturé : net à tout zoom. */
+function pdfCalendrier(doc, y, incidents) {
+  const sco = state.scolaire;
+  const cases = new Map();
+  let max = 0;
+  for (const i of incidents) {
+    const an = sco ? anneeScolaire(i.date) : i.date.getFullYear();
+    const k = an + ':' + rangMois(i.date, sco);
+    const n = (cases.get(k) || 0) + 1;
+    cases.set(k, n); if (n > max) max = n;
+  }
+  const annees = [...new Set([...cases.keys()].map((k) => +k.split(':')[0]))].sort();
+  if (!annees.length) return y;
+
+  const colAn = 16, cw = (UTILE - colAn) / 12, ch = 7;
+  doc.setFontSize(6.5); doc.setTextColor(...PDF_C.muet);
+  for (let r = 0; r < 12; r++) {
+    doc.text(moisDuRang(r, sco), A4.marge + colAn + cw * (r + 0.5), y, { align: 'center' });
+  }
+  y += 2;
+  // Une seule teinte, du clair au foncé : c'est une grandeur, pas des catégories.
+  const paliers = [[250, 231, 231], [242, 179, 179], [232, 138, 138],
+                   [220, 96, 96], [208, 59, 59], [168, 47, 47], [125, 35, 35]];
+  for (const an of annees) {
+    doc.setFontSize(7); doc.setTextColor(...PDF_C.encre2);
+    doc.text(sco ? libelleAnneeScolaire(an) : String(an), A4.marge + colAn - 2, y + 5, { align: 'right' });
+    for (let r = 0; r < 12; r++) {
+      const n = cases.get(an + ':' + r) || 0;
+      const x = A4.marge + colAn + cw * r;
+      if (n) {
+        const idx = Math.min(paliers.length - 1, Math.floor((n / max) * (paliers.length - 1) + 0.0001));
+        doc.setFillColor(...paliers[idx]);
+      } else doc.setFillColor(248, 247, 244);
+      doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.2);
+      doc.roundedRect(x + 0.4, y + 0.4, cw - 0.8, ch - 0.8, 0.8, 0.8, 'FD');
+      if (n) {
+        const sombre = (n / max) > 0.6;
+        doc.setFontSize(6); doc.setTextColor(...(sombre ? PDF_C.blanc : PDF_C.encre));
+        doc.text(String(n), x + cw / 2, y + ch / 2 + 1.2, { align: 'center' });
+      }
+    }
+    y += ch;
+  }
+  return y + 3;
 }
 
 function pdfPieds(doc, perimetre) {
@@ -2364,6 +2713,24 @@ function construireRapport(visuels) {
     y += h + 8;
   }
 
+  y = pdfTitre(doc, y, 'Calendrier',
+    state.scolaire ? 'Par année scolaire, de septembre à août.' : 'Par année civile.');
+  y = pdfCalendrier(doc, y, inc) + 5;
+
+  if (state.maille !== 'etab' && territoires.length) {
+    const def = MAILLES[state.maille];
+    const sansTaux = territoires.every((g) => g.taux == null);
+    y = pdfTitre(doc, y, def.label + 's', state.taux && !sansTaux
+      ? `Signalements par établissement, sur les territoires d'au moins ${MIN_DENOM} établissements.`
+      : 'Nombre de signalements par territoire.');
+    const liste = state.taux && !sansTaux ? territoires.filter((g) => g.tauxFiable) : territoires;
+    // Un taux arrondi à l'entier ferait lire « 2 » pour 2,4 comme pour 1,6.
+    const enTaux = state.taux && !sansTaux;
+    y = pdfBarres(doc, y, liste.slice(0, 6).map((g) => [g.nom, valeurMaille(g)]),
+      null, UTILE, enTaux ? (n) => n.toFixed(1).replace('.', ',') : fmtInt) + 4;
+  }
+
+  if (y > 200) { doc.addPage(); y = 22; }
   const familles = tally(inc, (i) => i.family).slice(0, 7);
   y = pdfTitre(doc, y, 'Familles de risques', `${fmtInt(familles.length)} familles représentées.`);
   y = pdfBarres(doc, y, familles) + 4;
@@ -2541,8 +2908,24 @@ function fichePdf(etab, incidents) {
   doc.text(`${fmtInt(incidents.length)} signalement${incidents.length > 1 ? 's' : ''}, `
     + `dont ${fmtInt(ouverts)} non clos.`, 14, 44);
 
+  // Frise : la répartition dans le temps, que la liste seule ne montre pas.
+  if (incidents.length > 1) {
+    const tri = [...incidents].sort((a, b) => a.date - b.date);
+    const t0 = tri[0].date.getTime(), etendue = Math.max(1, tri[tri.length - 1].date.getTime() - t0);
+    doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.4);
+    doc.line(A4.marge, 50, A4.marge + UTILE, 50);
+    for (const i of tri) {
+      const x = A4.marge + ((i.date.getTime() - t0) / etendue) * UTILE;
+      doc.setFillColor(...(i.open ? PDF_C.serieux : PDF_C.bon));
+      doc.circle(x, 50, 1.1, 'F');
+    }
+    doc.setFontSize(6.5); doc.setTextColor(...PDF_C.muet);
+    doc.text(DATE_FMT.format(tri[0].date), A4.marge, 55);
+    doc.text(DATE_FMT.format(tri[tri.length - 1].date), A4.marge + UTILE, 55, { align: 'right' });
+  }
+
   doc.autoTable({
-    startY: 50,
+    startY: incidents.length > 1 ? 60 : 50,
     head: [['Date', 'Référence', 'Risque', 'État', 'Situation', 'Relance']],
     body: l.map((x) => [x.date, x.ref, x.risque, x.etat, x.situation, x.relance || '—']),
     theme: 'grid', styles: { fontSize: 7.5, cellPadding: 1.6, overflow: 'linebreak' },
@@ -2599,6 +2982,184 @@ function renderQuoiDeNeuf() {
       <div><b style="color:var(--serious)">${fmtInt(d.encore)}</b><span>toujours ouverts</span></div>
       <div><b>${fmtInt(d.disparus)}</b><span>absents</span></div>
     </div>`;
+}
+
+/* ------------------- Calendrier des signalements ------------------- */
+/* Trente-six barres côte à côte ne montrent pas une saison. Une grille
+   année × mois, oui : la rentrée, les creux d'été, l'année qui se dégrade. */
+
+function renderCalendrier() {
+  const hote = $('#calendrier');
+  const inc = current.incidents;
+  if (!inc.length) { hote.innerHTML = ''; return; }
+  const sco = state.scolaire;
+
+  const cases = new Map();
+  let max = 0;
+  for (const i of inc) {
+    const an = sco ? anneeScolaire(i.date) : i.date.getFullYear();
+    const r = rangMois(i.date, sco);
+    const k = an + ':' + r;
+    const n = (cases.get(k) || 0) + 1;
+    cases.set(k, n);
+    if (n > max) max = n;
+  }
+  const annees = [...new Set([...cases.keys()].map((k) => +k.split(':')[0]))].sort();
+  const paliers = ['--d1', '--d2', '--d3', '--d4', '--d5', '--d6', '--d7'];
+  const teinte = (n) => (n ? token(paliers[Math.min(paliers.length - 1,
+    Math.floor((n / max) * (paliers.length - 1) + 0.0001))]) : 'transparent');
+
+  const entete = '<span></span>' + Array.from({ length: 12 },
+    (_, r) => `<span class="cal-m">${esc(moisDuRang(r, sco))}</span>`).join('');
+
+  const lignes = annees.map((an) => {
+    const total = Array.from({ length: 12 }, (_, r) => cases.get(an + ':' + r) || 0);
+    return `<span class="cal-a">${esc(sco ? libelleAnneeScolaire(an) : String(an))}</span>` +
+      total.map((n, r) => {
+        const d = new Date(an, sco ? (r + 8) % 12 : r, 1);
+        if (sco && r >= 4) d.setFullYear(an + 1);
+        const mk = monthKey(d);
+        const actif = state.filters.month === mk;
+        return `<button type="button" class="cal-c${actif ? ' on' : ''}" data-mois="${esc(mk)}"
+          style="background:${n ? teinte(n) : 'var(--surface-2)'}"
+          title="${esc(MONTH_FMT.format(d))} — ${fmtInt(n)} signalement${n > 1 ? 's' : ''}"
+          aria-label="${esc(MONTH_FMT.format(d))}, ${fmtInt(n)} signalements">${n || ''}</button>`;
+      }).join('');
+  }).join('');
+
+  hote.innerHTML = `<div class="cal">${entete}${lignes}</div>`;
+}
+
+/* ------------------- Frise d'un établissement ------------------- */
+/* Cinq signalements groupés sur une semaine et cinq étalés sur deux ans
+   donnent la même liste ; sur une frise, ils ne se ressemblent pas. */
+
+function friseEtab(incidents) {
+  if (incidents.length < 2) return '';
+  const tri = [...incidents].sort((a, b) => a.date - b.date);
+  const t0 = tri[0].date.getTime(), t1 = tri[tri.length - 1].date.getTime();
+  const etendue = Math.max(1, t1 - t0);
+  const W = 100, H = 26;
+  const couleur = { clos: 'var(--good)', encours: 'var(--serious)', vise: 'var(--series-1)' };
+  const points = tri.map((i) => {
+    const x = 3 + ((i.date.getTime() - t0) / etendue) * (W - 6);
+    return `<circle cx="${x.toFixed(2)}" cy="13" r="2.6" fill="${couleur[i.stateKey] || 'var(--ink-muted)'}"
+      stroke="var(--surface)" stroke-width="1"><title>${esc(DATE_FMT.format(i.date))} — ${esc(i.state)}</title></circle>`;
+  }).join('');
+  return `<div class="frise">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+         aria-label="Répartition des signalements dans le temps">
+      <line x1="3" y1="13" x2="${W - 3}" y2="13" stroke="var(--grid)" stroke-width="1"/>
+      ${points}
+    </svg>
+    <div class="frise-b"><span>${esc(DATE_FMT.format(tri[0].date))}</span>
+      <span>${esc(DATE_FMT.format(tri[tri.length - 1].date))}</span></div>
+  </div>`;
+}
+
+/* ------------------ Étiquettes des filtres actifs ------------------ */
+/* Six facettes repliées ne disent pas ce qui est filtré : il fallait les
+   déplier une à une. Ces étiquettes le disent, et le défont d'un clic. */
+
+function renderPuces() {
+  const hote = $('#puces');
+  const puces = [];
+  const f = state.filters;
+
+  if (f.text) puces.push({ k: 'text', l: 'Recherche', v: f.text });
+  if (f.openOnly) puces.push({ k: 'open', l: 'Non clos', v: 'seulement' });
+  if (f.month) puces.push({ k: 'month', l: 'Mois', v: MONTH_FMT.format(monthDate(f.month)) });
+  if (f.timeOn && state.months.length) {
+    const a = Math.min(f.from, f.to), b = Math.max(f.from, f.to);
+    puces.push({ k: 'time', l: 'Période',
+      v: `${MONTH_FMT.format(monthDate(state.months[a]))} → ${MONTH_FMT.format(monthDate(state.months[b]))}` });
+  }
+  for (const { key, label } of FACET_DEFS) {
+    const facette = state.facets[key];
+    const sel = f.selected[key];
+    if (!facette || !sel || sel.size === facette.values.size) continue;
+    puces.push({ k: 'facet:' + key, l: label,
+      v: sel.size === 1 ? [...sel][0] : `${fmtInt(sel.size)} sur ${fmtInt(facette.values.size)}` });
+  }
+
+  hote.innerHTML = puces.map((p) => `
+    <button type="button" class="puce" data-puce="${esc(p.k)}" title="Retirer ce filtre">
+      ${esc(p.l)} · <b>${esc(p.v)}</b><i aria-hidden="true">×</i>
+      <span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden">Retirer</span>
+    </button>`).join('');
+  hote.parentElement.hidden = !puces.length;
+}
+
+function retirerPuce(cle) {
+  const f = state.filters;
+  if (cle === 'text') { f.text = ''; $('#qText').value = ''; }
+  else if (cle === 'open') { f.openOnly = false; $('#chkOpenOnly').checked = false; }
+  else if (cle === 'month') f.month = null;
+  else if (cle === 'time') { f.timeOn = false; $('#chkTime').checked = false; renderTimeline(); }
+  else if (cle.startsWith('facet:')) {
+    const k = cle.slice(6);
+    f.selected[k] = new Set(state.facets[k].values.keys());
+    renderFacets();
+  }
+  refresh();
+}
+
+/* --------- Choisir la période en glissant sur le graphique --------- */
+/* Deux curseurs superposés obligent à choisir à l'aveugle ; ici on encadre
+   ce qu'on voit. Les curseurs restent, pour le clavier. */
+
+function brancherSelectionGraphique(cles) {
+  const zone = $('#chartSel');
+  const toile = $('#chMonth');
+  if (!zone || !monthChart) return;
+  zone.onpointerdown = null;
+  if (!cles.length) { zone.style.display = 'none'; return; }
+  zone.style.display = 'block';
+
+  const indexEn = (clientX) => {
+    const r = toile.getBoundingClientRect();
+    const i = monthChart.scales.x.getValueForPixel(clientX - r.left);
+    return Math.max(0, Math.min(cles.length - 1, Math.round(i)));
+  };
+  const peindre = (a, b) => {
+    const r = toile.getBoundingClientRect();
+    const x1 = monthChart.scales.x.getPixelForValue(Math.min(a, b));
+    const x2 = monthChart.scales.x.getPixelForValue(Math.max(a, b));
+    const demi = (monthChart.scales.x.getPixelForValue(1) - monthChart.scales.x.getPixelForValue(0)) / 2 || 6;
+    zone.style.left = (x1 - demi) + 'px';
+    zone.style.width = Math.max(4, (x2 - x1) + demi * 2) + 'px';
+    zone.style.top = '0px';
+    zone.style.height = r.height + 'px';
+  };
+
+  let debut = null;
+  zone.onpointerdown = (e) => {
+    debut = indexEn(e.clientX);
+    zone.setPointerCapture(e.pointerId);
+    zone.classList.add('tracant');
+    peindre(debut, debut);
+  };
+  zone.onpointermove = (e) => { if (debut !== null) peindre(debut, indexEn(e.clientX)); };
+  zone.onpointerup = (e) => {
+    if (debut === null) return;
+    const fin = indexEn(e.clientX);
+    zone.classList.remove('tracant');
+    zone.releasePointerCapture(e.pointerId);
+    const a = Math.min(debut, fin), b = Math.max(debut, fin);
+    debut = null;
+    // Un simple clic sur une barre isole le mois ; un glissement choisit la période.
+    if (a === b) {
+      state.filters.month = state.filters.month === cles[a] ? null : cles[a];
+    } else {
+      state.filters.month = null;
+      state.filters.timeOn = true;
+      $('#chkTime').checked = true;
+      state.filters.from = state.months.indexOf(cles[a]);
+      state.filters.to = state.months.indexOf(cles[b]);
+      renderTimeline();
+    }
+    refresh();
+  };
 }
 
 /* ------------------------------ Fiche établissement ------------------------------ */
@@ -2665,6 +3226,7 @@ function renderEtab() {
     <textarea class="note-etab" id="noteEtab" placeholder="Vu avec la direction le…"></textarea>
 
     <h3 style="font-size:12.5px;margin-top:16px">Journal des signalements</h3>
+    ${friseEtab(shown)}
     <div class="inclist">${shown.length ? shown.slice().reverse().map(incCard).join('')
       : '<div class="emptystate">Aucun signalement pour les filtres actuels.</div>'}</div>
   `;
@@ -3015,10 +3577,14 @@ function exportOrphans() {
 function refresh() {
   current = computeFiltered();
   const now = new Date();
+  territoires = agregerParMaille(current.places.filter((p) => p.count), state.maille);
   renderPriorities(now);      // avant la carte : le mode urgence lit ses résultats
   renderMap();
   renderSynthesis();
+  renderCalendrier();
+  renderTerritoires();
   renderQuoiDeNeuf();
+  renderPuces();
   renderEtab();
   updateFacetBadges();
   $('#mbFilterCount').textContent = activeFilterCount();
@@ -3134,6 +3700,20 @@ function wireEvents() {
     $(sel).setAttribute('aria-pressed', String(name === state.view));
   }
   $('#btnFit').addEventListener('click', fitToResults);
+
+  $('#selMaille').value = state.maille;
+  $('#selMaille').addEventListener('change', (e) => {
+    state.maille = e.target.value; Prefs.set('maille', state.maille); refresh();
+  });
+  $('#chkTaux').checked = state.taux;
+  $('#chkTaux').addEventListener('change', (e) => {
+    state.taux = e.target.checked; Prefs.set('taux', state.taux); refresh();
+  });
+  $('#chkScolaire').checked = state.scolaire;
+  $('#chkScolaire').addEventListener('change', (e) => {
+    state.scolaire = e.target.checked; Prefs.set('scolaire', state.scolaire);
+    renderCalendrier();
+  });
   $('#chkDimTiles').addEventListener('change', (e) => {
     Prefs.set('dimTiles', e.target.checked);
     applyTheme(Prefs.get('theme', 'auto'));
@@ -3204,6 +3784,26 @@ function wireEvents() {
   });
 
   document.addEventListener('click', (e) => {
+    const bPuce = e.target.closest('[data-puce]');
+    if (bPuce) { retirerPuce(bPuce.dataset.puce); return; }
+
+    const bCal = e.target.closest('[data-mois]');
+    if (bCal) {
+      state.filters.month = state.filters.month === bCal.dataset.mois ? null : bCal.dataset.mois;
+      refresh();
+      return;
+    }
+
+    const bTerr = e.target.closest('[data-terr]');
+    if (bTerr) {
+      const cle = bTerr.dataset.terr;
+      const g = territoires.find((x) => x.cle === cle);
+      if (state.maille === 'commune') { $('#qText').value = cle; state.filters.text = cle; refresh(); }
+      else toggleFacetValue(state.maille === 'circo' ? 'circo' : 'dept', cle);
+      if (g && Number.isFinite(g.lat)) map.setView([g.lat, g.lon], 11);
+      return;
+    }
+
     const bRel = e.target.closest('[data-relance]');
     if (bRel) {
       e.stopPropagation();

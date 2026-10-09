@@ -71,9 +71,40 @@ couleur est une rampe d'une seule teinte, par quantiles, recalculée à chaque
 filtrage ; la légende donne les bornes.
 
 **Filtres** — recherche libre, registre, état, famille de risque, risque
-détaillé, département, type d'établissement, période mensuelle avec animation.
-Chaque valeur affiche son effectif. Un clic sur une barre de la synthèse isole
-la valeur correspondante ; un second clic rétablit tout.
+détaillé, **circonscription**, département, type d'établissement, période
+mensuelle avec animation. Chaque valeur affiche son effectif. Un clic sur une
+barre de la synthèse isole la valeur correspondante ; un second clic rétablit
+tout. Les filtres actifs s'affichent en **étiquettes au-dessus de la carte** et
+se retirent d'un clic : il ne faut plus déplier sept facettes pour savoir ce qui
+est filtré.
+
+La circonscription figure au registre, pas à l'annuaire : l'outil la remonte sur
+l'établissement en gardant la plus fréquente de ses signalements. Elle n'est
+renseignée que pour le premier degré ; les collèges et lycées ressortent sous
+« Hors circonscription ».
+
+**Le temps** — trois lectures complémentaires :
+
+- le graphique mensuel, où l'on **glisse pour choisir une période** plutôt que
+  de manier deux curseurs à l'aveugle (les curseurs restent, pour le clavier) ;
+- un **calendrier année × mois**, qui montre d'un coup d'œil ce qu'une série de
+  trente-six barres ne montre pas : le pic de rentrée, le creux d'été, l'année
+  qui se dégrade. Réglable en **années scolaires**, de septembre à août —
+  découper un registre scolaire en années civiles coupe chaque rentrée en deux ;
+- une **frise** dans la fiche d'établissement : cinq signalements groupés sur
+  une semaine et cinq étalés sur deux ans donnent la même liste, pas la même
+  frise.
+
+**Les territoires** — la carte par établissement montre des volumes, donc
+surtout les endroits où il y a beaucoup d'écoles. On peut regrouper par
+**commune, circonscription ou département**, et surtout **rapporter au nombre
+d'établissements du territoire** : c'est l'intensité, non la densité scolaire.
+
+Le dénominateur vient de l'annuaire. En deçà de trois établissements le rapport
+n'est pas interprétable — une commune d'une seule école à trois signalements
+devancerait toute une ville —, ces territoires sont donc écartés du classement
+et l'outil le dit. La circonscription étant absente de l'annuaire, aucun taux
+n'y est calculé plutôt qu'un taux faux.
 
 **Synthèse** — signalements, établissements concernés, part de non clos, délai
 médian entre le signalement et la dernière réponse portée au registre.
@@ -159,11 +190,15 @@ premier chargement, faute de point de comparaison.
 une mention neutre, exports compris. Un registre est nominatif par nature ; une
 statistique portée devant une instance n'a pas à l'être.
 
-**Rapport PDF** — un document de quatre pages qui suit exactement les filtres en
-cours : chiffres clés, **carte telle qu'elle est à l'écran**, évolution
-mensuelle, familles de risques, état du traitement, puis les établissements à
-traiter en priorité avec leurs motifs en clair. Le périmètre retenu est rappelé
-en tête et en pied de chaque page.
+**Rapport PDF** — un document qui suit exactement les filtres en cours :
+chiffres clés, **carte telle qu'elle est à l'écran**, évolution mensuelle,
+**calendrier**, **classement des territoires** quand une maille est choisie,
+familles de risques, état du traitement, puis les établissements à traiter en
+priorité avec leurs motifs en clair. Le périmètre retenu est rappelé en tête et
+en pied de chaque page.
+
+Le calendrier et les barres sont redessinés dans le PDF plutôt que capturés :
+ils restent nets à tout zoom et à l'impression.
 
 Le détail ligne à ligne n'y figure pas par défaut — sur 1 200 signalements il
 pèserait cinquante pages, et c'est le rôle de l'export CSV. Une case à cocher
@@ -206,7 +241,9 @@ seule différence avec la version en ligne.
 ## Développement
 
 `index.html` contient toute l'application (HTML, CSS, JavaScript), sans étape de
-compilation. `vendor/` contient les bibliothèques figées à leur version :
+compilation. Les polices viennent de `../polices/`, servies par le dépôt comme
+pour les autres outils ; les deux assembleurs de version autonome les
+incorporent en base64. `vendor/` contient les bibliothèques figées à leur version :
 Leaflet 1.9.4 et ses greffons MarkerCluster 1.5.3 et Heat 0.2.0, Papa Parse
 5.4.1, Chart.js 4.4.1, jsPDF 2.5.1 et jsPDF-AutoTable 3.8.2.
 
