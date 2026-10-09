@@ -214,6 +214,25 @@ inaccessible — réseau filtré — les points sont dessinés seuls et le rappo
 dit. L'apparence claire est forcée le temps de la capture, puis rétablie : un
 rapport aux couleurs sombres serait illisible sur papier.
 
+**Article** — pour un billet, une note ou un compte rendu : un document rédigé,
+en **PDF** ou en **Word**, où les chiffres sont ceux du filtrage en cours et où
+la carte, le calendrier et les tableaux sont déjà en place.
+
+Les passages d'appréciation y restent en blanc, marqués `[À compléter]` : l'outil
+fournit les faits, l'interprétation revient à qui signe. Le fichier Word est un
+HTML balisé pour Word — il s'ouvre dans Word comme dans LibreOffice, images
+comprises, et se recopie dans un éditeur en ligne.
+
+**Options d'export** — ce qui entre dans le rapport et dans l'article se choisit :
+carte, calendrier, territoires, familles de risques, état du traitement, liste
+des établissements, passages à compléter. S'y ajoutent le masquage des noms et
+l'ajout du détail au rapport. Le compteur du panneau rappelle ce qui a été retiré.
+
+**Liste des établissements** — la synthèse n'en montre que douze ; un bouton
+déplie la liste entière, du plus signalé au moins signalé, selon les filtres en
+cours. L'option vaut aussi pour les exports : c'est souvent pour les reprendre
+ailleurs qu'on la déplie.
+
 **Exports** — CSV (encodage compatible Excel), strictement limité à ce qui est
 affiché. La page s'imprime aussi directement : filtres et carte sont retirés du
 papier, la synthèse et les priorités sont conservées.
