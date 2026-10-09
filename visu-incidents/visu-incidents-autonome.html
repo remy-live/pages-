@@ -1313,10 +1313,34 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button class="btn" id="btnPdf" style="flex:1">Rapport (PDF)</button>
         </div>
         <button class="btn wide" id="btnPng" style="margin-top:6px">Carte seule (image PNG)</button>
-        <label class="check"><input type="checkbox" id="chkDetail">
-          Joindre le détail des signalements au rapport</label>
-        <label class="check" style="margin-top:8px"><input type="checkbox" id="chkAnonyme">
-          Masquer les noms des déclarants</label>
+        <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin:10px 0 5px">
+          Pour un billet ou une note : texte rédigé, carte et tableaux déjà dedans.</p>
+        <div class="row">
+          <button class="btn" id="btnArticlePdf" style="flex:1">Article (PDF)</button>
+          <button class="btn" id="btnArticleDoc" style="flex:1">Article (Word)</button>
+        </div>
+        <details class="facet" style="margin-top:10px" id="blocOptions">
+          <summary>Options d'export<span class="badge" id="optBadge"></span></summary>
+          <div class="facet-body" style="padding:8px 11px">
+            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:4px">
+              Ce qui entre dans le rapport et dans l'article.</p>
+            <label class="check"><input type="checkbox" data-opt="carte"> Carte</label>
+            <label class="check"><input type="checkbox" data-opt="calendrier"> Calendrier</label>
+            <label class="check"><input type="checkbox" data-opt="territoires"> Territoires</label>
+            <label class="check"><input type="checkbox" data-opt="familles"> Familles de risques</label>
+            <label class="check"><input type="checkbox" data-opt="etats"> État du traitement</label>
+            <label class="check"><input type="checkbox" data-opt="etablissements"> Liste des établissements</label>
+            <label class="check" style="padding-left:24px"><input type="checkbox" id="chkTousEtabsOpt">
+              <span id="lblTousEtabsOpt">Tous, pas seulement les 8 premiers</span></label>
+            <label class="check"><input type="checkbox" data-opt="aCompleter">
+              Passages « à compléter » dans l'article</label>
+            <hr style="border:0;border-top:1px solid var(--hairline);margin:8px 0">
+            <label class="check"><input type="checkbox" id="chkAnonyme">
+              Masquer les noms des déclarants</label>
+            <label class="check"><input type="checkbox" id="chkDetail">
+              Joindre le détail des signalements au rapport</label>
+          </div>
+        </details>
         <p class="notice">L'export reprend exactement ce qui est affiché : mêmes filtres, même période.</p>
 
         <details class="facet" style="margin-top:10px">
@@ -1421,9 +1445,10 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         </div>
 
         <div class="chartbox" style="margin-top:16px">
-          <h3>Établissements les plus concernés</h3>
-          <p class="cap">Cliquez pour ouvrir la fiche.</p>
+          <h3>Établissements concernés</h3>
+          <p class="cap" id="capTop">Cliquez pour ouvrir la fiche.</p>
           <div class="toplist" id="topList"></div>
+          <button class="btn sm wide" id="btnTousEtabs" style="margin-top:8px" hidden></button>
         </div>
 
         <details class="facet" style="margin-top:16px">
@@ -2380,6 +2405,15 @@ const litJour = (v) => { const d = parseDate(v); return d ? DATE_FMT.format(d) :
 /* Un registre est nominatif par nature ; une statistique portée devant une
    instance n'a pas à l'être. L'interrupteur agit partout, exports compris. */
 
+/* Ce qui entre dans un document exporté. Tout est retenu par défaut : on
+   retire ce dont on ne veut pas, plutôt que de devoir tout cocher. */
+const OPTIONS_DEFAUT = {
+  carte: true, calendrier: true, territoires: true, familles: true,
+  etats: true, etablissements: true, aCompleter: true,
+};
+const options = () => ({ ...OPTIONS_DEFAUT, ...(Prefs.get('optionsExport', {}) || {}) });
+const veut = (cle) => options()[cle] !== false;
+
 const anonyme = () => Prefs.get('anonyme', false);
 const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom || ''));
 
@@ -2402,6 +2436,7 @@ const state = {
   view: Prefs.get('view', 'cluster'),
   maille: Prefs.get('maille', 'etab'),
   taux: Prefs.get('taux', false),
+  tousEtabs: Prefs.get('tousEtabs', false),
   scolaire: Prefs.get('scolaire', true),
   selectedUai: null,
   diff: null,
@@ -3128,8 +3163,17 @@ function renderSynthesis() {
   });
 
   /* --- Classement des établissements --- */
+  // `places` est déjà trié par nombre décroissant ; l'option lève seulement le
+  // plafond, pour pouvoir reprendre la liste entière ailleurs.
   const list = $('#topList');
-  const top = places.slice(0, 12);
+  const top = state.tousEtabs ? places : places.slice(0, 12);
+  $('#btnTousEtabs').hidden = places.length <= 12;
+  $('#btnTousEtabs').textContent = state.tousEtabs
+    ? "N'afficher que les 12 premiers"
+    : `Afficher les ${fmtInt(places.length)} établissements`;
+  $('#capTop').textContent = state.tousEtabs
+    ? `${fmtInt(places.length)} établissements concernés, du plus signalé au moins signalé.`
+    : 'Cliquez pour ouvrir la fiche.';
   list.innerHTML = top.length ? top.map((p, i) => {
     const fam = [...p.incidents.reduce((m, x) => m.set(x.family, (m.get(x.family) || 0) + 1), new Map())]
       .sort((a, b) => b[1] - a[1])[0][0];
@@ -3543,18 +3587,25 @@ const PDF_SUP = '‘’‚“”„†‡•…‰'
               + '‹›€–—ŒœŠšŸ'
               + 'Žžƒˆ˜™';
 const PDF_HORS = new RegExp('[^\\u0000-\\u00FF' + PDF_SUP + ']', 'g');
+const PDF_ESPACES_RE = /[\u202F\u2009\u00A0\u2011\u2212]/g;
 const pdfSafe = (v) => String(v === null || v === undefined ? '' : v)
-  .replace(/[   ‑−]/g, (c) => PDF_ESPACES[c])
+  .replace(PDF_ESPACES_RE, (c) => PDF_ESPACES[c])
   .replace(PDF_HORS, '?');
+
+/* Dans un paragraphe, l'espace des milliers devient un point de coupure et
+   « les 2 061 » se brise en fin de ligne. Le format n'offrant pas d'espace
+   insécable exploitable, on la retire : « 2061 » vaut mieux que « 2 » / « 061 ».
+   Les cellules de tableau, qui ne se coupent pas, gardent l'espace. */
+const pdfSafeProse = (v) => pdfSafe(v).replace(/(\d) (?=\d{3}(?!\d))/g, '$1');
 
 /** Un document dont toutes les écritures passent par ce filtre. */
 function pdfDoc(options) {
   const doc = new window.jspdf.jsPDF(options);
   const texteBrut = doc.text.bind(doc);
   doc.text = (t, ...reste) =>
-    texteBrut(Array.isArray(t) ? t.map(pdfSafe) : pdfSafe(t), ...reste);
+    texteBrut(Array.isArray(t) ? t.map(pdfSafeProse) : pdfSafeProse(t), ...reste);
   const couperBrut = doc.splitTextToSize.bind(doc);
-  doc.splitTextToSize = (t, ...reste) => couperBrut(pdfSafe(t), ...reste);
+  doc.splitTextToSize = (t, ...reste) => couperBrut(pdfSafeProse(t), ...reste);
   const tableauBrut = doc.autoTable.bind(doc);
   doc.autoTable = (cfg) => tableauBrut({
     ...cfg,
@@ -3831,7 +3882,7 @@ function construireRapport(visuels) {
            'Délai médian', med == null ? 'aucune réponse datée' : `sur ${fmtInt(delais.length)} réponses`);
   y += 32;
 
-  if (visuels.carte) {
+  if (visuels.carte && veut('carte')) {
     y = pdfTitre(doc, y, 'Répartition géographique',
       visuels.carte.tuiles ? "Vue exportée telle qu'elle était à l'écran."
                            : "Fond de carte indisponible : seuls les points sont représentés.");
@@ -3859,11 +3910,13 @@ function construireRapport(visuels) {
     y += h + 8;
   }
 
-  y = pdfTitre(doc, y, 'Calendrier',
-    state.scolaire ? 'Par année scolaire, de septembre à août.' : 'Par année civile.');
-  y = pdfCalendrier(doc, y, inc) + 5;
+  if (veut('calendrier')) {
+    y = pdfTitre(doc, y, 'Calendrier',
+      state.scolaire ? 'Par année scolaire, de septembre à août.' : 'Par année civile.');
+    y = pdfCalendrier(doc, y, inc) + 5;
+  }
 
-  if (state.maille !== 'etab' && territoires.length) {
+  if (state.maille !== 'etab' && territoires.length && veut('territoires')) {
     const def = MAILLES[state.maille];
     const sansTaux = territoires.every((g) => g.taux == null);
     y = pdfTitre(doc, y, def.label + 's', state.taux && !sansTaux
@@ -3989,6 +4042,363 @@ async function exportPdf() {
   } catch (err) {
     console.error(err);
     alert('La production du rapport a échoué : ' + err.message);
+  } finally { btn.disabled = false; btn.textContent = libelle; }
+}
+
+/* --------------------------- Article rédigé --------------------------- */
+/* De quoi illustrer un billet sans refaire le travail à la main : les chiffres
+   sont ceux du filtrage en cours, la carte et le calendrier sont incorporés, et
+   les passages d'appréciation restent en blanc — c'est à l'auteur de les écrire,
+   pas à l'outil de les inventer. */
+
+const ART_C = {
+  encre: '#1b1b1b', encre2: '#4a4a48', muet: '#7c7a75', trait: '#dedcd5',
+  fond: '#f6f5f2', accent: '#2a78d6', critique: '#d03b3b',
+};
+
+function ordinauxMois(incidents, sco) {
+  const cases = new Map();
+  let max = 0;
+  for (const i of incidents) {
+    const an = sco ? anneeScolaire(i.date) : i.date.getFullYear();
+    const k = an + ':' + rangMois(i.date, sco);
+    const n = (cases.get(k) || 0) + 1;
+    cases.set(k, n); if (n > max) max = n;
+  }
+  const annees = [...new Set([...cases.keys()].map((k) => +k.split(':')[0]))].sort();
+  return { cases, max, annees };
+}
+
+/** Le mois qui revient le plus souvent en tête : un fait, pas une interprétation. */
+function moisLePlusCharge(incidents) {
+  const parMois = new Map();
+  for (const i of incidents) parMois.set(i.date.getMonth(), (parMois.get(i.date.getMonth()) || 0) + 1);
+  if (!parMois.size) return null;
+  const [m, n] = [...parMois].sort((a, b) => b[1] - a[1])[0];
+  const total = incidents.length;
+  return { nom: MOIS_COURTS[m].replace(/\.$/, ''), n, part: Math.round((n / total) * 100) };
+}
+
+/** Les faits de l'article, une seule fois, pour les deux formats. */
+function faitsArticle() {
+  const inc = current.incidents;
+  const places = current.places.filter((p) => p.count > 0);
+  const ouverts = inc.filter((i) => i.open).length;
+  const delais = inc.filter((i) => i.delay != null).map((i) => i.delay);
+  return {
+    inc, places, ouverts,
+    med: median(delais),
+    pctOuverts: inc.length ? Math.round((ouverts / inc.length) * 100) : 0,
+    familles: tally(inc, (i) => i.family),
+    etats: tally(inc, (i) => i.state),
+    pic: moisLePlusCharge(inc),
+    def: MAILLES[state.maille],
+    terr: state.maille !== 'etab'
+      ? (state.taux ? territoires.filter((g) => g.tauxFiable) : territoires).slice(0, 8) : [],
+    periode: inc.length
+      ? `${DATE_FMT.format(inc[0].date)} au ${DATE_FMT.format(inc[inc.length - 1].date)}` : '—',
+    // L'option « tous les établissements » vaut aussi pour les exports : c'est
+    // souvent pour les reprendre ailleurs qu'on la coche.
+    etabsListe: state.tousEtabs ? places : places.slice(0, 8),
+  };
+}
+
+/** Le chapeau, en toutes lettres : les chiffres, rien qu'eux. */
+function chapeauArticle(f) {
+  return `${fmtInt(f.inc.length)} signalements ont été portés aux registres sur cette période, `
+    + `dans ${fmtInt(f.places.length)} établissements sur les ${fmtInt(state.etabs.size)} `
+    + `que compte l'annuaire. `
+    + (f.ouverts
+        ? `À ce jour, ${fmtInt(f.ouverts)} ne sont pas clos, soit ${f.pctOuverts} % d'entre eux. `
+        : 'Tous sont clos. ')
+    + (f.med != null
+        ? `Le délai médian entre un signalement et la dernière réponse portée au registre `
+          + `est de ${fmtInt(f.med)} jours.` : '');
+}
+
+const A_COMPLETER = {
+  chiffres: 'ce que vous retenez de ces chiffres',
+  territoires: 'le contexte de ces territoires',
+  calendrier: 'votre lecture de ce calendrier',
+  traitement: 'ce que ces délais appellent comme suite',
+};
+
+function corpsArticle(visuels) {
+  const inc = current.incidents;
+  const places = current.places.filter((p) => p.count > 0);
+  const ouverts = inc.filter((i) => i.open).length;
+  const delais = inc.filter((i) => i.delay != null).map((i) => i.delay);
+  const med = median(delais);
+  const familles = tally(inc, (i) => i.family);
+  const etats = tally(inc, (i) => i.state);
+  const pic = moisLePlusCharge(inc);
+  const sco = state.scolaire;
+  const { cases, max, annees } = ordinauxMois(inc, sco);
+  const periode = inc.length
+    ? `${DATE_FMT.format(inc[0].date)} au ${DATE_FMT.format(inc[inc.length - 1].date)}`
+    : '—';
+
+  const tbl = (lignes) => `<table style="width:100%;border-collapse:collapse;margin:1em 0;font-size:10.5pt">${lignes}</table>`;
+  const th = (t, a) => `<th style="text-align:${a || 'left'};padding:6px 8px;border-bottom:2px solid ${ART_C.encre};font-weight:700">${esc(t)}</th>`;
+  const td = (t, a) => `<td style="text-align:${a || 'left'};padding:5px 8px;border-bottom:1px solid ${ART_C.trait}">${t}</td>`;
+  const aCompleter = (quoi) => veut('aCompleter')
+    ? `<p style="margin:1em 0;padding:10px 12px;border-left:3px solid ${ART_C.accent};background:${ART_C.fond};color:${ART_C.encre2}">
+        <i>[À compléter — ${esc(quoi)}]</i></p>` : '';
+
+  // Calendrier, en teintes d'une seule couleur : c'est une grandeur.
+  const teinte = (n) => {
+    if (!n) return '#fbfaf8';
+    const paliers = ['#fae9e9', '#f2b3b3', '#e88a8a', '#dc6060', '#d03b3b', '#a82f2f', '#7d2323'];
+    return paliers[Math.min(paliers.length - 1, Math.floor((n / max) * (paliers.length - 1) + 0.0001))];
+  };
+  const calendrier = annees.length ? tbl(
+    `<tr>${th('')}${Array.from({ length: 12 }, (_, r) => th(moisDuRang(r, sco), 'center')).join('')}</tr>` +
+    annees.map((an) => `<tr>${td(`<b>${esc(sco ? libelleAnneeScolaire(an) : String(an))}</b>`)}` +
+      Array.from({ length: 12 }, (_, r) => {
+        const n = cases.get(an + ':' + r) || 0;
+        const sombre = n && (n / max) > 0.6;
+        return `<td style="text-align:center;padding:4px 2px;background:${teinte(n)};border:1px solid #fff;` +
+               `color:${sombre ? '#fff' : ART_C.encre};font-size:9.5pt">${n || ''}</td>`;
+      }).join('') + '</tr>').join('')) : '';
+
+  const topEtabs = state.tousEtabs ? places : places.slice(0, 8);
+  const def = MAILLES[state.maille];
+  const terr = state.maille !== 'etab'
+    ? (state.taux ? territoires.filter((g) => g.tauxFiable) : territoires).slice(0, 8) : [];
+
+  return `
+<h1 style="font-size:22pt;margin:0 0 .2em">Les signalements portés aux registres santé et sécurité au travail</h1>
+<p style="color:${ART_C.muet};font-size:10pt;margin:0 0 1.4em">
+  ${esc(periode)} · ${esc(filterSummary())} · relevé du ${esc(DATE_FMT.format(new Date()))}
+</p>
+
+<p><b>${esc(fmtInt(inc.length))} signalements</b> ont été portés aux registres sur cette période,
+dans <b>${esc(fmtInt(places.length))} établissements</b> sur les ${esc(fmtInt(state.etabs.size))} que compte l'annuaire.
+${ouverts ? `À ce jour, <b>${esc(fmtInt(ouverts))}</b> ne sont pas clos, soit ${Math.round((ouverts / inc.length) * 100)} % d'entre eux.` : 'Tous sont clos.'}
+${med != null ? ` Le délai médian entre un signalement et la dernière réponse portée au registre est de <b>${esc(fmtInt(med))} jours</b>.` : ''}</p>
+
+${aCompleter('ce que vous retenez de ces chiffres')}
+
+${veut('carte') || veut('etablissements') || terr.length ? '<h2 style="font-size:14pt;margin:1.6em 0 .3em">Où</h2>' : ''}
+${visuels.carte && veut('carte') ? `<p style="margin:.6em 0"><img src="${visuels.carte.url}" alt="Carte des signalements"
+   style="width:100%;max-width:640px;border:1px solid ${ART_C.trait}"></p>
+<p style="color:${ART_C.muet};font-size:9pt;margin-top:-.4em">
+  ${esc(visuels.legende)}${visuels.carte.tuiles ? ' Fond de carte © OpenStreetMap.' : ''}</p>` : ''}
+
+${terr.length && veut('territoires') ? `<p>Par ${esc(def.label.toLowerCase())} :</p>` + tbl(
+  `<tr>${th(def.label)}${th(state.taux ? 'Par établissement' : 'Signalements', 'right')}${th('Établissements', 'right')}</tr>` +
+  terr.map((g) => `<tr>${td(esc(g.nom))}${td(esc(libelleValeur(g)), 'right')}${td(esc(fmtInt(g.etabs.size)) + (g.denom ? ' / ' + esc(fmtInt(g.denom)) : ''), 'right')}</tr>`).join(''))
+: !veut('etablissements') ? '' : tbl(`<tr>${th('Établissement')}${th('Commune')}${th('Signalements', 'right')}</tr>` +
+  topEtabs.map((p) => `<tr>${td(esc(p.etab.name))}${td(esc(p.etab.commune))}${td(esc(fmtInt(p.count)), 'right')}</tr>`).join(''))}
+${state.tousEtabs ? `<p style="color:${ART_C.muet};font-size:9pt;margin-top:-.4em">
+  Les ${esc(fmtInt(places.length))} établissements concernés, du plus signalé au moins signalé.</p>` : ''}
+
+${aCompleter('le contexte de ces territoires')}
+
+${veut('calendrier') ? `<h2 style="font-size:14pt;margin:1.6em 0 .3em">Quand</h2>
+${pic ? `<p>Le mois de <b>${esc(pic.nom)}</b> concentre le plus de signalements :
+  ${esc(fmtInt(pic.n))} sur la période, soit ${pic.part} % du total.</p>` : ''}
+${calendrier}
+<p style="color:${ART_C.muet};font-size:9pt;margin-top:-.4em">
+  Nombre de signalements par mois${sco ? ', par année scolaire' : ''}. Plus la case est sombre, plus ils sont nombreux.</p>
+
+${aCompleter('votre lecture de ce calendrier')}` : ''}
+
+${veut('familles') ? `<h2 style="font-size:14pt;margin:1.6em 0 .3em">Quoi</h2>
+${tbl(`<tr>${th('Famille de risque')}${th('Signalements', 'right')}${th('Part', 'right')}</tr>` +
+  familles.slice(0, 8).map(([f, n]) =>
+    `<tr>${td(esc(f))}${td(esc(fmtInt(n)), 'right')}${td(Math.round((n / inc.length) * 100) + ' %', 'right')}</tr>`).join(''))}` : ''}
+
+${veut('etats') ? `<h2 style="font-size:14pt;margin:1.6em 0 .3em">Où en est le traitement</h2>
+${tbl(`<tr>${th('État')}${th('Signalements', 'right')}${th('Part', 'right')}</tr>` +
+  etats.map(([e, n]) =>
+    `<tr>${td(esc(e))}${td(esc(fmtInt(n)), 'right')}${td(Math.round((n / inc.length) * 100) + ' %', 'right')}</tr>`).join(''))}
+
+${aCompleter('ce que ces délais appellent comme suite')}` : ''}
+
+<hr style="border:0;border-top:1px solid ${ART_C.trait};margin:2em 0 1em">
+<p style="color:${ART_C.muet};font-size:9pt">
+  Source : registres santé et sécurité au travail, rapprochés de l'annuaire de l'éducation.
+  Chiffres arrêtés au ${esc(DATE_FMT.format(new Date()))}, sur le périmètre : ${esc(filterSummary())}.
+  ${anonyme() ? 'Les noms des déclarants sont masqués. ' : ''}
+  Un établissement absent de ces tableaux n'est pas pour autant sans risque : le registre
+  ne recense que ce qui y a été écrit.
+</p>`;
+}
+
+/** L'article en PDF : même matière que la version Word, mise en page pour la lecture. */
+function articlePdf(visuels) {
+  const doc = pdfDoc({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const f = faitsArticle();
+  let y = 24;
+
+  const place = (h) => { if (y + h > A4.h - 24) { doc.addPage(); y = 24; } };
+  const para = (texte, taille = 10, couleur = PDF_C.encre) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(taille); doc.setTextColor(...couleur);
+    const lignes = doc.splitTextToSize(texte, UTILE);
+    place(lignes.length * (taille * 0.45) + 3);
+    doc.text(lignes, A4.marge, y);
+    y += lignes.length * (taille * 0.45) + 4;
+  };
+  const aCompleter = (quoi) => {
+    if (!veut('aCompleter')) return;
+    const lignes = doc.splitTextToSize(`[À compléter — ${quoi}]`, UTILE - 10);
+    const h = lignes.length * 4.2 + 7;
+    place(h + 3);
+    doc.setFillColor(...PDF_C.fond); doc.rect(A4.marge, y - 4, UTILE, h, 'F');
+    doc.setFillColor(...PDF_C.serie); doc.rect(A4.marge, y - 4, 1.4, h, 'F');
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.encre2);
+    doc.text(lignes, A4.marge + 5, y + 1.5);
+    doc.setFont('helvetica', 'normal');
+    y += h + 4;
+  };
+  const sousTitre = (t) => {
+    place(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...PDF_C.encre);
+    doc.text(t, A4.marge, y);
+    doc.setFont('helvetica', 'normal');
+    y += 3;
+    doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+    doc.line(A4.marge, y, A4.l - A4.marge, y);
+    y += 6;
+  };
+  const tableau = (head, body, colonnes) => {
+    place(22);
+    doc.autoTable({
+      startY: y, head: [head], body,
+      theme: 'plain', styles: { fontSize: 9, cellPadding: 1.8, textColor: PDF_C.encre },
+      headStyles: { fontStyle: 'bold', textColor: PDF_C.encre,
+                    lineWidth: { bottom: 0.4 }, lineColor: PDF_C.encre },
+      bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: PDF_C.trait },
+      columnStyles: colonnes, margin: { left: A4.marge, right: A4.marge },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  };
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.setTextColor(...PDF_C.encre);
+  const titre = doc.splitTextToSize(
+    'Les signalements portés aux registres santé et sécurité au travail', UTILE);
+  doc.text(titre, A4.marge, y);
+  y += titre.length * 8 + 2;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.muet);
+  doc.text(doc.splitTextToSize(
+    `${f.periode} · ${filterSummary()} · relevé du ${DATE_FMT.format(new Date())}`, UTILE),
+    A4.marge, y);
+  y += 10;
+
+  para(chapeauArticle(f), 11);
+  aCompleter(A_COMPLETER.chiffres);
+
+  if (veut('carte') || veut('etablissements') || f.terr.length) sousTitre('Où');
+  if (visuels.carte && veut('carte')) {
+    const ratio = visuels.carte.h / visuels.carte.w;
+    let w = UTILE, h = w * ratio;
+    if (h > 95) { h = 95; w = h / ratio; }
+    place(h + 10);
+    doc.addImage(visuels.carte.url, 'PNG', A4.marge + (UTILE - w) / 2, y, w, h, undefined, 'FAST');
+    doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+    doc.rect(A4.marge + (UTILE - w) / 2, y, w, h, 'S');
+    y += h + 4;
+    doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
+    doc.text(doc.splitTextToSize(
+      visuels.legende + (visuels.carte.tuiles ? ' Fond de carte © OpenStreetMap.' : ''), UTILE),
+      A4.marge, y);
+    y += 7;
+  }
+  if (f.terr.length && veut('territoires')) {
+    tableau([f.def.label, state.taux ? 'Par établissement' : 'Signalements', 'Établissements'],
+      f.terr.map((g) => [g.nom, libelleValeur(g),
+        fmtInt(g.etabs.size) + (g.denom ? ' / ' + fmtInt(g.denom) : '')]),
+      { 1: { halign: 'right', cellWidth: 36 }, 2: { halign: 'right', cellWidth: 32 } });
+  } else if (veut('etablissements')) {
+    tableau(['Établissement', 'Commune', 'Signalements'],
+      f.etabsListe.map((p) => [p.etab.name, p.etab.commune, fmtInt(p.count)]),
+      { 2: { halign: 'right', cellWidth: 30 } });
+  }
+  aCompleter(A_COMPLETER.territoires);
+
+  if (veut('calendrier')) {
+  sousTitre('Quand');
+  if (f.pic) {
+    para(`Le mois de ${f.pic.nom} concentre le plus de signalements : ${fmtInt(f.pic.n)} `
+       + `sur la période, soit ${f.pic.part} % du total.`);
+  }
+  place(60);
+  y = pdfCalendrier(doc, y, f.inc);
+  doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
+  doc.text(doc.splitTextToSize(
+    `Nombre de signalements par mois${state.scolaire ? ', par année scolaire' : ''}.`
+    + ' Plus la case est sombre, plus ils sont nombreux.', UTILE), A4.marge, y);
+  y += 8;
+  aCompleter(A_COMPLETER.calendrier);
+  }
+
+  if (veut('familles')) {
+    sousTitre('Quoi');
+    tableau(['Famille de risque', 'Signalements', 'Part'],
+      f.familles.slice(0, 8).map(([nom, n]) =>
+        [nom, fmtInt(n), Math.round((n / f.inc.length) * 100) + ' %']),
+      { 1: { halign: 'right', cellWidth: 30 }, 2: { halign: 'right', cellWidth: 20 } });
+  }
+
+  if (veut('etats')) {
+    sousTitre('Où en est le traitement');
+    tableau(['État', 'Signalements', 'Part'],
+      f.etats.map(([nom, n]) => [nom, fmtInt(n), Math.round((n / f.inc.length) * 100) + ' %']),
+      { 1: { halign: 'right', cellWidth: 30 }, 2: { halign: 'right', cellWidth: 20 } });
+    aCompleter(A_COMPLETER.traitement);
+  }
+
+  place(26);
+  doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+  doc.line(A4.marge, y, A4.l - A4.marge, y);
+  y += 5;
+  para(`Source : registres santé et sécurité au travail, rapprochés de l'annuaire de `
+     + `l'éducation. Chiffres arrêtés au ${DATE_FMT.format(new Date())}, sur le périmètre : `
+     + `${filterSummary()}. ${anonyme() ? 'Les noms des déclarants sont masqués. ' : ''}`
+     + `Un établissement absent de ces tableaux n'est pas pour autant sans risque : le `
+     + `registre ne recense que ce qui y a été écrit.`, 8, PDF_C.muet);
+
+  pdfPieds(doc, 'Signalements santé et sécurité au travail');
+  doc.save(`article_signalements_${AUJ()}.pdf`);
+}
+
+async function exporterArticle(format) {
+  if (!current.incidents.length) {
+    alert('Aucun signalement à présenter avec les filtres actuels.'); return;
+  }
+  const btn = $(format === 'doc' ? '#btnArticleDoc' : '#btnArticlePdf');
+  const libelle = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Préparation…';
+  try {
+    const visuels = await avecApparenceClaire(async () => ({
+      carte: captureCarte({ echelle: 2 }),
+      legende: state.view === 'urgence'
+        ? 'Couleur : niveau de priorité.'
+        : state.maille !== 'etab'
+          ? `Signalements par ${MAILLES[state.maille].label.toLowerCase()}.`
+          : 'Couleur et taille : nombre de signalements par établissement.',
+    }));
+    if (format === 'pdf') { articlePdf(visuels); return; }
+
+    const corps = corpsArticle(visuels);
+    {
+      // Word ouvre un HTML balisé pour lui ; les images en base64 y sont
+      // conservées, ce qu'un .docx fabriqué à la main ne garantirait pas mieux.
+      const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office"`
+        + ` xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">`
+        + `<head><meta charset="utf-8"><title>Signalements santé et sécurité au travail</title>`
+        + `<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>`
+        + `<w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->`
+        + `<style>@page{size:A4;margin:2cm} body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:${ART_C.encre}}`
+        + `h1,h2{font-family:Calibri,Arial,sans-serif} p{line-height:1.45}</style></head>`
+        + `<body>${corps}</body></html>`;
+      download(new Blob(['﻿' + doc], { type: 'application/msword' }),
+               `article_signalements_${AUJ()}.doc`);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("La production de l'article a échoué : " + err.message);
   } finally { btn.disabled = false; btn.textContent = libelle; }
 }
 
@@ -4869,6 +5279,15 @@ function wireEvents() {
   $('#btnCsv').addEventListener('click', exportCsv);
   $('#btnPdf').addEventListener('click', exportPdf);
   $('#btnPng').addEventListener('click', exportCartePng);
+  $('#btnTousEtabs').addEventListener('click', () => {
+    state.tousEtabs = !state.tousEtabs;
+    Prefs.set('tousEtabs', state.tousEtabs);
+    renderSynthesis();
+    $('#chkTousEtabsOpt').checked = state.tousEtabs;
+  });
+
+  $('#btnArticlePdf').addEventListener('click', () => exporterArticle('pdf'));
+  $('#btnArticleDoc').addEventListener('click', () => exporterArticle('doc'));
 
   /* --- Onglets, tiroirs, thème --- */
   $('#tabSynth').addEventListener('click', () => selectTab('synth'));
@@ -4903,6 +5322,26 @@ function wireEvents() {
 
   $('#btnRelanceCsv').addEventListener('click', exportRelanceCsv);
   $('#btnRelancePdf').addEventListener('click', exportRelancePdf);
+
+  // Options d'export
+  const peindreOptions = () => {
+    const o = options();
+    $$('#blocOptions [data-opt]').forEach((c) => { c.checked = o[c.dataset.opt] !== false; });
+    $('#chkTousEtabsOpt').checked = state.tousEtabs;
+    $('#chkTousEtabsOpt').disabled = o.etablissements === false;
+    const retirees = Object.keys(OPTIONS_DEFAUT).filter((k) => o[k] === false).length;
+    $('#optBadge').textContent = retirees ? `${retirees} retirée${retirees > 1 ? 's' : ''}` : 'tout';
+  };
+  $$('#blocOptions [data-opt]').forEach((c) => c.addEventListener('change', () => {
+    Prefs.set('optionsExport', { ...options(), [c.dataset.opt]: c.checked });
+    peindreOptions();
+  }));
+  $('#chkTousEtabsOpt').addEventListener('change', (e) => {
+    state.tousEtabs = e.target.checked;
+    Prefs.set('tousEtabs', state.tousEtabs);
+    renderSynthesis(); peindreOptions();
+  });
+  peindreOptions();
 
   // Anonymat
   $('#chkAnonyme').checked = anonyme();
