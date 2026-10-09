@@ -159,10 +159,29 @@ premier chargement, faute de point de comparaison.
 une mention neutre, exports compris. Un registre est nominatif par nature ; une
 statistique portée devant une instance n'a pas à l'être.
 
-**Exports** — CSV (encodage compatible Excel) et rapport PDF, l'un comme l'autre
-strictement limités à ce qui est affiché, avec le rappel des filtres appliqués.
-La page s'imprime proprement : filtres et carte sont retirés du papier, la
-synthèse et les priorités sont conservées.
+**Rapport PDF** — un document de quatre pages qui suit exactement les filtres en
+cours : chiffres clés, **carte telle qu'elle est à l'écran**, évolution
+mensuelle, familles de risques, état du traitement, puis les établissements à
+traiter en priorité avec leurs motifs en clair. Le périmètre retenu est rappelé
+en tête et en pied de chaque page.
+
+Le détail ligne à ligne n'y figure pas par défaut — sur 1 200 signalements il
+pèserait cinquante pages, et c'est le rôle de l'export CSV. Une case à cocher
+permet de le joindre.
+
+**Carte seule** — la même capture, en PNG haute définition, pour une note ou un
+diaporama. L'attribution OpenStreetMap y est incrustée, comme la licence des
+tuiles l'exige.
+
+La capture est composée à la main depuis les tuiles, la couche de points et les
+groupes : aucune bibliothèque supplémentaire, et si le fond de carte est
+inaccessible — réseau filtré — les points sont dessinés seuls et le rapport le
+dit. L'apparence claire est forcée le temps de la capture, puis rétablie : un
+rapport aux couleurs sombres serait illisible sur papier.
+
+**Exports** — CSV (encodage compatible Excel), strictement limité à ce qui est
+affiché. La page s'imprime aussi directement : filtres et carte sont retirés du
+papier, la synthèse et les priorités sont conservées.
 
 ## Version autonome (Drive, clé USB, poste hors ligne)
 

@@ -1228,6 +1228,9 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button class="btn" id="btnCsv" style="flex:1">Tableur (CSV)</button>
           <button class="btn" id="btnPdf" style="flex:1">Rapport (PDF)</button>
         </div>
+        <button class="btn wide" id="btnPng" style="margin-top:6px">Carte seule (image PNG)</button>
+        <label class="check"><input type="checkbox" id="chkDetail">
+          Joindre le détail des signalements au rapport</label>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="chkAnonyme">
           Masquer les noms des déclarants</label>
         <p class="notice">L'export reprend exactement ce qui est affiché : mêmes filtres, même période.</p>
@@ -2519,6 +2522,9 @@ function initMap() {
   const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
+    // Sans cet attribut, les tuiles « teintent » le canvas et la carte ne peut
+    // plus être exportée en image.
+    crossOrigin: 'anonymous',
   }).addTo(map);
 
   // Sur un réseau filtré, le fond de carte peut être injoignable. Les points
@@ -3173,8 +3179,7 @@ function exportRelanceCsv() {
 function exportRelancePdf() {
   const rows = lignesRelance();
   if (!rows.length) { alert('Aucun signalement à relancer avec les seuils et filtres actuels.'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = pdfDoc({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const s = seuils();
 
   doc.setFontSize(16); doc.setTextColor(20);
@@ -3207,6 +3212,417 @@ function exportRelancePdf() {
   });
 
   doc.save(`visu-incidents_a-relancer_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+/* ---------------------- Capture de la carte en image ---------------------- */
+/* Recomposition manuelle plutôt qu'une bibliothèque de capture : on maîtrise le
+   rendu, rien n'est ajouté au poids de la page, et si les tuiles manquent — réseau
+   filtré — les points restent dessinés sur un fond neutre. */
+
+/** Couleurs du document imprimé : fixes, indépendantes du thème de l'écran. */
+const PDF_C = {
+  encre: [11, 11, 11], encre2: [82, 81, 78], muet: [137, 135, 129],
+  trait: [225, 224, 217], fond: [245, 244, 241], blanc: [255, 255, 255],
+  serie: [42, 120, 214], bon: [12, 163, 12],
+  critique: [208, 59, 59], serieux: [236, 131, 90], attention: [250, 178, 25],
+};
+const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+/**
+ * Les polices standard du PDF n'encodent qu'un jeu limité de caractères :
+ * l'espace fine insécable que le français place entre les milliers n'en fait
+ * pas partie, et « 1 200 » s'imprimait « 1/200 ». Les libellés venus des CSV
+ * peuvent en contenir d'autres. On filtre donc tout ce qui entre dans le
+ * document, en un seul endroit plutôt qu'à chaque appel.
+ */
+const PDF_ESPACES = { ' ': ' ', ' ': ' ', ' ': ' ', '‑': '-', '−': '-' };
+const PDF_SUP = '‘’‚“”„†‡•…‰'
+              + '‹›€–—ŒœŠšŸ'
+              + 'Žžƒˆ˜™';
+const PDF_HORS = new RegExp('[^\\u0000-\\u00FF' + PDF_SUP + ']', 'g');
+const pdfSafe = (v) => String(v === null || v === undefined ? '' : v)
+  .replace(/[   ‑−]/g, (c) => PDF_ESPACES[c])
+  .replace(PDF_HORS, '?');
+
+/** Un document dont toutes les écritures passent par ce filtre. */
+function pdfDoc(options) {
+  const doc = new window.jspdf.jsPDF(options);
+  const texteBrut = doc.text.bind(doc);
+  doc.text = (t, ...reste) =>
+    texteBrut(Array.isArray(t) ? t.map(pdfSafe) : pdfSafe(t), ...reste);
+  const couperBrut = doc.splitTextToSize.bind(doc);
+  doc.splitTextToSize = (t, ...reste) => couperBrut(pdfSafe(t), ...reste);
+  const tableauBrut = doc.autoTable.bind(doc);
+  doc.autoTable = (cfg) => tableauBrut({
+    ...cfg,
+    head: cfg.head && cfg.head.map((r) => r.map(pdfSafe)),
+    body: cfg.body && cfg.body.map((r) => r.map(pdfSafe)),
+  });
+  return doc;
+}
+
+/**
+ * Force l'apparence claire le temps d'une capture, puis rétablit.
+ * Un rapport imprimé en couleurs sombres serait illisible sur papier.
+ */
+async function avecApparenceClaire(action) {
+  const avant = document.documentElement.getAttribute('data-theme');
+  const dim = document.body.classList.contains('tiles-dim');
+  // L'onglet visible compte : dans un panneau masqué, la toile du graphique
+  // mesure zéro pixel et l'image produite est inexploitable.
+  const ongletAvant = $('#tabPrio').getAttribute('aria-selected') === 'true' ? 'prio'
+    : $('#tabEtab').getAttribute('aria-selected') === 'true' ? 'etab' : 'synth';
+
+  document.documentElement.setAttribute('data-theme', 'light');
+  document.body.classList.remove('tiles-dim');
+  selectTab('synth');
+  renderMap();
+  renderSynthesis();
+  await new Promise((r) => setTimeout(r, 400));          // laisse le navigateur peindre
+  try {
+    return await action();
+  } finally {
+    if (avant) document.documentElement.setAttribute('data-theme', avant);
+    else document.documentElement.removeAttribute('data-theme');
+    if (dim) document.body.classList.add('tiles-dim');
+    selectTab(ongletAvant);
+    applyTheme(Prefs.get('theme', 'auto'));
+    renderMap();
+    renderSynthesis();
+  }
+}
+
+/** Compose le fond de carte, les points et les groupes en une seule image. */
+function captureCarte({ echelle = 2 } = {}) {
+  const cont = map.getContainer();
+  const L0 = cont.getBoundingClientRect();
+  const W = Math.round(L0.width), H = Math.round(L0.height);
+  const out = document.createElement('canvas');
+  out.width = W * echelle; out.height = H * echelle;
+  const ctx = out.getContext('2d');
+
+  const dessiner = (avecTuiles) => {
+    ctx.setTransform(echelle, 0, 0, echelle, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#eceae4';
+    ctx.fillRect(0, 0, W, H);
+
+    let nTuiles = 0;
+    if (avecTuiles) {
+      for (const img of cont.querySelectorAll('.leaflet-tile-pane img.leaflet-tile')) {
+        if (!img.complete || !img.naturalWidth) continue;
+        const r = img.getBoundingClientRect();
+        try {
+          ctx.drawImage(img, r.left - L0.left, r.top - L0.top, r.width, r.height);
+          nTuiles++;
+        } catch { /* tuile inexploitable : on continue sans elle */ }
+      }
+    }
+
+    // Points et densité : Leaflet les dessine déjà dans un canvas.
+    for (const cv of cont.querySelectorAll('.leaflet-pane canvas')) {
+      const r = cv.getBoundingClientRect();
+      if (!r.width) continue;
+      ctx.drawImage(cv, r.left - L0.left, r.top - L0.top, r.width, r.height);
+    }
+
+    // Les groupes sont des éléments HTML : on les redessine à l'identique.
+    for (const el of cont.querySelectorAll('.leaflet-marker-icon.marker-cluster')) {
+      const r = el.getBoundingClientRect();
+      const cx = r.left - L0.left + r.width / 2, cy = r.top - L0.top + r.height / 2;
+      ctx.fillStyle = 'rgba(208,59,59,.22)';
+      ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = rgb(PDF_C.critique);
+      ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = '600 12px system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(el.textContent.trim(), cx, cy);
+    }
+
+    // Attribution : la licence des tuiles l'exige dès qu'on diffuse l'image.
+    if (nTuiles) {
+      const texte = '© OpenStreetMap';
+      ctx.font = '10px system-ui, sans-serif';
+      const w = ctx.measureText(texte).width + 10;
+      ctx.fillStyle = 'rgba(255,255,255,.82)';
+      ctx.fillRect(W - w - 4, H - 18, w, 14);
+      ctx.fillStyle = '#52514e'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(texte, W - w + 1, H - 11);
+    }
+    return nTuiles;
+  };
+
+  let nTuiles = dessiner(true);
+  try {
+    return { url: out.toDataURL('image/png'), w: W, h: H, tuiles: nTuiles > 0 };
+  } catch {
+    // Canvas teinté : une tuile n'autorisait pas la lecture. On refait sans fond.
+    nTuiles = dessiner(false);
+    return { url: out.toDataURL('image/png'), w: W, h: H, tuiles: false };
+  }
+}
+
+async function exportCartePng() {
+  const btn = $('#btnPng');
+  const libelle = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Capture…';
+  try {
+    const img = await avecApparenceClaire(() => captureCarte({ echelle: 2 }));
+    const blob = await (await fetch(img.url)).blob();
+    download(blob, `visu-incidents_carte_${AUJ()}.png`);
+    if (!img.tuiles) {
+      alert("Le fond de carte n'était pas disponible : l'image ne contient que les points.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("La capture de la carte a échoué : " + err.message);
+  } finally { btn.disabled = false; btn.textContent = libelle; }
+}
+
+/* --------------------------- Rapport PDF --------------------------- */
+
+const A4 = { l: 210, h: 297, marge: 16 };
+const UTILE = A4.l - 2 * A4.marge;
+
+function pdfTitre(doc, y, texte, sous) {
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5);
+  doc.setTextColor(...PDF_C.encre);
+  doc.text(texte, A4.marge, y);
+  doc.setFont('helvetica', 'normal');
+  if (sous) {
+    doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
+    doc.text(sous, A4.marge, y + 4.4);
+  }
+  doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+  doc.line(A4.marge, y + (sous ? 7.5 : 3.5), A4.l - A4.marge, y + (sous ? 7.5 : 3.5));
+  return y + (sous ? 14 : 10);
+}
+
+function pdfTuile(doc, x, y, w, h, valeur, libelle, note, couleur) {
+  doc.setFillColor(...PDF_C.fond); doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(19);
+  doc.setTextColor(...(couleur || PDF_C.encre));
+  doc.text(String(valeur), x + 4.5, y + 10.5);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.encre2);
+  doc.text(libelle, x + 4.5, y + 16);
+  if (note) {
+    doc.setFontSize(7); doc.setTextColor(...PDF_C.muet);
+    doc.text(doc.splitTextToSize(note, w - 9)[0], x + 4.5, y + 20.5);
+  }
+}
+
+function pdfBarres(doc, y, entrees, couleurDe, largeur = UTILE) {
+  const max = Math.max(...entrees.map((e) => e[1]), 1);
+  for (const [libelle, n] of entrees) {
+    doc.setFontSize(8.5); doc.setTextColor(...PDF_C.encre);
+    doc.text(doc.splitTextToSize(libelle, largeur - 24)[0], A4.marge, y);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_C.encre2);
+    doc.text(fmtInt(n), A4.marge + largeur, y, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    y += 1.8;
+    doc.setFillColor(...PDF_C.trait);
+    doc.roundedRect(A4.marge, y, largeur, 2.4, 1.2, 1.2, 'F');
+    doc.setFillColor(...(couleurDe ? couleurDe(libelle) : PDF_C.serie));
+    doc.roundedRect(A4.marge, y, Math.max(1.4, (largeur * n) / max), 2.4, 1.2, 1.2, 'F');
+    y += 7.4;
+  }
+  return y;
+}
+
+function pdfPieds(doc, perimetre) {
+  const n = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i);
+    const p = doc.internal.pageSize;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.setTextColor(...PDF_C.muet);
+    doc.text(doc.splitTextToSize(perimetre, p.getWidth() - 50)[0], 16, p.getHeight() - 8);
+    doc.text(`${i} / ${n}`, p.getWidth() - 16, p.getHeight() - 8, { align: 'right' });
+  }
+}
+
+function construireRapport(visuels) {
+  const doc = pdfDoc({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const inc = current.incidents;
+  const places = current.places.filter((p) => p.count > 0);
+  const ouverts = inc.filter((i) => i.open).length;
+  const delais = inc.filter((i) => i.delay != null).map((i) => i.delay);
+  const med = median(delais);
+  const perimetre = `Visu-Incidents · ${filterSummary()}`;
+
+  /* ---------- Page 1 : en-tête, chiffres clés, carte ---------- */
+  doc.setFillColor(...PDF_C.critique);
+  doc.rect(0, 0, 4, 44, 'F');
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(...PDF_C.encre);
+  doc.text('Rapport de signalements', A4.marge, 20);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...PDF_C.encre2);
+  doc.text('Registres santé et sécurité au travail', A4.marge, 27);
+  doc.setFontSize(8.5); doc.setTextColor(...PDF_C.muet);
+  doc.text(`Édité le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+         + (anonyme() ? ' · noms des déclarants masqués' : ''), A4.marge, 33);
+
+  let y = 42;
+  doc.setFontSize(8); doc.setTextColor(...PDF_C.encre2);
+  const perim = doc.splitTextToSize(`Périmètre retenu : ${filterSummary()}`, UTILE);
+  doc.text(perim, A4.marge, y);
+  y += perim.length * 3.8 + 5;
+
+  const lg = (UTILE - 3 * 4) / 4;
+  pdfTuile(doc, A4.marge, y, lg, 24, fmtInt(inc.length), 'Signalements',
+           inc.length === state.incidents.length ? 'jeu complet' : `sur ${fmtInt(state.incidents.length)}`);
+  pdfTuile(doc, A4.marge + (lg + 4), y, lg, 24, fmtInt(places.length), 'Établissements',
+           `sur ${fmtInt(state.etabs.size)} référencés`);
+  pdfTuile(doc, A4.marge + 2 * (lg + 4), y, lg, 24, fmtInt(ouverts), 'Non clos',
+           `${Math.round((ouverts / inc.length) * 100)} % des signalements`, PDF_C.serieux);
+  pdfTuile(doc, A4.marge + 3 * (lg + 4), y, lg, 24, med == null ? '—' : `${fmtInt(med)} j`,
+           'Délai médian', med == null ? 'aucune réponse datée' : `sur ${fmtInt(delais.length)} réponses`);
+  y += 32;
+
+  if (visuels.carte) {
+    y = pdfTitre(doc, y, 'Répartition géographique',
+      visuels.carte.tuiles ? "Vue exportée telle qu'elle était à l'écran."
+                           : "Fond de carte indisponible : seuls les points sont représentés.");
+    // On remplit ce qui reste de la page, sans jamais déformer l'image.
+    const hDispo = A4.h - 26 - y;
+    const ratio = visuels.carte.h / visuels.carte.w;
+    let w = UTILE, h = w * ratio;
+    if (h > hDispo) { h = hDispo; w = h / ratio; }
+    doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+    doc.roundedRect(A4.marge + (UTILE - w) / 2, y, w, h, 1.5, 1.5, 'S');
+    doc.addImage(visuels.carte.url, 'PNG', A4.marge + (UTILE - w) / 2, y, w, h, undefined, 'FAST');
+    y += h + 5;
+    doc.setFontSize(7.5); doc.setTextColor(...PDF_C.muet);
+    doc.text(visuels.legende || '', A4.marge, y);
+  }
+
+  /* ---------- Page 2 : analyse ---------- */
+  doc.addPage();
+  y = 22;
+  y = pdfTitre(doc, y, 'Évolution mensuelle', 'Nombre de signalements par mois sur le périmètre retenu.');
+  if (visuels.mois) {
+    // Proportions respectées : étiré, le graphique devient illisible.
+    const h = Math.min(62, (UTILE * visuels.mois.h) / visuels.mois.w);
+    doc.addImage(visuels.mois.url, 'PNG', A4.marge, y, UTILE, h, undefined, 'FAST');
+    y += h + 8;
+  }
+
+  const familles = tally(inc, (i) => i.family).slice(0, 7);
+  y = pdfTitre(doc, y, 'Familles de risques', `${fmtInt(familles.length)} familles représentées.`);
+  y = pdfBarres(doc, y, familles) + 4;
+
+  const etats = tally(inc, (i) => i.state);
+  const cleParEtat = new Map(inc.map((i) => [i.state, i.stateKey]));
+  const couleurEtat = { clos: PDF_C.bon, encours: PDF_C.serieux, vise: PDF_C.serie, autre: PDF_C.muet };
+  y = pdfTitre(doc, y, 'État du traitement', 'Avancement tel que porté au registre.');
+  y = pdfBarres(doc, y, etats, (l) => couleurEtat[cleParEtat.get(l)] || PDF_C.muet);
+
+  /* ---------- Page 3 : priorités ---------- */
+  if (priorites.length) {
+    doc.addPage();
+    y = 22;
+    y = pdfTitre(doc, y, 'Établissements à traiter en priorité',
+      'Classement fondé sur les délais et les regroupements, non sur la gravité des risques.');
+    for (const p of priorites.slice(0, 14)) {
+      if (y > 252) { doc.addPage(); y = 22; }
+      const couleur = { critique: PDF_C.critique, serieux: PDF_C.serieux, attention: PDF_C.attention }[p.niveau]
+        || PDF_C.muet;
+      const lignes = p.motifs.map((m) => doc.splitTextToSize('— ' + m.texte, UTILE - 10));
+      const hb = 15 + lignes.reduce((n, l) => n + l.length, 0) * 3.6;
+      doc.setFillColor(...PDF_C.fond); doc.setDrawColor(...PDF_C.trait); doc.setLineWidth(0.3);
+      doc.roundedRect(A4.marge, y - 4.5, UTILE, hb, 1.5, 1.5, 'FD');
+      doc.setFillColor(...couleur);
+      doc.rect(A4.marge, y - 4.5, 1.6, hb, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.encre);
+      const nom = doc.splitTextToSize(p.place.etab.name, UTILE - 48);
+      doc.text(nom.length > 1 ? nom[0].replace(/\s+\S*$/, '') + '…' : nom[0], A4.marge + 5, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...couleur);
+      doc.text(NIVEAUX[p.niveau].label, A4.marge + UTILE - 3, y, { align: 'right' });
+      doc.setFontSize(7.5); doc.setTextColor(...PDF_C.muet);
+      doc.text([p.place.etab.commune, p.place.etab.dept].filter(Boolean).join(' · '), A4.marge + 5, y + 4);
+      let yy = y + 8.5;
+      doc.setFontSize(8); doc.setTextColor(...PDF_C.encre2);
+      for (const bloc of lignes) { doc.text(bloc, A4.marge + 5, yy); yy += bloc.length * 3.6; }
+      y += hb + 3;
+    }
+    doc.setFontSize(7.5); doc.setTextColor(...PDF_C.muet);
+    doc.text(doc.splitTextToSize(
+      "Aucun signalement ne vaut pas absence de risque : un établissement absent de ce "
+      + "classement peut être un établissement où l'on n'écrit pas.", UTILE), A4.marge, Math.min(y + 4, 282));
+  }
+
+  /* ---------- Détail, en paysage et sur demande ---------- */
+  if (!$('#chkDetail').checked) {
+    doc.setFontSize(7.5); doc.setTextColor(...PDF_C.muet);
+    doc.text(doc.splitTextToSize(
+      `Le détail des ${fmtInt(inc.length)} signalements n'est pas joint à ce rapport. `
+      + `L'export CSV le contient intégralement, avec les mêmes filtres.`, UTILE),
+      A4.marge, A4.h - 22);
+    pdfPieds(doc, perimetre);
+    doc.save(`visu-incidents_rapport_${AUJ()}.pdf`);
+    return;
+  }
+
+  doc.addPage([297, 210], 'landscape');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...PDF_C.encre);
+  doc.text('Détail des signalements', 16, 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
+  doc.text(`${fmtInt(inc.length)} ligne${inc.length > 1 ? 's' : ''}, dans l'ordre chronologique.`, 16, 23);
+
+  doc.autoTable({
+    startY: 28,
+    head: [['Date', 'Établissement', 'Commune', 'Dépt', 'Risque', 'État', 'Signalé par']],
+    body: inc.map((i) => [
+      DATE_FMT.format(i.date), i.etab.name, i.etab.commune, i.etab.dept,
+      i.risk, i.state, declarant(i.reporter),
+    ]),
+    theme: 'striped',
+    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: PDF_C.encre },
+    headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [248, 247, 244] },
+    columnStyles: {
+      0: { cellWidth: 18 }, 1: { cellWidth: 58 }, 2: { cellWidth: 30 },
+      3: { cellWidth: 26 }, 4: { cellWidth: 74 }, 5: { cellWidth: 22 }, 6: { cellWidth: 'auto' },
+    },
+    margin: { left: 16, right: 16, bottom: 14 },
+  });
+
+  pdfPieds(doc, perimetre);
+  doc.save(`visu-incidents_rapport_${AUJ()}.pdf`);
+}
+
+/** L'image du graphique mensuel, ou rien si la toile n'a pas de dimensions. */
+function imageDuGraphique() {
+  if (!monthChart || !monthChart.canvas) return null;
+  const { width: w, height: h } = monthChart.canvas;
+  if (!w || !h) return null;
+  const url = monthChart.toBase64Image('image/png', 1);
+  return url && url.length > 200 ? { url, w, h } : null;
+}
+
+async function exportPdf() {
+  if (!current.incidents.length) {
+    alert('Aucun signalement à exporter avec les filtres actuels.'); return;
+  }
+  const btn = $('#btnPdf');
+  const libelle = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Préparation…';
+  try {
+    const visuels = await avecApparenceClaire(async () => ({
+      carte: captureCarte({ echelle: 2 }),
+      mois: imageDuGraphique(),
+      legende: state.view === 'urgence'
+        ? 'Couleur : niveau de priorité (critique, sérieux, à surveiller).'
+        : 'Couleur et taille : nombre de signalements par établissement.',
+    }));
+    construireRapport(visuels);
+  } catch (err) {
+    console.error(err);
+    alert('La production du rapport a échoué : ' + err.message);
+  } finally { btn.disabled = false; btn.textContent = libelle; }
 }
 
 /* ------------------- Fiche d'un établissement, à envoyer ------------------- */
@@ -3256,8 +3672,7 @@ function ficheTexte(etab, incidents) {
 }
 
 function fichePdf(etab, incidents) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = pdfDoc({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const l = ficheLignes(etab, incidents);
 
   doc.setFontSize(15); doc.setTextColor(20);
@@ -3477,73 +3892,6 @@ function exportCsv() {
   }
   download(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
            `visu-incidents_${new Date().toISOString().slice(0, 10)}.csv`);
-}
-
-function exportPdf() {
-  if (!current.incidents.length) { alert('Aucun signalement à exporter avec les filtres actuels.'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  doc.setFontSize(16); doc.setTextColor(20);
-  doc.text('Visu-Incidents — rapport de signalements', 14, 16);
-
-  doc.setFontSize(9); doc.setTextColor(110);
-  doc.text(`Édité le ${new Date().toLocaleString('fr-FR')}`, 14, 22);
-  doc.text(doc.splitTextToSize(`Filtres appliqués : ${filterSummary()}`, 265), 14, 27);
-
-  const openCount = current.incidents.filter((i) => i.open).length;
-  const delays = current.incidents.filter((i) => i.delay != null).map((i) => i.delay);
-  const med = median(delays);
-  const places = current.places.filter((p) => p.count > 0);
-
-  doc.autoTable({
-    startY: 36,
-    head: [['Signalements', 'Établissements', 'Non clos', 'Délai médian de réponse']],
-    body: [[fmtInt(current.incidents.length), fmtInt(places.length),
-            `${fmtInt(openCount)} (${Math.round((openCount / current.incidents.length) * 100)} %)`,
-            med == null ? '—' : `${fmtInt(med)} jours`]],
-    theme: 'plain',
-    headStyles: { fontStyle: 'bold', textColor: 110, fontSize: 8 },
-    bodyStyles: { fontSize: 13, fontStyle: 'bold', textColor: 20 },
-    margin: { left: 14, right: 14 },
-  });
-
-  const top = places.slice(0, 10).map((p, i) => [i + 1, p.etab.name, p.etab.commune, fmtInt(p.count)]);
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 6,
-    head: [['#', 'Établissements les plus concernés', 'Commune', 'Signalements']],
-    body: top,
-    theme: 'striped', styles: { fontSize: 8, cellPadding: 1.6 },
-    headStyles: { fillColor: [42, 120, 214], fontSize: 8 },
-    columnStyles: { 0: { cellWidth: 10 }, 3: { cellWidth: 26, halign: 'right' } },
-    margin: { left: 14, right: 14 },
-  });
-
-  doc.addPage();
-  doc.setFontSize(12); doc.setTextColor(20);
-  doc.text('Détail des signalements', 14, 15);
-  doc.autoTable({
-    startY: 20,
-    head: [['Date', 'Établissement', 'Commune', 'Dépt', 'Risque', 'État', 'Signalé par']],
-    body: current.incidents.map((i) => [
-      DATE_FMT.format(i.date), i.etab.name, i.etab.commune, i.etab.dept,
-      i.risk, i.state, declarant(i.reporter),
-    ]),
-    theme: 'grid', styles: { fontSize: 7, cellPadding: 1.4, overflow: 'linebreak' },
-    headStyles: { fillColor: [42, 120, 214], fontSize: 7.5 },
-    columnStyles: {
-      0: { cellWidth: 18 }, 1: { cellWidth: 55 }, 2: { cellWidth: 30 },
-      3: { cellWidth: 26 }, 4: { cellWidth: 72 }, 5: { cellWidth: 22 }, 6: { cellWidth: 'auto' },
-    },
-    margin: { left: 14, right: 14 },
-    didDrawPage: () => {
-      const p = doc.internal.getNumberOfPages();
-      doc.setFontSize(7); doc.setTextColor(140);
-      doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber} / ${p}`, 275, 200, { align: 'right' });
-    },
-  });
-
-  doc.save(`visu-incidents_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 function download(blob, filename) {
@@ -3940,6 +4288,7 @@ function wireEvents() {
   /* --- Exports --- */
   $('#btnCsv').addEventListener('click', exportCsv);
   $('#btnPdf').addEventListener('click', exportPdf);
+  $('#btnPng').addEventListener('click', exportCartePng);
 
   /* --- Onglets, tiroirs, thème --- */
   $('#tabSynth').addEventListener('click', () => selectTab('synth'));
