@@ -159,13 +159,24 @@ en retard.
 signalements. La fiche respecte les filtres actifs et indique combien de
 signalements sont masqués.
 
-**Qualité des données** — l'outil signale et laisse exporter les signalements
-dont l'UAI est absent de l'annuaire, ceux sans date exploitable, et les
-établissements sans coordonnées. Ils ne disparaissent plus silencieusement.
+**Structures hors annuaire** — CIO, services départementaux, circonscriptions
+IEN, établissements privés, centres spécialisés : l'annuaire de l'éducation ne
+les recense pas, mais le registre, lui, porte leurs signalements.
 
-L'annuaire ne recense que des écoles, collèges et lycées : les signalements
-portés par un CIO, un service ou une circonscription apparaîtront donc dans
-cette liste, faute de coordonnées où les placer.
+Ils sont **comptés partout** — indicateurs, calendrier, familles de risques,
+états, priorités, listes et exports — à partir du nom et de la commune que
+donne le registre. Faute de coordonnées, ils ne figurent pas sur la carte, qui
+le dit en toutes lettres, et ils portent le type « Non référencé à l'annuaire »
+pour qu'on puisse les isoler ou les écarter d'un clic.
+
+Le dénominateur « sur N référencés » reste celui de l'annuaire seul : ces
+structures ne s'y ajoutent pas, sans quoi les taux par territoire seraient
+faussés.
+
+**Qualité des données** — l'outil signale et laisse exporter les signalements
+venus de structures hors annuaire, ceux sans date exploitable, et les
+établissements de l'annuaire dépourvus de coordonnées. Rien ne disparaît
+silencieusement.
 
 **Fiche à envoyer** — depuis la fiche d'un établissement, un PDF d'une page ou
 un texte à coller dans un courriel, ne contenant **que** les signalements de cet
@@ -189,6 +200,12 @@ premier chargement, faute de point de comparaison.
 **Masquage des noms** — un interrupteur remplace partout le nom du déclarant par
 une mention neutre, exports compris. Un registre est nominatif par nature ; une
 statistique portée devant une instance n'a pas à l'être.
+
+**Tous les établissements concernés** — le rapport se termine par une annexe
+exhaustive : chaque établissement touché, du plus signalé au moins signalé,
+avec sa commune, son département, son nombre de signalements et combien ne sont
+pas clos. Les priorités n'en retiennent que quatorze ; l'annexe les recense
+tous, y compris ceux qui n'ont qu'un seul signalement.
 
 **Rapport PDF** — un document qui suit exactement les filtres en cours :
 chiffres clés, **carte telle qu'elle est à l'écran**, évolution mensuelle,

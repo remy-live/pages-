@@ -687,6 +687,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
     <div id="map"></div>
 
     <div class="map-overlay bl">
+      <div class="floatcard" id="nonSitues" hidden style="font-size:11.5px;max-width:250px;color:var(--ink-2)"></div>
       <div class="floatcard" id="tileWarn" hidden style="font-size:11.5px;max-width:230px;color:var(--ink-2)">
         Fond de carte indisponible (réseau filtré). Les points et la synthèse restent utilisables.
       </div>
@@ -928,6 +929,9 @@ function parseNum(value) {
 /** « GRANDVILLIERS (0602086S) » → « GRANDVILLIERS ». Le code n'apporte rien à l'écran. */
 const nettoyerCirco = (v) => String(v || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
 
+/** Nature donnée aux structures que le registre cite sans que l'annuaire les connaisse. */
+const HORS_ANNUAIRE = "Non référencé à l'annuaire";
+
 /* Un registre scolaire se lit par année scolaire : la découper en années
    civiles coupe chaque rentrée en deux. */
 const anneeScolaire = (d) => (d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1);
@@ -1025,7 +1029,7 @@ async function buildAnnuaireModule() {
   const payload = await gzipBase64(serializeAnnuaire());
   const meta = {
     name: state.meta.etabs.builtin ? (window.VI_ANNUAIRE.name || 'annuaire') : state.meta.etabs.name,
-    count: state.etabs.size,
+    count: state.nAnnuaire || state.etabs.size,
     built: new Date().toISOString().slice(0, 10),
   };
   return {
@@ -1365,6 +1369,14 @@ async function buildModel() {
     });
   }
 
+  // L'annuaire sert de référence : on fige sa taille avant d'y ajouter les
+  // structures connues du seul registre.
+  state.nAnnuaire = state.etabs.size;
+  state.deptParCommune = new Map();
+  for (const e of state.etabs.values()) {
+    if (e.commune && e.dept) state.deptParCommune.set(norm(e.commune), e.dept);
+  }
+
   const readI = makeReader(incRows);
   for (const row of incRows) {
     const uai = readI(row, 'UAI', "Numéro d'UAI").toUpperCase();
@@ -1399,8 +1411,28 @@ async function buildModel() {
       month: monthKey(date),
     };
 
-    const etab = state.etabs.get(uai);
-    if (!etab) { state.orphans.push(inc); continue; }
+    let etab = state.etabs.get(uai);
+    if (!etab) {
+      // CIO, services, circonscriptions, établissements privés : absents de
+      // l'annuaire, mais bien présents au registre. Les écarter revenait à
+      // perdre leurs signalements ; on les compte, faute de pouvoir les situer.
+      const commune = nettoyerCirco(readI(row, 'Commune'));
+      etab = {
+        uai,
+        name: inc.etabLabel || uai,
+        commune,
+        dept: state.deptParCommune.get(norm(commune))
+              || readI(row, 'Département', 'Departement') || 'Non précisé',
+        nature: HORS_ANNUAIRE,
+        secteur: '', voie: '', cp: '', localite: '',
+        lat: NaN, lon: NaN, horsAnnuaire: true,
+        incidents: [],
+      };
+      state.etabs.set(uai, etab);
+    }
+    // Tous les signalements de ces structures, pas seulement le premier :
+    // c'est cette liste qui part à l'export.
+    if (etab.horsAnnuaire) state.orphans.push(inc);
     inc.etab = etab;
     inc.dept = etab.dept;
     inc.nature = etab.nature;
@@ -1422,6 +1454,7 @@ async function buildModel() {
   // dénominateur sans lequel la carte ne montre que la densité d'écoles.
   state.refTerritoire = { commune: new Map(), dept: new Map() };
   for (const e of state.etabs.values()) {
+    if (e.horsAnnuaire) continue;          // elles ne sont pas au dénominateur
     for (const cle of ['commune', 'dept']) {
       const v = e[cle];
       if (v) state.refTerritoire[cle].set(v, (state.refTerritoire[cle].get(v) || 0) + 1);
@@ -1696,7 +1729,9 @@ function renderMap() {
   const target = urgence ? pointLayer : (state.view === 'cluster' ? clusterLayer : pointLayer);
   const maxCount = scale.max || 1;
 
+  let nonSitues = 0;
   for (const p of places) {
+    if (!Number.isFinite(p.etab.lat) || !Number.isFinite(p.etab.lon)) { nonSitues++; continue; }
     const niveau = urgence ? (niveaux.get(p.etab.uai) || 'ok') : null;
     const color = urgence ? token(NIVEAUX[niveau].couleur) : scale.colorOf(p.count);
     // Points : la surface du disque suit le nombre (racine carrée = perception juste).
@@ -1740,6 +1775,12 @@ function renderMap() {
 
   map.addLayer(target);
   renderLegend(scale, false);
+  $('#nonSitues').hidden = !nonSitues;
+  if (nonSitues) {
+    $('#nonSitues').textContent = `${fmtInt(nonSitues)} structure${nonSitues > 1 ? 's' : ''} `
+      + `sans coordonnées (hors annuaire) : comptée${nonSitues > 1 ? 's' : ''} partout, `
+      + `mais absente${nonSitues > 1 ? 's' : ''} de la carte.`;
+  }
 }
 
 function renderLegend(scale, isHeat) {
@@ -1774,7 +1815,9 @@ function renderLegend(scale, isHeat) {
 }
 
 function fitToResults() {
-  const pts = current.places.map((p) => [p.etab.lat, p.etab.lon]);
+  const pts = current.places
+    .filter((p) => Number.isFinite(p.etab.lat) && Number.isFinite(p.etab.lon))
+    .map((p) => [p.etab.lat, p.etab.lon]);
   if (!pts.length) return;
   map.fitBounds(L.latLngBounds(pts).pad(0.12), { maxZoom: 13 });
 }
@@ -1802,6 +1845,7 @@ function agregerParMaille(places, maille) {
   const def = MAILLES[maille];
   const groupes = new Map();
   for (const p of places) {
+    if (!Number.isFinite(p.etab.lat)) continue;   // pas de barycentre possible
     const cle = def.cle(p.etab) || '—';
     let g = groupes.get(cle);
     if (!g) {
@@ -1911,7 +1955,7 @@ function renderSynthesis() {
     : `sur ${fmtInt(state.incidents.length)}`;
 
   $('#kEtabs').textContent = fmtInt(places.length);
-  $('#kEtabsH').textContent = `sur ${fmtInt(state.etabs.size)} référencés`;
+  $('#kEtabsH').textContent = `sur ${fmtInt(state.nAnnuaire)} référencés`;
 
   $('#kOpen').textContent = fmtInt(openCount);
   $('#kOpenH').textContent = `${pctOpen} % des signalements`;
@@ -2729,7 +2773,7 @@ function construireRapport(visuels) {
   pdfTuile(doc, A4.marge, y, lg, 24, fmtInt(inc.length), 'Signalements',
            inc.length === state.incidents.length ? 'jeu complet' : `sur ${fmtInt(state.incidents.length)}`);
   pdfTuile(doc, A4.marge + (lg + 4), y, lg, 24, fmtInt(places.length), 'Établissements',
-           `sur ${fmtInt(state.etabs.size)} référencés`);
+           `sur ${fmtInt(state.nAnnuaire)} référencés`);
   pdfTuile(doc, A4.marge + 2 * (lg + 4), y, lg, 24, fmtInt(ouverts), 'Non clos',
            `${Math.round((ouverts / inc.length) * 100)} % des signalements`, PDF_C.serieux);
   pdfTuile(doc, A4.marge + 3 * (lg + 4), y, lg, 24, med == null ? '—' : `${fmtInt(med)} j`,
@@ -2826,6 +2870,33 @@ function construireRapport(visuels) {
     doc.text(doc.splitTextToSize(
       "Aucun signalement ne vaut pas absence de risque : un établissement absent de ce "
       + "classement peut être un établissement où l'on n'écrit pas.", UTILE), A4.marge, Math.min(y + 4, 282));
+  }
+
+  /* ---------- Tous les établissements concernés ---------- */
+  /* Les priorités ne retiennent que les quatorze premiers ; cette annexe les
+     recense tous, y compris ceux qui n'ont qu'un seul signalement. */
+  if (veut('etablissements') && places.length) {
+    doc.addPage();
+    let ye = 22;
+    ye = pdfTitre(doc, ye, 'Tous les établissements concernés',
+      `${fmtInt(places.length)} établissements, du plus signalé au moins signalé.`);
+    doc.autoTable({
+      startY: ye,
+      head: [['Établissement', 'Commune', 'Dépt', 'Signalements', 'Non clos']],
+      body: places.map((p) => [
+        p.etab.name, p.etab.commune, p.etab.dept,
+        fmtInt(p.count), fmtInt(p.incidents.filter((i) => i.open).length),
+      ]),
+      theme: 'striped',
+      styles: { fontSize: 7.5, cellPadding: 1.4, overflow: 'linebreak', textColor: PDF_C.encre },
+      headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [248, 247, 244] },
+      columnStyles: {
+        0: { cellWidth: 74 }, 1: { cellWidth: 38 }, 2: { cellWidth: 26 },
+        3: { cellWidth: 22, halign: 'right' }, 4: { cellWidth: 18, halign: 'right' },
+      },
+      margin: { left: A4.marge, right: A4.marge, bottom: 16 },
+    });
   }
 
   /* ---------- Détail, en paysage et sur demande ---------- */
@@ -2960,7 +3031,7 @@ function faitsArticle() {
 /** Le chapeau, en toutes lettres : les chiffres, rien qu'eux. */
 function chapeauArticle(f) {
   return `${fmtInt(f.inc.length)} signalements ont été portés aux registres sur cette période, `
-    + `dans ${fmtInt(f.places.length)} établissements sur les ${fmtInt(state.etabs.size)} `
+    + `dans ${fmtInt(f.places.length)} établissements sur les ${fmtInt(state.nAnnuaire)} `
     + `que compte l'annuaire. `
     + (f.ouverts
         ? `À ce jour, ${fmtInt(f.ouverts)} ne sont pas clos, soit ${f.pctOuverts} % d'entre eux. `
@@ -3027,7 +3098,7 @@ function corpsArticle(visuels) {
 </p>
 
 <p><b>${esc(fmtInt(inc.length))} signalements</b> ont été portés aux registres sur cette période,
-dans <b>${esc(fmtInt(places.length))} établissements</b> sur les ${esc(fmtInt(state.etabs.size))} que compte l'annuaire.
+dans <b>${esc(fmtInt(places.length))} établissements</b> sur les ${esc(fmtInt(state.nAnnuaire))} que compte l'annuaire.
 ${ouverts ? `À ce jour, <b>${esc(fmtInt(ouverts))}</b> ne sont pas clos, soit ${Math.round((ouverts / inc.length) * 100)} % d'entre eux.` : 'Tous sont clos.'}
 ${med != null ? ` Le délai médian entre un signalement et la dernière réponse portée au registre est de <b>${esc(fmtInt(med))} jours</b>.` : ''}</p>
 
@@ -3694,7 +3765,12 @@ function filterSummary() {
   for (const { key, label } of FACET_DEFS) {
     const sel = state.filters.selected[key];
     const all = state.facets[key] ? state.facets[key].values.size : 0;
-    if (sel && all && sel.size < all) parts.push(`${label.toLowerCase()} : ${sel.size} sur ${all}`);
+    if (!sel || !all || sel.size >= all) continue;
+    // « 1 sur 16 » ne dit pas laquelle : tant qu'elles tiennent, on les nomme.
+    const nommees = [...sel];
+    parts.push(nommees.length <= 3
+      ? `${label.toLowerCase()} : ${nommees.join(', ')}`
+      : `${label.toLowerCase()} : ${fmtInt(sel.size)} sur ${fmtInt(all)}`);
   }
   return parts.length ? parts.join(' · ') : 'aucun filtre';
 }
@@ -3901,7 +3977,7 @@ async function reload() {
   }
   const builtin = state.meta.etabs.builtin;
   setFileState('etabs',
-    `${builtin ? 'Annuaire intégré' : state.meta.etabs.name} — ${fmtInt(state.etabs.size)} établissements`, 'ok');
+    `${builtin ? 'Annuaire intégré' : state.meta.etabs.name} — ${fmtInt(state.nAnnuaire)} établissements`, 'ok');
   setFileState('incidents', `${state.meta.incidents.name || 'Signalements'} — ${fmtInt(state.incidents.length)} rattachés`, 'ok');
   $('#etabsBadge').textContent = builtin ? 'intégré' : 'remplacé';
   $('#btnRestoreAnnuaire').hidden = builtin || !hasBuiltinAnnuaire();
@@ -3956,8 +4032,12 @@ function renderNotices(error) {
       Déposez l'export du registre pour afficher la carte.</div>`);
   }
   if (state.orphans.length) {
+    const structures = new Set(state.orphans.map((i) => i.uai)).size;
     bits.push(`<div class="notice warn"><b>${fmtInt(state.orphans.length)} signalement${state.orphans.length > 1 ? 's' : ''}</b>
-      sans établissement correspondant dans l'annuaire — non affiché${state.orphans.length > 1 ? 's' : ''} sur la carte.
+      provenant de ${fmtInt(structures)} structure${structures > 1 ? 's' : ''} absente${structures > 1 ? 's' : ''}
+      de l'annuaire — CIO, services, circonscriptions, établissements privés.
+      Ils sont comptés partout et figurent dans les listes, mais n'ont pas de
+      coordonnées : la carte ne peut pas les situer.
       <button id="btnOrphans">Exporter la liste</button></div>`);
   }
   if (state.undated) {
