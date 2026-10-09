@@ -524,6 +524,8 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <input type="file" id="fileIncidents" accept=".csv,text/csv">
         </label>
         <div class="file-state"><span class="dot" id="dotIncidents"></span><span id="lblIncidents">Aucun fichier</span></div>
+        <button class="btn sm wide" id="btnViderRegistre" style="margin-top:4px" hidden>
+          Retirer le registre</button>
 
         <details class="facet" id="etabsBlock" style="margin-top:10px">
           <summary>Annuaire des établissements<span class="badge" id="etabsBadge">—</span></summary>
@@ -942,6 +944,10 @@ const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
                      'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const moisDuRang = (r, scolaire) => MOIS_COURTS[scolaire ? (r + 8) % 12 : r];
 
+/* Bornes de vraisemblance : au-delà, c'est une erreur de saisie, pas une date. */
+const DATE_MIN = new Date(2000, 0, 1);
+const DATE_MAX = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d; })();
+
 const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 const monthDate = (key) => { const [y, m] = key.split('-'); return new Date(+y, +m - 1, 1); };
 
@@ -1341,6 +1347,7 @@ async function buildModel() {
   state.incidents = [];
   state.orphans = [];
   state.undated = 0;
+  state.aberrantes = 0;
 
   const readE = makeReader(etabRows);
   let missingCoords = 0;
@@ -1384,6 +1391,9 @@ async function buildModel() {
     const entered = parseDate(readI(row, 'Saisie', 'Date de saisie'));
     const date = observed || entered;
     if (!date) { state.undated++; continue; }
+    // Une coquille de saisie — « 1/7/207 » pour 2007 — devenait la borne basse
+    // de la période et ajoutait une ligne au calendrier. On l'écarte en le disant.
+    if (date < DATE_MIN || date > DATE_MAX) { state.aberrantes++; continue; }
 
     const risk = splitRisk(readI(row, 'Risque', 'Type de risque'));
     const st = classifyState(readI(row, 'Etat', 'État'), readI(row, 'Clôturé', 'Cloture', 'Clos'));
@@ -3112,11 +3122,7 @@ ${visuels.carte && veut('carte') ? `<p style="margin:.6em 0"><img src="${visuels
 
 ${terr.length && veut('territoires') ? `<p>Par ${esc(def.label.toLowerCase())} :</p>` + tbl(
   `<tr>${th(def.label)}${th(state.taux ? 'Par établissement' : 'Signalements', 'right')}${th('Établissements', 'right')}</tr>` +
-  terr.map((g) => `<tr>${td(esc(g.nom))}${td(esc(libelleValeur(g)), 'right')}${td(esc(fmtInt(g.etabs.size)) + (g.denom ? ' / ' + esc(fmtInt(g.denom)) : ''), 'right')}</tr>`).join(''))
-: !veut('etablissements') ? '' : tbl(`<tr>${th('Établissement')}${th('Commune')}${th('Signalements', 'right')}</tr>` +
-  topEtabs.map((p) => `<tr>${td(esc(p.etab.name))}${td(esc(p.etab.commune))}${td(esc(fmtInt(p.count)), 'right')}</tr>`).join(''))}
-${state.tousEtabs ? `<p style="color:${ART_C.muet};font-size:9pt;margin-top:-.4em">
-  Les ${esc(fmtInt(places.length))} établissements concernés, du plus signalé au moins signalé.</p>` : ''}
+  terr.map((g) => `<tr>${td(esc(g.nom))}${td(esc(libelleValeur(g)), 'right')}${td(esc(fmtInt(g.etabs.size)) + (g.denom ? ' / ' + esc(fmtInt(g.denom)) : ''), 'right')}</tr>`).join('')) : ''}
 
 ${aCompleter('le contexte de ces territoires')}
 
@@ -3140,6 +3146,14 @@ ${tbl(`<tr>${th('État')}${th('Signalements', 'right')}${th('Part', 'right')}</t
     `<tr>${td(esc(e))}${td(esc(fmtInt(n)), 'right')}${td(Math.round((n / inc.length) * 100) + ' %', 'right')}</tr>`).join(''))}
 
 ${aCompleter('ce que ces délais appellent comme suite')}` : ''}
+
+${veut('etablissements') && places.length ? `
+<h2 style="font-size:14pt;margin:1.6em 0 .3em">Tous les établissements concernés</h2>
+<p style="color:${ART_C.muet};font-size:9.5pt;margin:0 0 .4em">
+  ${esc(fmtInt(places.length))} établissements, du plus signalé au moins signalé.</p>
+${tbl(`<tr>${th('Établissement')}${th('Commune')}${th('Dépt')}${th('Signalements', 'right')}${th('Non clos', 'right')}</tr>` +
+  places.map((p) => `<tr>${td(esc(p.etab.name))}${td(esc(p.etab.commune))}${td(esc(p.etab.dept))}` +
+    `${td(esc(fmtInt(p.count)), 'right')}${td(esc(fmtInt(p.incidents.filter((i) => i.open).length)), 'right')}</tr>`).join(''))}` : ''}
 
 <hr style="border:0;border-top:1px solid ${ART_C.trait};margin:2em 0 1em">
 <p style="color:${ART_C.muet};font-size:9pt">
@@ -3235,10 +3249,6 @@ function articlePdf(visuels) {
       f.terr.map((g) => [g.nom, libelleValeur(g),
         fmtInt(g.etabs.size) + (g.denom ? ' / ' + fmtInt(g.denom) : '')]),
       { 1: { halign: 'right', cellWidth: 36 }, 2: { halign: 'right', cellWidth: 32 } });
-  } else if (veut('etablissements')) {
-    tableau(['Établissement', 'Commune', 'Signalements'],
-      f.etabsListe.map((p) => [p.etab.name, p.etab.commune, fmtInt(p.count)]),
-      { 2: { halign: 'right', cellWidth: 30 } });
   }
   aCompleter(A_COMPLETER.territoires);
 
@@ -3272,6 +3282,31 @@ function articlePdf(visuels) {
       f.etats.map(([nom, n]) => [nom, fmtInt(n), Math.round((n / f.inc.length) * 100) + ' %']),
       { 1: { halign: 'right', cellWidth: 30 }, 2: { halign: 'right', cellWidth: 20 } });
     aCompleter(A_COMPLETER.traitement);
+  }
+
+  // L'annexe : tous les établissements, pas un extrait.
+  if (veut('etablissements') && f.places.length) {
+    doc.addPage(); y = 24;
+    sousTitre('Tous les établissements concernés');
+    para(`${fmtInt(f.places.length)} établissements, du plus signalé au moins signalé.`, 9, PDF_C.muet);
+    doc.autoTable({
+      startY: y,
+      head: [['Établissement', 'Commune', 'Dépt', 'Signalements', 'Non clos']],
+      body: f.places.map((p) => [
+        p.etab.name, p.etab.commune, p.etab.dept,
+        fmtInt(p.count), fmtInt(p.incidents.filter((i) => i.open).length),
+      ]),
+      theme: 'striped',
+      styles: { fontSize: 7.5, cellPadding: 1.4, overflow: 'linebreak', textColor: PDF_C.encre },
+      headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [248, 247, 244] },
+      columnStyles: {
+        0: { cellWidth: 74 }, 1: { cellWidth: 38 }, 2: { cellWidth: 26 },
+        3: { cellWidth: 22, halign: 'right' }, 4: { cellWidth: 18, halign: 'right' },
+      },
+      margin: { left: A4.marge, right: A4.marge, bottom: 16 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
   }
 
   place(26);
@@ -3979,6 +4014,7 @@ async function reload() {
   setFileState('etabs',
     `${builtin ? 'Annuaire intégré' : state.meta.etabs.name} — ${fmtInt(state.nAnnuaire)} établissements`, 'ok');
   setFileState('incidents', `${state.meta.incidents.name || 'Signalements'} — ${fmtInt(state.incidents.length)} rattachés`, 'ok');
+  $('#btnViderRegistre').hidden = false;
   $('#etabsBadge').textContent = builtin ? 'intégré' : 'remplacé';
   $('#btnRestoreAnnuaire').hidden = builtin || !hasBuiltinAnnuaire();
   syncBuildButtons();
@@ -4042,6 +4078,12 @@ function renderNotices(error) {
   }
   if (state.undated) {
     bits.push(`<div class="notice warn">${fmtInt(state.undated)} signalement${state.undated > 1 ? 's' : ''} sans date exploitable, ignoré${state.undated > 1 ? 's' : ''}.</div>`);
+  }
+  if (state.aberrantes) {
+    bits.push(`<div class="notice warn">${fmtInt(state.aberrantes)} signalement${state.aberrantes > 1 ? 's' : ''}
+      à date invraisemblable — hors ${DATE_MIN.getFullYear()}-${DATE_MAX.getFullYear()} —
+      ignoré${state.aberrantes > 1 ? 's' : ''}. Une coquille de saisie, du genre « 207 » pour « 2007 »,
+      fausserait la période et le calendrier.</div>`);
   }
   if (state.meta.etabs && state.meta.etabs.missingCoords) {
     bits.push(`<div class="notice">${fmtInt(state.meta.etabs.missingCoords)} établissement${state.meta.etabs.missingCoords > 1 ? 's' : ''} de l'annuaire sans coordonnées géographiques.</div>`);
@@ -4113,8 +4155,18 @@ function wireEvents() {
     });
   }
 
+  $('#btnViderRegistre').addEventListener('click', async () => {
+    if (!confirm("Retirer l'export du registre ?\n\n"
+      + "L'annuaire des établissements, vos marques de relance, vos notes et vos "
+      + "réglages sont conservés. Vous pourrez déposer un autre export aussitôt.")) return;
+    await Store.del('incidents');
+    location.reload();
+  });
+
   $('#btnForget').addEventListener('click', async () => {
-    if (!confirm('Retirer les fichiers enregistrés dans ce navigateur ?')) return;
+    if (!confirm("Retirer l'annuaire déposé et l'export du registre ?\n\n"
+      + "L'annuaire intégré à la page reprendra sa place. Vos marques de relance "
+      + "et vos notes sont conservées.")) return;
     await Store.del('etabs'); await Store.del('incidents');
     location.reload();
   });
