@@ -103,6 +103,26 @@ body[data-vue=accueil] main{display:none}
 .grandchoix .t{font-size:19px;font-weight:700;color:var(--encre)}
 .grandchoix .q{font-size:14px;color:var(--gris);line-height:1.45}
 #accueil .aide{margin:18px 0 0;font-size:13px;color:var(--gris)}
+#accueil .aide a{color:var(--encre2)}
+/* Revue des dessins : la planche contact pour dire ce qui est à refaire */
+#revue{display:none;max-width:1400px;margin:0 auto;padding:16px}
+body[data-vue=revue] #revue{display:block}
+body[data-vue=revue] main,body[data-vue=revue] #accueil{display:none}
+body[data-vue=revue] .bascule{display:none}
+.revue-haut{background:#fff;border-radius:14px;padding:14px 16px;display:flex;gap:20px;
+  align-items:center;flex-wrap:wrap;box-shadow:0 1px 3px rgba(31,58,138,.12)}
+.revue-haut h2{margin:0;font-size:19px;color:var(--encre)}
+.revue-haut .aide{margin:2px 0 0;font-size:13px;color:var(--gris)}
+.revue-haut .reglage{min-width:180px}
+.revue-barre{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 8px}
+.revue-barre b{color:var(--encre);margin-right:auto}
+#revueListe{width:100%;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px;
+  border:1px solid var(--bord);border-radius:9px;background:#fff;margin-bottom:12px;resize:vertical}
+#revueGrille .carte{cursor:pointer;user-select:none}
+#revueGrille .carte.coche{border-color:var(--rouge);background:#fff2f0;box-shadow:0 0 0 3px #f6c9c2}
+#revueGrille .carte .coin{position:absolute;top:4px;right:6px;font-size:18px;line-height:1;color:var(--rouge);display:none}
+#revueGrille .carte.coche .coin{display:block}
+#revueGrille .meta{font-size:11px}
 .bascule{margin-left:auto;display:flex;gap:8px}
 body[data-vue=accueil] .bascule{display:none}
 .bascule button{padding:7px 13px;border-radius:99px;font-size:13px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)}
@@ -206,8 +226,30 @@ body[data-partage] .bandeau{display:flex}
           et l'atelier pour créer les siens à partir d'une image.</span>
       </button>
     </div>
-    <p class="aide">On passe de l'une à l'autre quand on veut, avec le bouton <b>Mode</b> en haut de la page.</p>
+    <p class="aide">On passe de l'une à l'autre quand on veut, avec le bouton <b>Mode</b> en haut de la page.
+      — <a href="#revue" id="lienRevue">revue des dessins</a></p>
   </div>
+</section>
+
+<section id="revue">
+  <div class="revue-haut">
+    <div>
+      <h2>Revue des dessins</h2>
+      <p class="aide">Coche ce qui est à refaire, puis copie la liste. Rien n'est envoyé : tout reste dans ce navigateur.</p>
+    </div>
+    <label class="reglage"><span>Points <b id="revueVN">28</b></span>
+      <input type="range" id="revueN" min="8" max="80" step="1" value="28"></label>
+    <label class="coche"><input type="checkbox" id="revueDecor" checked> Montrer le décor</label>
+    <label class="coche"><input type="checkbox" id="revueSeules"> Ne montrer que les cochées</label>
+  </div>
+  <div class="revue-barre">
+    <b id="revueCompte"></b>
+    <button id="revueCopier">Copier la liste</button>
+    <button id="revueVider">Tout décocher</button>
+    <button class="encre" id="revueQuitter">Quitter la revue</button>
+  </div>
+  <textarea id="revueListe" readonly rows="3" aria-label="liste des dessins à refaire"></textarea>
+  <div class="grille" id="revueGrille"></div>
 </section>
 
 <main>
@@ -1124,10 +1166,10 @@ function indice(){
    ============================================================ */
 let filtre='animaux',recherche='';
 const sansAccent=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-function vignette(d){
-  const p=echantillonner(contour(d),Math.min(28,maxPoints(d)));
+function vignette(d,n,avecDecor){
+  const p=echantillonner(contour(d),Math.min(n||28,maxPoints(d)));
   const poly=p.map(q=>q.join(',')).join(' ');
-  const dec=(decorDe(d)||[]).map(m=>`<polygon points="${m.map(q=>q.join(',')).join(' ')}" fill="#3a4461"/>`).join('');
+  const dec=avecDecor===false?'':(decorDe(d)||[]).map(m=>`<polygon points="${m.map(q=>q.join(',')).join(' ')}" fill="#3a4461"/>`).join('');
   return `<svg viewBox="-4 -4 108 108" aria-hidden="true"><polygon points="${poly}" fill="#1f3a8a" opacity=".12"/>`
     +`<polygon points="${poly}" fill="none" stroke="#1f3a8a" stroke-width="1.6" stroke-linejoin="round"/>`+dec
     +p.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2" fill="#24262c"/>`).join('')+'</svg>';
@@ -1218,6 +1260,7 @@ let pasCourant=1;
 
 function vue(v){
   document.body.dataset.vue=v;
+  if(v==='revue'){construireRevue();window.scrollTo({top:0});return}
   if(v!=='accueil'){try{localStorage.setItem(CLE_VUE,v)}catch(e){}}
   $('btnBascule').textContent=v==='guide'?'Interface complète':'Pas à pas';
   if(v==='guide')allerA(pasCourant);else delete document.body.dataset.pas;
@@ -1252,6 +1295,50 @@ function majGuide(){
   $('pointsG').innerHTML=[12,20,30,60,100,200].filter(v=>v<=max).map(v=>
     `<button data-n="${v}" aria-pressed="${v===n}">${v}</button>`).join('');
   if(exo)$('gTitre').textContent=`C'est prêt : ${exo.items.length} points, ${TYPES[exo.type].nom.toLowerCase()}.`;
+}
+
+/* ============================================================
+   6 ter. Revue des dessins
+   Une planche contact de toute la bibliothèque, pour cocher ce qui est à
+   refaire et en sortir la liste. Les cases restent dans ce navigateur.
+   ============================================================ */
+const CLE_REVUE='relier:arefaire';
+let aRefaire=new Set();
+function chargerRevue(){
+  try{aRefaire=new Set(JSON.parse(localStorage.getItem(CLE_REVUE)||'[]'))}catch(e){aRefaire=new Set()}
+}
+function ecrireRevue(){
+  try{localStorage.setItem(CLE_REVUE,JSON.stringify([...aRefaire]))}catch(e){}
+}
+function construireRevue(){
+  const n=+$('revueN').value,dec=$('revueDecor').checked,seules=$('revueSeules').checked;
+  $('revueVN').textContent=n;
+  const liste=DESSINS.filter(d=>d.cat!=='perso'&&(!seules||aRefaire.has(d.id)));
+  $('revueGrille').innerHTML=liste.map(d=>
+    `<div class="carte${aRefaire.has(d.id)?' coche':''}" data-id="${d.id}" role="checkbox" tabindex="0" `
+    +`aria-checked="${aRefaire.has(d.id)}"><span class="coin">✕</span>`
+    +vignette(d,n,dec)
+    +`<span class="nom">${d.nom}</span>`
+    +`<span class="meta"><span>${d.id}</span><span>dès ${detail(d)}</span></span></div>`).join('')
+    ||'<p class="vide">Rien de coché pour le moment.</p>';
+  majRevue();
+}
+function majRevue(){
+  const n=aRefaire.size;
+  $('revueCompte').textContent=n?`${n} dessin${n>1?'s':''} à refaire sur ${DESSINS.filter(d=>d.cat!=='perso').length}`
+    :`Rien de coché sur ${DESSINS.filter(d=>d.cat!=='perso').length} dessins`;
+  const choisis=DESSINS.filter(d=>aRefaire.has(d.id));
+  $('revueListe').value=n
+    ?'À refaire : '+choisis.map(d=>d.id).join(' ')+'\n\n'
+      +choisis.map(d=>`- ${d.nom} (${d.id}, famille ${CATEGORIES[d.cat]||d.cat})`).join('\n')
+    :'';
+}
+function basculerRevue(id){
+  if(aRefaire.has(id))aRefaire.delete(id);else aRefaire.add(id);
+  ecrireRevue();
+  const c=$('revueGrille').querySelector(`.carte[data-id="${id}"]`);
+  if(c){c.classList.toggle('coche',aRefaire.has(id));c.setAttribute('aria-checked',aRefaire.has(id))}
+  if($('revueSeules').checked)construireRevue();else majRevue();
 }
 
 /* ---------- Le code de fin ----------
@@ -1781,6 +1868,36 @@ $('btnLireSvg').onclick=()=>{
     atelier.trace=[];dessinAtelier();
   });
 })();
+/* Revue des dessins */
+chargerRevue();
+$('lienRevue').onclick=e=>{e.preventDefault();vue('revue')};
+$('revueGrille').onclick=e=>{const c=e.target.closest('.carte');if(c)basculerRevue(c.dataset.id)};
+$('revueGrille').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const c=e.target.closest('.carte');
+  if(c){e.preventDefault();basculerRevue(c.dataset.id)}}};
+$('revueN').oninput=construireRevue;
+$('revueDecor').onchange=construireRevue;
+$('revueSeules').onchange=construireRevue;
+$('revueVider').onclick=()=>{
+  if(aRefaire.size&&!confirm(`Décocher les ${aRefaire.size} dessins ?`))return;
+  aRefaire.clear();ecrireRevue();construireRevue();
+};
+$('revueQuitter').onclick=()=>{
+  history.replaceState(null,'',location.pathname+location.search);
+  let retenu=null;try{retenu=localStorage.getItem(CLE_VUE)}catch(e){}
+  vue(retenu==='expert'||retenu==='guide'?retenu:'accueil');
+};
+$('revueCopier').onclick=async()=>{
+  const t=$('revueListe');
+  if(!t.value){$('revueCopier').textContent='Rien à copier';
+    setTimeout(()=>{$('revueCopier').textContent='Copier la liste'},2000);return}
+  t.select();t.setSelectionRange(0,99999);
+  let ok=false;
+  try{await navigator.clipboard.writeText(t.value);ok=true}
+  catch(e){try{ok=document.execCommand('copy')}catch(_){}}
+  $('revueCopier').textContent=ok?'Copié ✓':'Sélectionne puis copie';
+  setTimeout(()=>{$('revueCopier').textContent='Copier la liste'},2500);
+};
+
 /* Accueil et mode guidé */
 $('btnAccueil').onclick=()=>vue('accueil');
 $('btnBascule').onclick=()=>vue(document.body.dataset.vue==='guide'?'expert':'guide');
@@ -1851,7 +1968,9 @@ $('fichierJson').onchange=e=>{const f=e.target.files[0];if(f)importerPerso(f);e.
 majBornesN();majDifficultes();construireGalerie();
 
 /* Un lien partagé passe avant tout : il rouvre la fiche telle quelle. */
-const venu=lireLien();
+const venu=location.hash==='#revue'?null:lireLien();
+if(location.hash==='#revue'){graine=nouvelleGraine();nouveau();vue('revue')}
+else
 if(venu){
   const jouerTout_de_suite=appliquerLien(venu);
   history.replaceState(null,'',location.pathname+location.search);
