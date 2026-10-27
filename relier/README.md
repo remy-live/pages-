@@ -93,8 +93,8 @@ Douze types, chacun sur cinq niveaux :
 
 ## Les dessins
 
-Cent une figures en treize familles : Animaux, Oiseaux, Mer, Petites bêtes,
-**Halloween**, **Noël**, **Pâques**, Monuments, Villes, Nature, Formes, Objets,
+Cent figures en douze familles : Animaux, Oiseaux, Mer, Petites bêtes,
+**Halloween**, **Noël**, **Pâques**, Monuments, Nature, Formes, Objets,
 Véhicules. Beaucoup portent une phrase à savoir, montrée quand la partie est
 gagnée et imprimée sur la page solution.
 
@@ -109,29 +109,47 @@ ses points, le hibou ses yeux, la citrouille sa grimace.
 
 Le décor n'apparaît **pas sur l'exercice vierge** : la forme reste à découvrir.
 Il se montre là où il sert — dans la galerie où l'on choisit, sur la solution, à
-la fin de la partie, et sur la feuille à colorier. Vingt-six dessins qui n'en
-avaient pas ont reçu un œil placé à la main.
+la fin de la partie, et sur la feuille à colorier. Les dessins qui n'en avaient
+pas ont reçu un œil placé à la main.
 
 ### D'où viennent les tracés
 
-La moitié d'entre elles sont **décalquées des silhouettes du puzzle de calcul**
-du même dépôt : ce sont de vrais dessins vectoriels, avec oreilles, trompe et
-queue, là où des polygones écrits à la main donnaient une suite de blobs qui se
-ressemblaient tous. Le décalque emprunte le chemin de l'atelier — on binarise
-la silhouette, on bouche les trous, on ferme les craquelures, on garde la plus
-grosse tache et on suit son bord. Une fermeture progressive soude au passage
-les morceaux détachés : la voile d'un bateau, les bois d'un renne.
+Écrire les contours à la main ne marchait pas : un quadrupède dessiné au
+jugé ressemble à n'importe quel quadrupède. Une trentaine de figures sont donc
+**décalquées de jeux d'icônes libres** — Game-icons.net (CC BY 3.0), Twemoji et
+EmojiOne (CC BY 4.0), Fluent Emoji (MIT) — qui sont de vrais dessins, faits pour
+être lus petit. Les crédits sont sur l'écran d'accueil.
+
+Le décalque emprunte le chemin de l'atelier, mais passe par l'**image** plutôt
+que par le vectoriel : une icône est souvent faite de morceaux séparés — les
+pattes d'un crabe, la voile d'un bateau —, et découper son tracé donnerait un
+contour qui n'en garde qu'un. On la rend donc en noir, on soude les morceaux par
+une fermeture progressive, on garde la plus grosse tache et on suit son bord.
+
+Ce qui reste **à l'intérieur** devient le décor : les trous de l'icône (l'œil
+d'un oiseau, les taches d'une vache, les écailles d'une carapace) et les détails
+isolés. Rien ne se perd, et rien n'alourdit le contour. Là où l'icône n'avait pas
+d'œil, il a été posé à la main.
+
+Chaque contour est ensuite **allégé autant qu'il le supporte**, figure par
+figure : c'est ce qui fixe le « dès *n* points » annoncé par la galerie. Un
+crabe garde ses dix pattes et demande 36 points ; un pingouin en demande 14.
+Sans cet allègement, les figures anguleuses réclamaient cent points et
+devenaient inchoisissables.
 
 Chaque figure est jugée **à la taille d'une vignette de galerie**, pas en grand :
 une silhouette qui se lit en 400 px peut n'être qu'une tache en 130. Celles qui
-ne passaient pas ce test ont été retirées plutôt que gardées pour le nombre.
+ne passaient pas ce test ont été retirées plutôt que gardées pour le nombre —
+ainsi des silhouettes de New York, Paris et Londres, qui ne faisaient qu'une
+rangée de rectangles ; la Tour Eiffel, Big Ben et la Statue de la Liberté, elles,
+sont restées dans Monuments.
 
 Les tracés décalqués sont rangés encodés — trois caractères par point, comme
-dans un lien de partage — ce qui tient la page sous 130 ko.
+dans un lien de partage — ce qui tient la page sous 135 ko.
 
-La **recherche** au-dessus de la galerie cherche dans les quatre-vingt-quinze
-dessins, sans se soucier des accents ni des majuscules, et par famille aussi :
-taper « oiseau » les montre tous.
+La **recherche** au-dessus de la galerie cherche dans les cent dessins, sans se
+soucier des accents ni des majuscules, et par famille aussi : taper « oiseau »
+les montre tous.
 
 ## L'atelier
 
@@ -223,7 +241,7 @@ entre deux points : il faut pouvoir la sortir loin, et un **trait de rappel**
 dit alors à quel point elle appartient. Il apparaît quand un autre point la
 revendique d'aussi près que le sien, ou quand elle s'en est éloignée de plus
 d'une hauteur de texte — pas quand elle est collée à son point, où il ne
-servirait à rien. Sur les quatre-vingt-quinze dessins à 16, 24 et 36 points,
+servirait à rien. Sur les cent dessins à 16, 24 et 36 points,
 cela fait zéro étiquette qui en recouvre une autre, et zéro étiquette ambiguë
 sans son trait.
 

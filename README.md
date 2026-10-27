@@ -17,7 +17,7 @@ la section « Outils en ligne » de la page.
   découpée en pièces se reconstitue si les calculs sont justes :
   https://remy-live.github.io/pages-/puzzle/
 - [`relier/`](relier/) — **Points à relier**, des fiches où l'ordre du tracé vient
-  des résultats des calculs : cinq niveaux de difficulté, cent une figures dont
+  des résultats des calculs : cinq niveaux de difficulté, cent figures dont
   des thèmes Halloween, Noël et Pâques, un atelier pour en créer d'autres à
   partir d'une image, et un lien pour partager une fiche :
   https://remy-live.github.io/pages-/relier/
