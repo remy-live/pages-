@@ -181,6 +181,19 @@ paysage. **SVG exercice**, **SVG solution** et **SVG à colorier** exportent le
 dessin seul, vectoriel ; le dernier ne contient que le contour, sans chiffres,
 prêt pour les crayons de couleur.
 
+## Revue des dessins
+
+L'adresse `#revue` — ou le lien sous les deux grands choix de l'accueil — ouvre
+une planche contact de toute la bibliothèque : on **coche ce qui est à refaire**
+et le bouton copie la liste, identifiants d'un côté, noms et familles de
+l'autre. Un curseur change le nombre de points de toutes les vignettes d'un
+coup, car un dessin correct à 40 points peut n'être qu'une tache à 12, et une
+case masque le décor pour juger le contour seul. Les cases restent dans le
+navigateur ; rien n'est envoyé nulle part.
+
+C'est l'outil qui manquait pour dire précisément quelles figures ne vont pas,
+au lieu de les désigner de mémoire.
+
 ## Comment ça marche
 
 Un seul fichier, `index.html` : HTML, CSS et JavaScript, aucun outil de build,
