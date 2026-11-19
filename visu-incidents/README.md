@@ -33,10 +33,15 @@ clique le favori, un panneau s'ouvre en bas à droite de la page.
 
 Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et ne
 supprime aucun signalement, et ne voit que ce que le compte voit déjà en
-cliquant. Il laisse une demi-seconde entre deux pages. Le balayage complet
-demande une vingtaine de minutes ; il s'interrompt et reprend sans relire ce
-qui l'a déjà été, et une fiche illisible garde sa ligne avec le motif en
-colonne `erreur` plutôt que de disparaître.
+cliquant. Il laisse une demi-seconde entre deux pages. Une fiche illisible
+garde sa ligne, avec le motif en colonne `erreur`, plutôt que de disparaître.
+
+**Le premier relevé est long, les suivants non.** Les fiches lues restent dans
+le navigateur. Au relevé suivant, le script parcourt les pages de liste — une
+minute — et y lit l'état et le nombre de réponses de chaque signalement. Il ne
+rouvre que les fiches dont l'un des deux a changé, plus les nouvelles : en
+général quelques dizaines au lieu de mille cinq cents. Le bouton **Tout
+oublier** efface cette mémoire.
 
 **Le fichier produit est nominatif** : texte intégral des signalements et des
 réponses, noms des agents et des chefs de service. Il se traite comme le
@@ -99,6 +104,18 @@ Quatre zones, et rien d'autre :
   change au moment où on le change ;
 - **le panneau de droite** — la lecture : synthèse, priorités, fiche d'un
   établissement.
+
+Deux boutons de la barre haute ouvrent une boîte plutôt qu'un panneau :
+
+- **Récent** compte les signalements des trente derniers jours. La boîte
+  détaille les fenêtres à trente et soixante jours, liste ce qui est arrivé,
+  et propose d'**entourer sur la carte** les établissements concernés. Si le
+  registre ne contient rien de récent, elle dit à quelle date il s'arrête
+  plutôt que d'afficher un zéro qui passerait pour une panne ;
+- **Lire les fiches une par une**, depuis l'onglet Établissement, ouvre une
+  liseuse : un signalement par page, son texte sur la largeur d'une page
+  plutôt que dans une colonne de 360 px. Flèches, pastilles ou glissement du
+  doigt pour tourner.
 
 Les exports qui portent sur l'ensemble de la vue filtrée (rapport, article,
 tableur, carte) sont dans la boîte **Exporter**. Ceux qui portent sur ce qu'on
