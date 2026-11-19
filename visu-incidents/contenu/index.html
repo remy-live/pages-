@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contenu des signalements — Visu-Incidents</title>
+<meta name="description" content="Installer le favori qui récupère le texte des signalements du registre santé et sécurité au travail.">
+<style>
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;
+  src:url("../../polices/barlow-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;
+  src:url("../../polices/barlow-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;
+  src:url("../../polices/barlow-condensed-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;
+  src:url("../../polices/barlow-condensed-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url("../../polices/ibm-plex-mono-latin-400-normal.woff2") format("woff2")}
+
+:root{
+  color-scheme: light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ed;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --hairline:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-ink:#fff;
+  --warning:#fab219; --good:#1baf7a;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(11,11,11,.06), 0 8px 24px rgba(11,11,11,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+    --ink:#fff; --ink-2:#c3c2b7; --ink-muted:#898781;
+    --hairline:rgba(255,255,255,.10);
+    --accent:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+  --ink:#fff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --hairline:rgba(255,255,255,.10);
+  --accent:#3987e5;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font:16px/1.6 "Barlow", system-ui, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+main{max-width:720px; margin:0 auto; padding:40px 20px 72px}
+h1{
+  font:700 clamp(26px,4.5vw,36px)/1.15 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.01em; margin:0 0 6px; text-transform:uppercase;
+}
+.sub{color:var(--ink-2); margin:0 0 32px; font-size:17px}
+h2{
+  font:600 20px/1.25 "Barlow Condensed", system-ui, sans-serif;
+  text-transform:uppercase; letter-spacing:.03em;
+  margin:36px 0 10px; color:var(--ink);
+}
+p{margin:0 0 14px}
+code, .mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:.9em}
+a{color:var(--accent)}
+
+.carte{
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:var(--radius); padding:22px; box-shadow:var(--shadow);
+}
+.poser{
+  display:flex; flex-wrap:wrap; align-items:center; gap:16px;
+  padding:20px; border:2px dashed var(--hairline); border-radius:var(--radius);
+  background:var(--surface-2); margin:4px 0 16px;
+}
+#favori{
+  display:inline-block; padding:11px 20px; border-radius:9px;
+  background:var(--accent); color:var(--accent-ink);
+  font-weight:600; text-decoration:none; font-size:15px;
+  cursor:grab; box-shadow:var(--shadow); white-space:nowrap;
+}
+#favori:active{cursor:grabbing}
+#favori[aria-disabled="true"]{background:var(--ink-muted); cursor:default}
+.poser .quoi{flex:1; min-width:220px; font-size:14px; color:var(--ink-2); margin:0}
+
+ol{margin:0 0 14px; padding-left:22px}
+ol li{margin-bottom:9px}
+.note{
+  font-size:14px; color:var(--ink-2);
+  border-left:3px solid var(--hairline); padding:2px 0 2px 14px; margin:14px 0;
+}
+.attention{
+  border-left-color:var(--warning);
+  background:color-mix(in srgb, var(--warning) 8%, transparent);
+  padding:12px 14px; border-radius:0 8px 8px 0;
+}
+table{border-collapse:collapse; width:100%; font-size:14.5px; margin:10px 0 16px}
+th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--hairline); vertical-align:top}
+th{font-weight:600; color:var(--ink-2); font-size:13px; text-transform:uppercase; letter-spacing:.03em}
+td.c{font-family:"IBM Plex Mono", monospace; font-size:13px; white-space:nowrap}
+
+.btn{
+  padding:8px 14px; border-radius:8px; border:1px solid var(--hairline);
+  background:var(--surface); color:var(--ink); font:inherit; font-size:14px;
+  font-weight:600; cursor:pointer;
+}
+.btn:hover{background:var(--surface-2)}
+.retour{display:inline-block; margin-bottom:22px; font-size:14px}
+footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hairline);
+  font-size:13.5px; color:var(--ink-muted)}
+</style>
+</head>
+<body>
+<main>
+
+<a class="retour" href="../">← Visu-Incidents</a>
+
+<h1>Contenu des signalements</h1>
+<p class="sub">
+  Un favori qui ouvre chaque fiche du registre et en tire un second fichier,
+  raccordable à l'extraction du portail.
+</p>
+
+<div class="carte">
+  <h2 style="margin-top:0">Installer</h2>
+  <p>
+    Faites glisser ce bouton dans votre barre de favoris. Sur un clic droit,
+    choisissez plutôt « Copier l'adresse du lien » et collez-la dans un
+    nouveau favori.
+  </p>
+  <div class="poser">
+    <a id="favori" href="#" aria-disabled="true" draggable="true">Contenu RSST</a>
+    <p class="quoi" id="etatFavori">Préparation…</p>
+  </div>
+  <ol>
+    <li>Ouvrez le registre et connectez-vous :
+      <a href="https://portail.ac-amiens.fr/registre-sante-securite/" target="_blank" rel="noopener">portail.ac-amiens.fr</a>.</li>
+    <li>Cliquez le favori. Un panneau s'ouvre en bas à droite de la page.</li>
+    <li>« Lancer ». Laissez l'onglet ouvert : le fichier s'enregistre à la fin.</li>
+  </ol>
+  <p class="note">
+    Rien n'est installé sur votre poste et rien n'est envoyé nulle part : le
+    favori contient le programme en entier, qui s'exécute dans l'onglet du
+    portail, avec votre session et vos droits.
+  </p>
+</div>
+
+<h2>Ce que ça balaie</h2>
+<p>
+  Le registre tient sur une centaine de pages de liste, et chaque signalement a
+  sa propre page. Le script relève d'abord les signalements listés — il suit les
+  liens plutôt que de numéroter à l'aveugle, pour rester dans votre périmètre —
+  puis ouvre les fiches une à une, avec une demi-seconde entre deux pages.
+</p>
+<table>
+  <tr><th>Étape</th><th>Pages</th><th>Durée</th></tr>
+  <tr><td>Relevé des signalements</td><td class="c">~100</td><td class="c">~1 min</td></tr>
+  <tr><td>Lecture des fiches</td><td class="c">~1 500</td><td class="c">~16 min</td></tr>
+</table>
+<p>
+  Vous pouvez arrêter en cours de route : « Reprendre » repart des fiches non
+  lues, et « Enregistrer » produit un fichier de ce qui est déjà là. Pour un
+  essai rapide, ouvrez la console (F12) et lancez
+  <code>rsstContenu.lancer({pages:[1,3]})</code>.
+</p>
+<p class="note">
+  Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et
+  ne supprime aucun signalement.
+</p>
+
+<h2>Le fichier produit</h2>
+<p>
+  Un CSV à point-virgule, en UTF-8, une ligne par signalement. La colonne
+  <code>numero</code> reprend le numéro d'inscription au registre : c'est par
+  elle que Visu-Incidents le raccorde à l'extraction du portail.
+</p>
+<table>
+  <tr><th>Colonne</th><th>Contenu</th></tr>
+  <tr><td class="c">numero</td><td>Numéro d'inscription — la clé de rapprochement</td></tr>
+  <tr><td class="c">risque</td><td>Risque tel qu'il est qualifié sur la fiche</td></tr>
+  <tr><td class="c">observation</td><td>Ce qui a été signalé</td></tr>
+  <tr><td class="c">suggestion</td><td>Ce qui est proposé par l'agent</td></tr>
+  <tr><td class="c">pieces_jointes</td><td>Noms des pièces jointes</td></tr>
+  <tr><td class="c">caviarde</td><td><code>oui</code> si des mentions ont été retirées</td></tr>
+  <tr><td class="c">cloture_par</td><td>Qui a clôturé, le cas échéant</td></tr>
+  <tr><td class="c">visas</td><td>Qui a visé, et quand</td></tr>
+  <tr><td class="c">reponses</td><td>Les observations en réponse, datées et signées</td></tr>
+  <tr><td class="c">erreur</td><td>Renseignée si la fiche n'a pas pu être lue</td></tr>
+</table>
+<p class="note">
+  Une fiche illisible garde sa ligne, avec le motif. Un signalement absent sans
+  le dire vaudrait moins qu'un signalement signalé absent.
+</p>
+
+<div class="note attention">
+  <strong>Ce fichier est nominatif.</strong> Il contient le texte intégral des
+  signalements et des réponses, avec les noms des agents et des chefs de
+  service. Il se traite comme le registre lui-même : sur votre poste, pas sur
+  un espace partagé, et pas en pièce jointe d'un courriel.
+</div>
+
+<h2>Si le favori ne passe pas</h2>
+<p>
+  Certaines configurations bloquent les favoris exécutables. Dans ce cas,
+  ouvrez la console du navigateur sur la page du registre (F12, onglet
+  « Console »), collez le programme et validez. Au premier collage, Firefox et
+  Chrome demandent de taper <code>allow pasting</code> : faites-le, puis
+  recollez.
+</p>
+<p>
+  <button class="btn" id="copier">Copier le programme</button>
+  <button class="btn" id="voir">Voir le fichier</button>
+</p>
+
+<footer>
+  Visu-Incidents — tout se passe dans le navigateur.
+  <a href="../">Retour à l'outil</a>
+</footer>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const lien = document.getElementById('favori');
+  const etat = document.getElementById('etatFavori');
+  let source = '';
+
+  /**
+   * Allège le programme avant d'en faire une adresse de favori : on retire
+   * l'en-tête de documentation, les commentaires et l'indentation.
+   *
+   * Un commentaire sur plusieurs lignes se suit d'une ligne à l'autre jusqu'à
+   * sa fermeture : ne retirer que sa première ligne laisserait le reste de la
+   * phrase dans le code, où il serait lu comme une instruction. Les lignes
+   * sont conservées une par une, pour qu'un commentaire en fin de ligne
+   * n'avale pas la suivante, et les espaces à l'intérieur des chaînes ne sont
+   * pas touchés : le gabarit du panneau y survit.
+   */
+  function alleger(code) {
+    const debut = code.indexOf('(function ()');
+    if (debut > 0) code = code.slice(debut);
+    const sorties = [];
+    let dansBloc = false;
+    for (const brute of code.split('\n')) {
+      const l = brute.trim();
+      if (dansBloc) {
+        if (l.endsWith('*/')) dansBloc = false;
+        continue;
+      }
+      if (l.startsWith('/*')) {
+        if (!l.endsWith('*/')) dansBloc = true;
+        continue;
+      }
+      if (l === '' || l.startsWith('//')) continue;
+      sorties.push(l);
+    }
+    return sorties.join('\n');
+  }
+
+  fetch('../rsst-contenu.js')
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then((code) => {
+      source = code;
+      const bref = alleger(code);
+      lien.href = 'javascript:' + encodeURIComponent(bref);
+      lien.removeAttribute('aria-disabled');
+      etat.innerHTML = 'Prêt — <strong>' + Math.round(bref.length / 1024) +
+        ' Ko</strong>, à glisser dans la barre de favoris.';
+    })
+    .catch((e) => {
+      etat.textContent = 'Le programme n\'a pas pu être chargé (' + e.message +
+        '). Ouvrez rsst-contenu.js et copiez-le à la main.';
+    });
+
+  document.getElementById('copier').addEventListener('click', async function () {
+    if (!source) return;
+    try {
+      await navigator.clipboard.writeText(source);
+      this.textContent = 'Copié';
+    } catch (e) {
+      this.textContent = 'Copie refusée — ouvrez le fichier';
+    }
+    setTimeout(() => { this.textContent = 'Copier le programme'; }, 2200);
+  });
+
+  document.getElementById('voir').addEventListener('click', function () {
+    window.open('../rsst-contenu.js', '_blank', 'noopener');
+  });
+})();
+</script>
+</body>
+</html>

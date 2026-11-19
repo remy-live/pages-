@@ -20,6 +20,28 @@ Un intitulé qui change légèrement d'un export à l'autre ne casse donc rien.
 
 Le fichier déposé est mémorisé : à la prochaine ouverture, il est déjà là.
 
+## Le contenu des signalements
+
+L'extraction du portail donne les métadonnées d'un signalement — date, risque,
+RNE, état, déclarant — mais pas ce qui y est écrit. Le texte n'existe que sur
+la fiche, une page par signalement, et il y en a un millier et demi.
+
+`rsst-contenu.js` les ouvre une à une et en tire un **second CSV**, raccordable
+au premier par la colonne `numero` (le numéro d'inscription au registre). Il
+s'installe en favori depuis [`contenu/`](contenu/) : on ouvre le registre, on
+clique le favori, un panneau s'ouvre en bas à droite de la page.
+
+Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et ne
+supprime aucun signalement, et ne voit que ce que le compte voit déjà en
+cliquant. Il laisse une demi-seconde entre deux pages. Le balayage complet
+demande une vingtaine de minutes ; il s'interrompt et reprend sans relire ce
+qui l'a déjà été, et une fiche illisible garde sa ligne avec le motif en
+colonne `erreur` plutôt que de disparaître.
+
+**Le fichier produit est nominatif** : texte intégral des signalements et des
+réponses, noms des agents et des chefs de service. Il se traite comme le
+registre lui-même.
+
 ## L'annuaire intégré
 
 L'annuaire ne bouge quasiment jamais, alors que l'export du registre change
@@ -36,8 +58,8 @@ navigateur : aucune bibliothèque supplémentaire, et 0,2 s au chargement.
 
 ### Depuis la page, sans rien installer
 
-Section **Annuaire des établissements**, dans le panneau de gauche : déposer le
-fichier de l'annuaire, puis
+Bouton **Données** dans la barre haute, section **Annuaire des
+établissements** : déposer le fichier de l'annuaire. Puis, sous **Avancé**,
 
 - **Créer le fichier autonome** — produit `visu-incidents-autonome.html` avec
   cet annuaire déjà dedans. C'est le fichier à déposer sur un Drive ou une clé.
@@ -62,6 +84,29 @@ c'est vérifié par les tests. Sans argument, `build-annuaire.py` vide
 `DecompressionStream` et `CompressionStream` demandent Chrome 80+, Safari 16.4+
 ou Firefox 113+. Sur un navigateur plus ancien, la page le dit, désactive les
 boutons de fabrication et redemande l'annuaire à la main.
+
+## L'écran
+
+Quatre zones, et rien d'autre :
+
+- **la barre haute** — ce qui est chargé, la recherche, et les deux commandes
+  de tous les jours : **Critères** replie ou déploie le panneau de gauche,
+  **Exporter** ouvre la boîte des documents ;
+- **le panneau de gauche** — uniquement ce qui restreint la vue : recherche
+  d'un établissement, facettes, période. Il tient dans la hauteur de l'écran,
+  sans défilement ;
+- **la carte**, avec ses propres réglages posés dessus — on voit ce qu'on
+  change au moment où on le change ;
+- **le panneau de droite** — la lecture : synthèse, priorités, fiche d'un
+  établissement.
+
+Les exports qui portent sur l'ensemble de la vue filtrée (rapport, article,
+tableur, carte) sont dans la boîte **Exporter**. Ceux qui portent sur ce qu'on
+a sous les yeux — le courrier de relance, la fiche d'un établissement —
+restent là où on les regarde.
+
+Sous 1 000 px de large, les deux panneaux deviennent des tiroirs et la barre du
+bas prend le relais.
 
 ## Ce que fait l'outil
 
@@ -200,7 +245,7 @@ la seconde situation étant précisément celle qui justifie de remonter d'un cr
 
 Ces marques vivent dans le navigateur, comme le reste : elles disparaîtraient
 au premier changement de poste. D'où l'export et l'import du suivi, en JSON,
-depuis la section **Export**. La note interne n'apparaît jamais dans un export
+depuis le bouton **Exporter**. La note interne n'apparaît jamais dans un export
 de données, et sur la fiche PDF elle est signalée comme non destinée à l'envoi.
 
 **Quoi de neuf** — au chargement d'un nouvel export, un encart compare au
