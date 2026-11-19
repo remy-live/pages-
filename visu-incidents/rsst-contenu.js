@@ -106,6 +106,10 @@
       if (this._db) return Promise.resolve(this._db);
       return new Promise((ok, non) => {
         const rq = indexedDB.open('rsst-contenu', 1);
+        // Une suppression de base en cours, ou un autre onglet qui retient
+        // une version antérieure, laisse la demande en attente sans jamais
+        // ni réussir ni échouer.
+        rq.onblocked = () => non(new Error('stockage occupé'));
         rq.onupgradeneeded = () => {
           const db = rq.result;
           if (!db.objectStoreNames.contains('fiches')) db.createObjectStore('fiches');
@@ -321,7 +325,76 @@
       .join('\n\n')],
     ['url', (f) => f.url],
     ['erreur', (f) => f.erreur],
+    // Le repère qui permettra, au prochain relevé, de savoir sans ouvrir la
+    // fiche si son contenu a pu changer.
+    ['etat_liste', (f) => f.sig || ''],
   ];
+
+  /** Lecture d'un CSV à point-virgule, guillemets compris. */
+  function lireCsv(t) {
+    const out = [];
+    let champ = '', ligne = [], q = false;
+    t = t.replace(/^\ufeff/, '');
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      if (q) {
+        if (c === '"' && t[i + 1] === '"') { champ += '"'; i++; }
+        else if (c === '"') q = false;
+        else champ += c;
+      } else if (c === '"') q = true;
+      else if (c === ';') { ligne.push(champ); champ = ''; }
+      else if (c === '\r' || c === '\n') {
+        if (c === '\r' && t[i + 1] === '\n') i++;
+        ligne.push(champ); out.push(ligne); ligne = []; champ = '';
+      } else champ += c;
+    }
+    if (champ !== '' || ligne.length) { ligne.push(champ); out.push(ligne); }
+    return out.filter((l) => l.length > 1 || l[0] !== '');
+  }
+
+  /**
+   * Réamorce la mémoire avec un CSV déjà enregistré.
+   *
+   * Les valeurs sont gardées telles quelles plutôt que reconstruites : on ne
+   * peut pas redécouper fidèlement des réponses mises bout à bout, et un
+   * fichier repris doit ressortir identique à ce qu'il était.
+   */
+  async function importerCsv(texte) {
+    const lignes = lireCsv(texte);
+    if (lignes.length < 2) return dire('Fichier vide ou illisible.');
+    const entetes = lignes[0].map((h) => h.trim().toLowerCase());
+    const iNum = entetes.indexOf('numero');
+    if (iNum < 0) return dire('Ce fichier n\'a pas de colonne « numero ».');
+    const iUrl = entetes.indexOf('url');
+    const iSig = entetes.indexOf('etat_liste');
+
+    const lot = [];
+    let sansRepere = 0;
+    for (const l of lignes.slice(1)) {
+      const numero = (l[iNum] || '').trim();
+      if (!numero) continue;
+      // L'identifiant de la fiche est celui de son adresse ; à défaut, le
+      // numéro d'inscription, qui lui est égal dans tous les cas observés.
+      const m = iUrl >= 0 ? String(l[iUrl] || '').match(/[?&]id=(\d+)/) : null;
+      const id = m ? m[1] : numero;
+      const brut = {};
+      entetes.forEach((h, k) => { brut[h] = l[k] == null ? '' : l[k]; });
+      const sig = iSig >= 0 ? (l[iSig] || '') : '';
+      if (!sig) sansRepere++;
+      const f = { numero, brut, sig, erreur: brut.erreur || '' };
+      etat.fiches.set(id, f);
+      lot.push([id, f]);
+    }
+    if (!lot.length) return dire('Aucune ligne exploitable dans ce fichier.');
+    await Memoire.ecrire(lot);
+    if (ui) ui.boutons(false);
+    dire(lot.length + ' fiche' + (lot.length > 1 ? 's' : '') + ' reprise'
+      + (lot.length > 1 ? 's' : '') + '.'
+      + (sansRepere
+        ? ' ' + sansRepere + ' sans repère d\'état : elles seront relues une fois,'
+          + ' puis suivies comme les autres.'
+        : ' La mise à jour ne rouvrira que ce qui a changé.'));
+  }
 
   function cellule(v) {
     const s = String(v == null ? '' : v);
@@ -332,7 +405,10 @@
     const lignes = [COLONNES.map(([h]) => h).join(';')];
     const tri = [...etat.fiches.values()]
       .sort((a, b) => (parseInt(a.numero, 10) || 0) - (parseInt(b.numero, 10) || 0));
-    for (const f of tri) lignes.push(COLONNES.map(([, get]) => cellule(get(f))).join(';'));
+    for (const f of tri) {
+      lignes.push(COLONNES.map(([nom, get]) =>
+        cellule(f.brut ? (f.brut[nom] != null ? f.brut[nom] : '') : get(f))).join(';'));
+    }
     // Le BOM fait ouvrir le fichier en UTF-8 par Excel, accents compris.
     return '﻿' + lignes.join('\r\n') + '\r\n';
   }
@@ -412,6 +488,8 @@
       '    <div class="w">Le fichier produit — et la mémoire qui le prépare —',
       '      sont nominatifs : texte des signalements et noms. À traiter comme',
       '      le registre lui-même.</div>',
+      '    <button class="oubli" data-reprise>Reprendre un fichier déjà enregistré</button>',
+      '    <input type="file" accept=".csv,text/csv" data-fichier hidden>',
       '    <button class="oubli" data-oubli hidden>Tout oublier</button>',
       '  </div>',
       '</div>',
@@ -421,11 +499,21 @@
     const $ = (s) => racine.querySelector(s);
     const jauge = $('.j'), barre = $('.j i'), statut = $('.s'), resume = $('[data-etat]');
     const bGo = $('[data-go]'), bStop = $('[data-stop]'), bCsv = $('[data-csv]'), bOubli = $('[data-oubli]');
+    const bReprise = $('[data-reprise]'), fichier = $('[data-fichier]');
 
     $('.x').onclick = () => hote.remove();
     bGo.onclick = () => lancer();
     bStop.onclick = () => { etat.arret = true; statut.textContent = 'Arrêt en cours…'; };
     bCsv.onclick = telecharger;
+    bReprise.onclick = () => fichier.click();
+    fichier.onchange = async () => {
+      const f = fichier.files && fichier.files[0];
+      fichier.value = '';
+      if (!f) return;
+      dire('Lecture de ' + f.name + '…');
+      try { await importerCsv(await f.text()); }
+      catch (e) { dire('Fichier illisible : ' + e.message); }
+    };
     bOubli.onclick = async () => {
       if (!confirm('Effacer les ' + etat.fiches.size + ' fiches gardées dans ce navigateur ?\n\n'
         + 'Le prochain relevé repartira de zéro et demandera une vingtaine de minutes.')) return;
@@ -600,6 +688,15 @@
     return;
   }
 
-  Memoire.charger().then(() => { panneau(); });
+  // Le panneau s'ouvre quoi qu'il arrive : sans stockage — navigation privée,
+  // écriture refusée, base occupée — on travaille en mémoire vive, ce qui
+  // vaut toujours mieux qu'une page où il ne se passe rien.
+  const delai = new Promise((ok) => setTimeout(ok, 3000));
+  Promise.race([Memoire.charger(), delai])
+    .catch(() => {})
+    .then(() => {
+      panneau();
+      if (!etat.fiches.size && etat.releve === null) return;
+    });
   console.log('%crsst-contenu prêt.', 'color:#2a78d6;font-weight:bold');
 })();
