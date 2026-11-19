@@ -205,6 +205,21 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
 .sortie .quoi span{font-size:11.5px; color:var(--ink-muted); line-height:1.4}
 .sortie .fmts{display:flex; gap:6px; flex:0 0 auto}
 
+/* Bouton d'action au pied d'une bulle de carte. */
+.pact{
+  display:block; width:100%; margin-top:8px; padding:6px 10px;
+  border:1px solid var(--hairline); border-radius:7px; background:var(--surface-2);
+  font:inherit; font-size:12px; font-weight:600; color:var(--ink); cursor:pointer;
+}
+.pact:hover{background:var(--surface); border-color:var(--ring)}
+
+/* Un bouton qui se lit comme un lien, dans une phrase. */
+.lien{
+  border:0; background:none; padding:0; font:inherit; color:var(--accent);
+  text-decoration:underline; cursor:pointer;
+}
+.lien:hover{color:var(--ink)}
+
 /* ---------------- Arrivé récemment ---------------- */
 .pied-recent{
   display:flex; gap:8px; flex:0 0 auto;
@@ -767,6 +782,11 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
       <section class="group">
         <h2>Période</h2>
         <label class="check"><input type="checkbox" id="chkTime"> Restreindre à une période</label>
+        <div class="row" id="raccourcisPeriode" style="margin:2px 0 9px">
+          <button class="btn sm" data-dern="1" style="flex:1">Dernier mois</button>
+          <button class="btn sm" data-dern="2" style="flex:1">2 mois</button>
+          <button class="btn sm" data-dern="3" style="flex:1">3 mois</button>
+        </div>
         <div class="timeline" id="timeline" aria-disabled="true">
           <div class="bounds"><span>De <b id="lblFrom">—</b></span><span>à <b id="lblTo">—</b></span></div>
           <input type="range" id="rgFrom" min="0" max="0" value="0" step="1" aria-label="Mois de début">
@@ -780,6 +800,8 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
             </select>
           </div>
         </div>
+        <p class="note" id="avisAvantAxe" hidden
+           style="font-size:11.5px;color:var(--ink-muted);margin-top:8px"></p>
       </section>
 
     </div>
@@ -1640,6 +1662,8 @@ const state = {
   },
   view: Prefs.get('view', 'cluster'),
   recent: 0,                               // fenêtre mise en évidence : 0, 30 ou 60 jours
+  axeComplet: Prefs.get('axeComplet', false), // l'axe remonte-t-il avant la rentrée 2024 ?
+  avantAxe: 0,                             // signalements laissés hors de l'axe
   maille: Prefs.get('maille', 'etab'),
   taux: Prefs.get('taux', false),
   tousEtabs: Prefs.get('tousEtabs', false),
@@ -1917,12 +1941,27 @@ function buildFacets() {
   }
 }
 
+/* Le registre dématérialisé a commencé à la rentrée 2024 : l'axe des mois
+   part de là, plutôt que d'étaler la frise sur des années vides à cause de
+   quelques dates douteuses. Les signalements antérieurs ne sont pas écartés
+   pour autant — ils sont comptés et annoncés, et l'axe se rouvre jusqu'à eux
+   d'un clic. */
+const DEBUT_AXE = '2024-08';
+
 function buildMonths() {
   state.months = [];
+  state.avantAxe = 0;
   if (!state.incidents.length) return;
   const first = state.incidents[0].date;
   const last = state.incidents[state.incidents.length - 1].date;
   const cursor = new Date(first.getFullYear(), first.getMonth(), 1);
+  const plancher = monthDate(DEBUT_AXE);
+  // On ne remonte le plancher que s'il reste quelque chose après : un
+  // registre entièrement antérieur garderait sinon un axe vide.
+  if (!state.axeComplet && cursor < plancher && last >= plancher) {
+    state.avantAxe = state.incidents.filter((i) => i.date < plancher).length;
+    cursor.setFullYear(plancher.getFullYear(), plancher.getMonth(), 1);
+  }
   const end = new Date(last.getFullYear(), last.getMonth(), 1);
   while (cursor <= end) {
     state.months.push(monthKey(cursor));
@@ -2230,6 +2269,9 @@ function renderMap() {
         ? `<br><b>${esc(NIVEAUX[niveau].label)}</b>`
           + (motifs ? motifs.map((m) => `<br>${esc(m.texte)}`).join('') : '')
         : (top ? `<br>Principal : ${esc(top)}` : '')) + '</span>'
+      + (p.count
+        ? `<button type="button" class="pact" data-lire="${esc(p.etab.uai)}">Lire les fiches</button>`
+        : '')
     );
     marker.on('click', () => showEtab(p.etab.uai));
     target.addLayer(marker);
@@ -2828,6 +2870,7 @@ function renderPriorities(now) {
         <button type="button" data-relance="${esc(p.place.etab.uai)}">
           ${p.enAttente.every((x) => Suivi.relanceDe(x.inc)) && p.enAttente.length
             ? 'Relance déjà notée' : 'Noter une relance'}</button>
+        <button type="button" data-lire="${esc(p.place.etab.uai)}">Lire les fiches</button>
         <button type="button" data-fiche="${esc(p.place.etab.uai)}">Fiche à envoyer</button>
       </span>
     </div>`).join('');
@@ -4426,6 +4469,27 @@ function renderTimeline() {
   to.value = Math.min(state.filters.to, last);
   $('#lblFrom').textContent = state.months.length ? MONTH_FMT.format(monthDate(state.months[+from.value])) : '—';
   $('#lblTo').textContent = state.months.length ? MONTH_FMT.format(monthDate(state.months[+to.value])) : '—';
+
+  // Les boutons de raccourci n'ont de sens que s'il reste assez de mois.
+  $$('#raccourcisPeriode [data-dern]').forEach((b) => {
+    b.disabled = state.months.length < +b.dataset.dern;
+  });
+
+  const avis = $('#avisAvantAxe');
+  if (state.avantAxe) {
+    avis.hidden = false;
+    avis.innerHTML = `${fmtInt(state.avantAxe)} signalement${state.avantAxe > 1 ? 's' : ''}
+      antérieur${state.avantAxe > 1 ? 's' : ''} à ${esc(MONTH_FMT.format(monthDate(DEBUT_AXE)))}
+      ne figure${state.avantAxe > 1 ? 'nt' : ''} pas sur cet axe.
+      <button class="lien" id="btnAxeComplet" type="button">Remonter jusqu'à eux</button>`;
+  } else if (state.axeComplet) {
+    avis.hidden = false;
+    avis.innerHTML = `L'axe remonte au premier signalement du registre.
+      <button class="lien" id="btnAxeComplet" type="button">Revenir à ${esc(MONTH_FMT.format(monthDate(DEBUT_AXE)))}</button>`;
+  } else {
+    avis.hidden = true;
+    avis.innerHTML = '';
+  }
 }
 
 let playTimer = null;
@@ -4499,12 +4563,17 @@ function syncCriteres() {
 /* ------------------------------ Interface : boîtes de dialogue ------------------------------ */
 
 let fermeeParEchap = null;
+let rendreLeFocusA = null;
+
+const ACTIONNABLES = 'button:not([disabled]), [href], input:not([type=file]):not([disabled]),'
+  + ' select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function ouvrirModale(id) {
   const m = $('#' + id);
   if (!m) return;
+  // Pour rendre le focus au bouton qui a ouvert la boîte, une fois fermée.
+  rendreLeFocusA = document.activeElement;
   m.dataset.ouverte = '1';
-  // On rend la main au clavier : premier élément actionnable de la boîte.
   const cible = m.querySelector('input:not([type=file]), button:not([data-fermer])');
   if (cible) setTimeout(() => cible.focus(), 30);
   fermeeParEchap = id;
@@ -4514,6 +4583,31 @@ function fermerModale(id) {
   const m = id ? $('#' + id) : $('.modale[data-ouverte]');
   if (m) delete m.dataset.ouverte;
   fermeeParEchap = null;
+  // Sans cela, le focus retomberait en tête de page et l'on perdrait le fil.
+  if (rendreLeFocusA && document.contains(rendreLeFocusA)) {
+    try { rendreLeFocusA.focus(); } catch { /* élément devenu infocusable */ }
+  }
+  rendreLeFocusA = null;
+}
+
+/**
+ * Garde la tabulation dans la boîte ouverte.
+ *
+ * Sans cela, la tabulation sort par-derrière et l'on se met à parcourir une
+ * page qu'on ne voit pas, sous le voile.
+ */
+function piegerTabulation(e) {
+  if (e.key !== 'Tab') return;
+  const m = $('.modale[data-ouverte]');
+  if (!m) return;
+  const cibles = [...m.querySelectorAll(ACTIONNABLES)]
+    .filter((el) => el.offsetParent !== null || el === document.activeElement);
+  if (!cibles.length) return;
+  const premier = cibles[0];
+  const dernier = cibles[cibles.length - 1];
+  if (e.shiftKey && document.activeElement === premier) { e.preventDefault(); dernier.focus(); }
+  else if (!e.shiftKey && document.activeElement === dernier) { e.preventDefault(); premier.focus(); }
+  else if (!m.contains(document.activeElement)) { e.preventDefault(); premier.focus(); }
 }
 
 /* ------------------------------ Arrivé récemment ------------------------------ */
@@ -5172,6 +5266,19 @@ function wireEvents() {
       refresh();
       return;
     }
+    const bLire = e.target.closest('[data-lire]');
+    if (bLire) {
+      e.stopPropagation();
+      const uai = bLire.dataset.lire;
+      const seau = current.byEtab.get(uai);
+      const etab = state.etabs.get(uai);
+      if (seau && etab && seau.incidents.length) {
+        state.selectedUai = uai;
+        renderEtab();
+        ouvrirLiseuse(etab, seau.incidents, 0);
+      }
+      return;
+    }
     const bFiche = e.target.closest('[data-fiche]');
     if (bFiche) { e.stopPropagation(); showEtab(bFiche.dataset.fiche); return; }
     const nom = e.target.closest('.prio .nm[data-uai]');
@@ -5197,8 +5304,24 @@ function wireEvents() {
       if (e.target === m || e.target.closest('[data-fermer]')) fermerModale(m.id);
     });
   });
+  document.addEventListener('keydown', piegerTabulation);
   document.addEventListener('keydown', (e) => {
+    // « / » amène à la recherche, comme partout ailleurs.
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !$('.modale[data-ouverte]')
+        && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+      e.preventDefault();
+      $('#qText').focus();
+      $('#qText').select();
+      return;
+    }
     if (e.key === 'Escape' && fermeeParEchap) { fermerModale(); return; }
+    // Échap dans la recherche l'efface, puis rend la vue entière.
+    if (e.key === 'Escape' && document.activeElement === $('#qText') && $('#qText').value) {
+      $('#qText').value = '';
+      state.filters.text = '';
+      refresh();
+      return;
+    }
     // Les flèches tournent les pages, sauf si l'on est en train d'écrire.
     if (!$('#modaleLiseuse').dataset.ouverte) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
@@ -5206,6 +5329,34 @@ function wireEvents() {
     else if (e.key === 'ArrowRight') { e.preventDefault(); tournerLiseuse(1); }
     else if (e.key === 'Home') { e.preventDefault(); Liseuse.i = 0; peindreLiseuse(); }
     else if (e.key === 'End') { e.preventDefault(); Liseuse.i = Liseuse.incidents.length - 1; peindreLiseuse(); }
+  });
+
+  // --- Période : les derniers mois, d'un clic ---
+  $('#raccourcisPeriode').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dern]');
+    if (!b || b.disabled) return;
+    const n = +b.dataset.dern;
+    const dernier = state.months.length - 1;
+    // On s'ancre sur le dernier mois du registre, pas sur le mois courant :
+    // un export de juin consulté en novembre donnerait sinon une vue vide.
+    state.filters.timeOn = true;
+    state.filters.month = null;
+    state.filters.to = dernier;
+    state.filters.from = Math.max(0, dernier - (n - 1));
+    $('#chkTime').checked = true;
+    renderTimeline();
+    refresh();
+  });
+  $('#avisAvantAxe').addEventListener('click', (e) => {
+    if (!e.target.closest('#btnAxeComplet')) return;
+    state.axeComplet = !state.axeComplet;
+    Prefs.set('axeComplet', state.axeComplet);
+    // L'axe change de longueur : les bornes en cours n'ont plus le même sens.
+    state.filters.timeOn = false;
+    $('#chkTime').checked = false;
+    buildMonths();
+    renderTimeline();
+    refresh();
   });
 
   // --- Arrivé récemment ---

@@ -43,6 +43,12 @@ rouvre que les fiches dont l'un des deux a changé, plus les nouvelles : en
 général quelques dizaines au lieu de mille cinq cents. Le bouton **Tout
 oublier** efface cette mémoire.
 
+**Reprendre un fichier déjà enregistré** réamorce cette mémoire à partir d'un
+CSV produit précédemment — utile après un changement de poste, ou quand le
+relevé a été fait par une version qui ne gardait rien. La colonne `etat_liste`
+transporte le repère qui rend les relevés suivants incrémentaux ; un fichier
+qui ne la porte pas est repris quand même, et ses fiches sont relues une fois.
+
 **Le fichier produit est nominatif** : texte intégral des signalements et des
 réponses, noms des agents et des chefs de service. Il se traite comme le
 registre lui-même.
@@ -112,10 +118,24 @@ Deux boutons de la barre haute ouvrent une boîte plutôt qu'un panneau :
   et propose d'**entourer sur la carte** les établissements concernés. Si le
   registre ne contient rien de récent, elle dit à quelle date il s'arrête
   plutôt que d'afficher un zéro qui passerait pour une panne ;
-- **Lire les fiches une par une**, depuis l'onglet Établissement, ouvre une
-  liseuse : un signalement par page, son texte sur la largeur d'une page
-  plutôt que dans une colonne de 360 px. Flèches, pastilles ou glissement du
-  doigt pour tourner.
+- **Lire les fiches une par une** ouvre une liseuse : un signalement par page,
+  son texte sur la largeur d'une page plutôt que dans une colonne de 360 px.
+  Flèches, pastilles ou glissement du doigt pour tourner. Elle s'ouvre depuis
+  l'onglet Établissement, depuis la bulle d'un point de la carte, depuis la
+  liste des priorités, et depuis chaque ligne d'« Arrivé récemment ».
+
+Au clavier : `/` amène à la recherche, `Échap` l'efface, les flèches tournent
+les pages de la liseuse, et la tabulation reste dans la boîte ouverte.
+
+### La période
+
+L'axe des mois part d'**août 2024** : le registre dématérialisé a commencé à
+cette rentrée, et quelques dates douteuses suffiraient sinon à étaler la frise
+sur des années vides. Les signalements antérieurs ne sont pas écartés pour
+autant — ils restent comptés, un avis les dénombre, et un lien rouvre l'axe
+jusqu'à eux. Trois boutons — **Dernier mois**, **2 mois**, **3 mois** — se
+calent sur le dernier mois du registre, et non sur le mois courant : un export
+de juin consulté en novembre donnerait sinon une vue vide.
 
 Les exports qui portent sur l'ensemble de la vue filtrée (rapport, article,
 tableur, carte) sont dans la boîte **Exporter**. Ceux qui portent sur ce qu'on
