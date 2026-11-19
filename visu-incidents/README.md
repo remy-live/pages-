@@ -58,8 +58,8 @@ navigateur : aucune bibliothèque supplémentaire, et 0,2 s au chargement.
 
 ### Depuis la page, sans rien installer
 
-Section **Annuaire des établissements**, dans le panneau de gauche : déposer le
-fichier de l'annuaire, puis
+Bouton **Données** dans la barre haute, section **Annuaire des
+établissements** : déposer le fichier de l'annuaire. Puis, sous **Avancé**,
 
 - **Créer le fichier autonome** — produit `visu-incidents-autonome.html` avec
   cet annuaire déjà dedans. C'est le fichier à déposer sur un Drive ou une clé.
@@ -84,6 +84,29 @@ c'est vérifié par les tests. Sans argument, `build-annuaire.py` vide
 `DecompressionStream` et `CompressionStream` demandent Chrome 80+, Safari 16.4+
 ou Firefox 113+. Sur un navigateur plus ancien, la page le dit, désactive les
 boutons de fabrication et redemande l'annuaire à la main.
+
+## L'écran
+
+Quatre zones, et rien d'autre :
+
+- **la barre haute** — ce qui est chargé, la recherche, et les deux commandes
+  de tous les jours : **Critères** replie ou déploie le panneau de gauche,
+  **Exporter** ouvre la boîte des documents ;
+- **le panneau de gauche** — uniquement ce qui restreint la vue : recherche
+  d'un établissement, facettes, période. Il tient dans la hauteur de l'écran,
+  sans défilement ;
+- **la carte**, avec ses propres réglages posés dessus — on voit ce qu'on
+  change au moment où on le change ;
+- **le panneau de droite** — la lecture : synthèse, priorités, fiche d'un
+  établissement.
+
+Les exports qui portent sur l'ensemble de la vue filtrée (rapport, article,
+tableur, carte) sont dans la boîte **Exporter**. Ceux qui portent sur ce qu'on
+a sous les yeux — le courrier de relance, la fiche d'un établissement —
+restent là où on les regarde.
+
+Sous 1 000 px de large, les deux panneaux deviennent des tiroirs et la barre du
+bas prend le relais.
 
 ## Ce que fait l'outil
 
@@ -222,7 +245,7 @@ la seconde situation étant précisément celle qui justifie de remonter d'un cr
 
 Ces marques vivent dans le navigateur, comme le reste : elles disparaîtraient
 au premier changement de poste. D'où l'export et l'import du suivi, en JSON,
-depuis la section **Export**. La note interne n'apparaît jamais dans un export
+depuis le bouton **Exporter**. La note interne n'apparaît jamais dans un export
 de données, et sur la fiche PDF elle est signalée comme non destinée à l'envoi.
 
 **Quoi de neuf** — au chargement d'un nouvel export, un encart compare au

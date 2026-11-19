@@ -64,6 +64,7 @@
   --sidebar-w: 340px;
   --dock-w: 360px;
   --barh: calc(54px + env(safe-area-inset-bottom));  /* hauteur de la barre mobile */
+  --toph: 52px;                                      /* hauteur de la barre haute */
 }
 @media (prefers-color-scheme: dark){
   :root:where(:not([data-theme="light"])){
@@ -116,16 +117,108 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
 .rk,.cal-a,.cal-m,.file-state,.badge,.facet-list .opt .n{
   font-family:"IBM Plex Mono",ui-monospace,monospace}
 
-/* ---------------- Ossature ---------------- */
+/* ---------------- Ossature ----------------
+   Une barre haute pleine largeur, puis trois colonnes : les critères à
+   gauche, la carte au centre, la lecture à droite. Les deux panneaux se
+   replient ; la carte prend la place libérée. */
 .app{
   display:grid; height:100dvh;
   grid-template-columns: var(--sidebar-w) minmax(0,1fr) var(--dock-w);
-  grid-template-areas: "side map dock";
+  grid-template-rows: auto minmax(0,1fr);
+  grid-template-areas:
+    "top  top top"
+    "side map dock";
 }
 .app.dock-hidden{grid-template-columns: var(--sidebar-w) minmax(0,1fr) 0}
+.app.side-hidden{grid-template-columns: 0 minmax(0,1fr) var(--dock-w)}
+.app.side-hidden.dock-hidden{grid-template-columns: 0 minmax(0,1fr) 0}
+#topbar{grid-area:top}
 #sidebar{grid-area:side}
 #mapwrap{grid-area:map; position:relative; min-width:0}
 #dock{grid-area:dock}
+
+/* ---------------- Barre haute ---------------- */
+#topbar{
+  display:flex; align-items:center; gap:10px; min-width:0;
+  padding:0 12px; height:52px; flex:0 0 auto;
+  background:var(--surface); border-bottom:1px solid var(--hairline);
+  position:relative; z-index:60;
+}
+#topbar .marque{
+  font:700 15px/1 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
+}
+#btnDonnees{
+  display:flex; align-items:center; gap:7px; max-width:290px;
+  padding:6px 10px; border-radius:8px; border:1px solid transparent;
+  background:none; color:var(--ink-2); font:inherit; font-size:12.5px;
+  cursor:pointer; text-align:left; min-width:0;
+}
+#btnDonnees:hover{background:var(--surface-2); border-color:var(--hairline)}
+#btnDonnees .dot{flex:0 0 auto}
+#btnDonnees .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+#topbar .pousse{flex:1 1 auto; min-width:8px}
+#topbar #qText{max-width:320px; min-width:120px}
+#topbar .sep{width:1px; height:24px; background:var(--hairline); flex:0 0 auto}
+.btn .n{
+  display:inline-block; min-width:17px; padding:0 4px; margin-left:5px;
+  border-radius:9px; background:var(--accent); color:var(--accent-ink);
+  font-size:10.5px; line-height:17px; font-weight:700; text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.btn.primaire{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.btn.primaire:hover{filter:brightness(1.07)}
+.btn.primaire .n{background:rgba(255,255,255,.26); color:#fff}
+
+/* ---------------- Boîtes de dialogue ---------------- */
+.modale{
+  position:fixed; inset:0; z-index:2000; display:none;
+  align-items:center; justify-content:center; padding:24px;
+  background:rgba(0,0,0,.42);
+}
+.modale[data-ouverte]{display:flex}
+.modale > .boite{
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:14px; box-shadow:var(--shadow);
+  width:min(560px, 100%); max-height:min(86vh, 860px);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.modale .tete{
+  display:flex; align-items:center; gap:10px; flex:0 0 auto;
+  padding:13px 16px; border-bottom:1px solid var(--hairline);
+}
+.modale .tete h2{
+  flex:1; margin:0; font:700 17px/1.2 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.03em; text-transform:uppercase; color:var(--ink);
+}
+.modale .corps{overflow-y:auto; padding:16px; flex:1 1 auto}
+.modale .corps > .group:last-child{margin-bottom:0}
+
+/* Une sortie possible : ce qu'on obtient, et dans quels formats. */
+.sortie{
+  display:flex; align-items:center; gap:12px; padding:11px 0;
+  border-bottom:1px solid var(--hairline);
+}
+.sortie:last-of-type{border-bottom:0}
+.sortie .quoi{flex:1; min-width:0}
+.sortie .quoi b{display:block; font-size:13.5px; font-weight:600}
+.sortie .quoi span{font-size:11.5px; color:var(--ink-muted); line-height:1.4}
+.sortie .fmts{display:flex; gap:6px; flex:0 0 auto}
+
+/* ---------------- Réglages posés sur la carte ---------------- */
+#carteReglages{
+  display:flex; align-items:center; gap:6px;
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:10px; padding:4px; box-shadow:var(--shadow);
+}
+#carteReglages .seg{margin:0; border:0; background:none}
+#popCarte{
+  position:absolute; top:46px; right:0; width:245px; z-index:70;
+  background:var(--surface); border:1px solid var(--hairline);
+  border-radius:10px; box-shadow:var(--shadow); padding:11px 12px;
+}
+#popCarte[hidden]{display:none}
+#popCarte .maille{margin-bottom:4px}
 
 .pane{
   background:var(--surface); border:0 solid var(--hairline);
@@ -177,6 +270,22 @@ input::placeholder{color:var(--ink-muted)}
 .seg{display:flex; background:var(--surface-2); border:1px solid var(--hairline); border-radius:8px; padding:2px; gap:2px}
 .seg button{flex:1; padding:6px 8px; font-size:12px; font-weight:550; background:none; border:0; border-radius:6px; cursor:pointer; color:var(--ink-2)}
 .seg button[aria-pressed=true]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+/* Texte d'une fiche, replié sous le signalement */
+.ftexte{margin-top:7px; border-top:1px solid var(--hairline); padding-top:6px}
+.ftexte > summary{
+  list-style:none; cursor:pointer; font-size:11.5px; font-weight:600;
+  color:var(--accent); user-select:none;
+}
+.ftexte > summary::-webkit-details-marker{display:none}
+.ftexte > summary::before{content:"\25B8 "; display:inline-block; transition:transform .15s}
+.ftexte[open] > summary::before{transform:rotate(90deg)}
+.ftexte > summary i{font-style:normal; color:var(--ink-muted); font-weight:500}
+.ft-c{margin-top:7px}
+.ft-b + .ft-b{margin-top:8px}
+.ft-b b{display:block; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); margin-bottom:2px}
+.ft-b p{margin:0; font-size:12px; line-height:1.5; color:var(--ink-2); white-space:normal}
 
 /* Interrupteurs */
 .check{display:flex; align-items:center; gap:9px; padding:5px 0; cursor:pointer; font-size:13px}
@@ -397,7 +506,8 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 @media print{
   /* À l'impression, seul le panneau de droite a du sens : la carte ne rend rien
      d'utile sur papier et les filtres encore moins. */
-  #sidebar, #mapwrap, #mobilebar, #scrim, .tabs, .map-overlay{display:none !important}
+  #sidebar, #mapwrap, #mobilebar, #scrim, .tabs, .map-overlay,
+  #topbar, .modale{display:none !important}
   .app{display:block;height:auto}
   #dock{position:static;width:auto;border:0;overflow:visible}
   .pane-body{overflow:visible;padding:0}
@@ -458,16 +568,33 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 .only-mobile{display:none !important}
 
 /* ---------------- Adaptatif ---------------- */
+.only-etroit{display:none !important}
+@media (max-width:620px){
+  #carteReglages .seg{display:none}
+  #popCarte .only-etroit{display:flex !important}
+  #popCarte{right:0; width:220px}
+}
 @media (max-width:1180px){
   :root{--dock-w:320px; --sidebar-w:300px}
 }
 @media (max-width:1000px){
-  .app{grid-template-columns:1fr; grid-template-areas:"map"}
+  .app{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
+    grid-template-areas:"top" "map";
+  }
+  #topbar{gap:7px; padding:0 8px}
+  #topbar .btn{flex:0 0 auto; white-space:nowrap}
+  #topbar .marque,#topbar .sep{display:none}
+  #btnDonnees{max-width:none; flex:1 1 auto}
+  #topbar #qText{display:none}
+  .modale{padding:0; align-items:stretch}
+  .modale > .boite{width:100%; max-height:none; border-radius:0; border:0}
   .only-mobile{display:inline-flex !important}
   /* Les tiroirs s'arrêtent au-dessus de la barre du bas : on peut toujours
      passer de « Filtres » à « Synthèse » sans fermer d'abord. */
   #sidebar,#dock{
-    position:fixed; top:0; bottom:var(--barh); width:min(360px,88vw); z-index:1200;
+    position:fixed; top:var(--toph); bottom:var(--barh); width:min(360px,88vw); z-index:1200;
     box-shadow:var(--shadow); transition:transform .22s ease;
   }
   #sidebar{left:0; transform:translateX(-101%)}
@@ -475,7 +602,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
   body[data-drawer="filters"] #sidebar{transform:none}
   body[data-drawer="dash"] #dock{transform:none}
   #scrim{
-    display:block; position:fixed; left:0; right:0; top:0; bottom:var(--barh);
+    display:block; position:fixed; left:0; right:0; top:var(--toph); bottom:var(--barh);
     background:rgba(0,0,0,.4); z-index:1100;
     opacity:0; pointer-events:none; transition:opacity .2s;
   }
@@ -501,79 +628,47 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
 <div class="app" id="app">
 
-  <!-- ================= Panneau gauche : données & filtres ================= -->
-  <aside class="pane" id="sidebar" aria-label="Données et filtres">
+  <!-- ================= Barre haute =================
+       L'état du registre, la recherche, et les deux seules commandes dont on
+       se sert à chaque fois : restreindre, et sortir un document. -->
+  <header id="topbar">
+    <span class="marque">Visu-Incidents</span>
+
+    <button id="btnDonnees" aria-haspopup="dialog"
+            title="Registre, annuaire, suivi des relances">
+      <span class="dot" id="dotTop"></span>
+      <span class="lbl" id="lblRegistre">Aucun registre</span>
+      <span aria-hidden="true" style="opacity:.6">⌄</span>
+    </button>
+
+    <span class="pousse"></span>
+
+    <input type="search" id="qText" placeholder="Rechercher : établissement, commune, risque…"
+           aria-label="Recherche libre">
+
+    <span class="sep"></span>
+
+    <button class="btn" id="btnFiltres" aria-expanded="true" aria-controls="sidebar"
+            title="Afficher ou masquer les critères">Critères<span class="n" id="nFiltres" hidden>0</span></button>
+    <button class="btn primaire" id="btnExporter" aria-haspopup="dialog">Exporter…</button>
+    <button class="btn icon" id="btnTheme" title="Basculer clair / sombre" aria-label="Basculer clair / sombre">◐</button>
+  </header>
+
+  <!-- ================= Panneau gauche : les critères ================= -->
+  <aside class="pane" id="sidebar" aria-label="Critères">
     <div class="pane-head">
       <div style="flex:1;min-width:0">
-        <h1>Visu-Incidents</h1>
-        <div class="sub">Registres santé &amp; sécurité au travail</div>
+        <h1>Critères</h1>
+        <div class="sub" id="subCriteres">Aucun filtre actif</div>
       </div>
-      <button class="btn icon" id="btnTheme" title="Basculer clair / sombre" aria-label="Basculer clair / sombre">◐</button>
-      <button class="btn icon only-mobile" id="closeFilters" title="Fermer" aria-label="Fermer les filtres">✕</button>
+      <button class="btn icon" id="closeFilters" title="Masquer les critères" aria-label="Masquer les critères">✕</button>
     </div>
 
     <div class="pane-body">
 
-      <!-- 1. Données -->
-      <section class="group">
-        <h2>1 · Données</h2>
-
-        <label class="drop" id="dropIncidents">
-          <span class="t">Signalements</span>
-          <span class="s">Export du registre, avec colonne UAI (CSV)</span>
-          <input type="file" id="fileIncidents" accept=".csv,text/csv">
-        </label>
-        <div class="file-state"><span class="dot" id="dotIncidents"></span><span id="lblIncidents">Aucun fichier</span></div>
-        <button class="btn sm wide" id="btnViderRegistre" style="margin-top:4px" hidden>
-          Retirer le registre</button>
-
-        <details class="facet" id="etabsBlock" style="margin-top:10px">
-          <summary>Annuaire des établissements<span class="badge" id="etabsBadge">—</span></summary>
-          <div class="facet-body" style="padding:10px">
-            <div class="file-state" style="padding-top:0"><span class="dot" id="dotEtabs"></span><span id="lblEtabs">Aucun fichier</span></div>
-            <label class="drop" id="dropEtabs" style="margin-top:6px">
-              <span class="t">Remplacer l'annuaire</span>
-              <span class="s">CSV avec latitude / longitude (facultatif)</span>
-              <input type="file" id="fileEtabs" accept=".csv,text/csv">
-            </label>
-            <button class="btn sm wide" id="btnRestoreAnnuaire" style="margin-top:6px" hidden>
-              Revenir à l'annuaire intégré
-            </button>
-
-            <hr style="border:0;border-top:1px solid var(--hairline);margin:12px 0">
-            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:6px">
-              Pour n'avoir plus qu'un fichier à déposer, on intègre l'annuaire à la page.
-            </p>
-            <button class="btn sm wide" id="btnMakeStandalone" disabled>Créer le fichier autonome</button>
-            <button class="btn sm wide" id="btnMakeAnnuaire" style="margin-top:6px" disabled>
-              Exporter l'annuaire compressé (annuaire.js)
-            </button>
-            <p class="note" id="standaloneHint" style="font-size:11.5px;color:var(--ink-muted);margin-top:6px"></p>
-          </div>
-        </details>
-
-        <div id="dataNotices"></div>
-
-        <div class="row wrap" style="margin-top:10px">
-          <button class="btn sm" id="btnForget">Oublier les fichiers</button>
-          <button class="btn sm" id="btnDemo" title="Charger un petit jeu de démonstration">Démonstration</button>
-        </div>
-        <p class="notice" style="margin-top:8px">
-          Tout se passe dans le navigateur : aucune donnée n'est envoyée sur un serveur.
-          Les fichiers sont conservés en local pour les retrouver à la prochaine ouverture.
-        </p>
-      </section>
-
-      <!-- 2. Filtres -->
       <section class="group" id="filtersGroup">
-        <h2>2 · Filtres</h2>
-
-        <input type="search" id="qText" placeholder="Rechercher : établissement, commune, risque…" aria-label="Recherche libre">
-
-        <div style="margin-top:8px">
-          <input type="search" id="qEtab" list="etabList" placeholder="Aller à un établissement…" aria-label="Aller à un établissement">
-          <datalist id="etabList"></datalist>
-        </div>
+        <input type="search" id="qEtab" list="etabList" placeholder="Aller à un établissement…" aria-label="Aller à un établissement">
+        <datalist id="etabList"></datalist>
 
         <div style="margin-top:10px">
           <label class="check"><input type="checkbox" id="chkOpenOnly"> Signalements non clos uniquement</label>
@@ -582,12 +677,12 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
         <div id="facets" style="margin-top:10px"></div>
 
-        <button class="btn wide" id="btnResetFilters" style="margin-top:4px">Réinitialiser les filtres</button>
+        <button class="btn wide" id="btnResetFilters" style="margin-top:4px">Réinitialiser les critères</button>
       </section>
 
-      <!-- 3. Période -->
+      <!-- Période -->
       <section class="group">
-        <h2>3 · Période</h2>
+        <h2>Période</h2>
         <label class="check"><input type="checkbox" id="chkTime"> Restreindre à une période</label>
         <div class="timeline" id="timeline" aria-disabled="true">
           <div class="bounds"><span>De <b id="lblFrom">—</b></span><span>à <b id="lblTo">—</b></span></div>
@@ -604,83 +699,6 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         </div>
       </section>
 
-      <!-- 4. Carte -->
-      <section class="group">
-        <h2>4 · Affichage de la carte</h2>
-        <div class="seg" role="group" aria-label="Mode d'affichage">
-          <button id="vwCluster" aria-pressed="true">Groupes</button>
-          <button id="vwPoints" aria-pressed="false">Points</button>
-          <button id="vwHeat" aria-pressed="false">Densité</button>
-          <button id="vwUrgence" aria-pressed="false">Urgence</button>
-        </div>
-        <div class="maille">
-          <label for="selMaille" style="font-size:12px;color:var(--ink-2);white-space:nowrap">Regrouper par</label>
-          <select id="selMaille">
-            <option value="etab">Établissement</option>
-            <option value="commune">Commune</option>
-            <option value="circo">Circonscription</option>
-            <option value="dept">Département</option>
-          </select>
-        </div>
-        <label class="check"><input type="checkbox" id="chkTaux">
-          Rapporter au nombre d'établissements</label>
-        <label class="check"><input type="checkbox" id="chkDimTiles"> Atténuer le fond de carte</label>
-      </section>
-
-      <!-- 5. Export -->
-      <section class="group">
-        <h2>5 · Export</h2>
-        <div class="row">
-          <button class="btn" id="btnCsv" style="flex:1">Tableur (CSV)</button>
-          <button class="btn" id="btnPdf" style="flex:1">Rapport (PDF)</button>
-        </div>
-        <button class="btn wide" id="btnPng" style="margin-top:6px">Carte seule (image PNG)</button>
-        <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin:10px 0 5px">
-          Pour un billet ou une note : texte rédigé, carte et tableaux déjà dedans.</p>
-        <div class="row">
-          <button class="btn" id="btnArticlePdf" style="flex:1">Article (PDF)</button>
-          <button class="btn" id="btnArticleDoc" style="flex:1">Article (Word)</button>
-        </div>
-        <details class="facet" style="margin-top:10px" id="blocOptions">
-          <summary>Options d'export<span class="badge" id="optBadge"></span></summary>
-          <div class="facet-body" style="padding:8px 11px">
-            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:4px">
-              Ce qui entre dans le rapport et dans l'article.</p>
-            <label class="check"><input type="checkbox" data-opt="carte"> Carte</label>
-            <label class="check"><input type="checkbox" data-opt="calendrier"> Calendrier</label>
-            <label class="check"><input type="checkbox" data-opt="territoires"> Territoires</label>
-            <label class="check"><input type="checkbox" data-opt="familles"> Familles de risques</label>
-            <label class="check"><input type="checkbox" data-opt="etats"> État du traitement</label>
-            <label class="check"><input type="checkbox" data-opt="etablissements"> Liste des établissements</label>
-            <label class="check" style="padding-left:24px"><input type="checkbox" id="chkTousEtabsOpt">
-              <span id="lblTousEtabsOpt">Tous, pas seulement les 8 premiers</span></label>
-            <label class="check"><input type="checkbox" data-opt="aCompleter">
-              Passages « à compléter » dans l'article</label>
-            <hr style="border:0;border-top:1px solid var(--hairline);margin:8px 0">
-            <label class="check"><input type="checkbox" id="chkAnonyme">
-              Masquer les noms des déclarants</label>
-            <label class="check"><input type="checkbox" id="chkDetail">
-              Joindre le détail des signalements au rapport</label>
-          </div>
-        </details>
-        <p class="notice">L'export reprend exactement ce qui est affiché : mêmes filtres, même période.</p>
-
-        <details class="facet" style="margin-top:10px">
-          <summary>Suivi des relances<span class="badge" id="suiviBadge">0</span></summary>
-          <div class="facet-body" style="padding:10px">
-            <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px">
-              Vos marques de relance et vos notes ne sont enregistrées que dans ce navigateur.
-              Exportez-les pour les conserver ou les reprendre sur un autre poste.
-            </p>
-            <div class="row wrap">
-              <button class="btn sm" id="btnSuiviExport" style="flex:1 1 110px">Exporter</button>
-              <label class="btn sm" style="flex:1 1 110px;text-align:center">Importer
-                <input type="file" id="fileSuivi" accept=".json,application/json" style="display:none">
-              </label>
-            </div>
-          </div>
-        </details>
-      </section>
     </div>
   </aside>
 
@@ -705,9 +723,42 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
       <div class="puces" id="puces"></div>
     </div>
 
+    <!-- Les réglages de la carte sont posés sur la carte : on voit ce qu'on
+         change au moment où on le change. -->
     <div class="map-overlay tr">
+      <div id="carteReglages">
+        <div class="seg" role="group" aria-label="Mode d'affichage">
+          <button id="vwCluster" aria-pressed="true">Groupes</button>
+          <button id="vwPoints" aria-pressed="false">Points</button>
+          <button id="vwHeat" aria-pressed="false">Densité</button>
+          <button id="vwUrgence" aria-pressed="false">Urgence</button>
+        </div>
+        <button class="btn icon" id="btnPopCarte" aria-expanded="false" aria-controls="popCarte"
+                title="Autres réglages de la carte" aria-label="Autres réglages de la carte">⚙</button>
+      </div>
       <button class="btn icon" id="btnFit" title="Recadrer sur les résultats" aria-label="Recadrer sur les résultats">⤢</button>
       <button class="btn icon" id="openDash" title="Afficher la synthèse" aria-label="Afficher la synthèse">▤</button>
+
+      <div id="popCarte" hidden>
+        <div class="seg only-etroit" role="group" aria-label="Mode d'affichage" style="margin-bottom:8px">
+          <button data-vue="cluster">Groupes</button>
+          <button data-vue="points">Points</button>
+          <button data-vue="heat">Densité</button>
+          <button data-vue="urgence">Urgence</button>
+        </div>
+        <div class="maille">
+          <label for="selMaille" style="font-size:12px;color:var(--ink-2);white-space:nowrap">Regrouper par</label>
+          <select id="selMaille">
+            <option value="etab">Établissement</option>
+            <option value="commune">Commune</option>
+            <option value="circo">Circonscription</option>
+            <option value="dept">Département</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" id="chkTaux">
+          Rapporter au nombre d'établissements</label>
+        <label class="check"><input type="checkbox" id="chkDimTiles"> Atténuer le fond de carte</label>
+      </div>
     </div>
   </div>
 
@@ -849,8 +900,179 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
 <div id="scrim"></div>
 
+<!-- ================= Données ================= -->
+<div class="modale" id="modaleDonnees" role="dialog" aria-modal="true" aria-labelledby="ttlDonnees">
+  <div class="boite">
+    <div class="tete">
+      <h2 id="ttlDonnees">Données</h2>
+      <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="corps">
+
+      <section class="group">
+        <h2>Registre</h2>
+        <label class="drop" id="dropIncidents">
+          <span class="t">Signalements</span>
+          <span class="s">Export du registre, avec colonne UAI (CSV)</span>
+          <input type="file" id="fileIncidents" accept=".csv,text/csv">
+        </label>
+        <div class="file-state"><span class="dot" id="dotIncidents"></span><span id="lblIncidents">Aucun fichier</span></div>
+        <button class="btn sm wide" id="btnViderRegistre" style="margin-top:4px" hidden>
+          Retirer le registre</button>
+        <div id="dataNotices"></div>
+      </section>
+
+      <section class="group">
+        <h2>Contenu des signalements</h2>
+        <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:6px">
+          Le texte des fiches, que l'extraction du portail ne contient pas.
+          Il se récupère avec le favori de la page
+          <a href="contenu/" target="_blank" rel="noopener">Contenu des signalements</a>,
+          et se raccorde au registre par le numéro d'inscription.
+        </p>
+        <label class="drop" id="dropTextes">
+          <span class="t">Contenu des fiches</span>
+          <span class="s">rsst_contenu_….csv</span>
+          <input type="file" id="fileTextes" accept=".csv,text/csv">
+        </label>
+        <div class="file-state"><span class="dot" id="dotTextes"></span><span id="lblTextes">Aucun fichier</span></div>
+        <button class="btn sm wide" id="btnViderTextes" style="margin-top:4px" hidden>
+          Retirer le contenu</button>
+        <p class="notice" style="margin-top:8px">
+          Ce fichier est nominatif. Il reste dans ce navigateur, et n'entre dans
+          un export que si vous le demandez explicitement.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Annuaire des établissements
+          <span id="etabsBadge" style="font-weight:600;color:var(--ink-2);text-transform:none;letter-spacing:0">—</span></h2>
+        <div class="file-state" style="padding-top:0"><span class="dot" id="dotEtabs"></span><span id="lblEtabs">Aucun fichier</span></div>
+        <label class="drop" id="dropEtabs" style="margin-top:6px">
+          <span class="t">Remplacer l'annuaire</span>
+          <span class="s">CSV avec latitude / longitude (facultatif)</span>
+          <input type="file" id="fileEtabs" accept=".csv,text/csv">
+        </label>
+        <button class="btn sm wide" id="btnRestoreAnnuaire" style="margin-top:6px" hidden>
+          Revenir à l'annuaire intégré
+        </button>
+      </section>
+
+      <section class="group">
+        <h2>Suivi des relances</h2>
+        <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px">
+          Vos marques de relance et vos notes — <b id="suiviBadge">0</b> à ce jour —
+          ne sont enregistrées que dans ce navigateur. Exportez-les pour les
+          conserver ou les reprendre sur un autre poste.
+        </p>
+        <div class="row wrap">
+          <button class="btn sm" id="btnSuiviExport" style="flex:1 1 110px">Exporter</button>
+          <label class="btn sm" style="flex:1 1 110px;text-align:center">Importer
+            <input type="file" id="fileSuivi" accept=".json,application/json" style="display:none">
+          </label>
+        </div>
+      </section>
+
+      <details class="facet">
+        <summary>Avancé</summary>
+        <div class="facet-body" style="padding:10px">
+          <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:6px">
+            Pour n'avoir plus qu'un fichier à déposer, on intègre l'annuaire à la page.
+          </p>
+          <button class="btn sm wide" id="btnMakeStandalone" disabled>Créer le fichier autonome</button>
+          <button class="btn sm wide" id="btnMakeAnnuaire" style="margin-top:6px" disabled>
+            Exporter l'annuaire compressé (annuaire.js)
+          </button>
+          <p class="note" id="standaloneHint" style="font-size:11.5px;color:var(--ink-muted);margin-top:6px"></p>
+          <hr style="border:0;border-top:1px solid var(--hairline);margin:12px 0">
+          <div class="row wrap">
+            <button class="btn sm" id="btnForget">Oublier les fichiers</button>
+            <button class="btn sm" id="btnDemo" title="Charger un petit jeu de démonstration">Démonstration</button>
+          </div>
+        </div>
+      </details>
+
+      <p class="notice">
+        Tout se passe dans le navigateur : aucune donnée n'est envoyée sur un serveur.
+        Les fichiers sont conservés en local pour les retrouver à la prochaine ouverture.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Exporter ================= -->
+<div class="modale" id="modaleExport" role="dialog" aria-modal="true" aria-labelledby="ttlExport">
+  <div class="boite">
+    <div class="tete">
+      <h2 id="ttlExport">Exporter</h2>
+      <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="corps">
+
+      <p class="notice" style="margin:0 0 12px" id="perimetreExport">
+        L'export reprend exactement ce qui est affiché : mêmes critères, même période.
+      </p>
+
+      <div class="sortie">
+        <div class="quoi"><b>Rapport</b>
+          <span>Tableau de bord : chiffres, carte, priorités, et la liste de tous les établissements.</span></div>
+        <div class="fmts"><button class="btn sm" id="btnPdf">PDF</button></div>
+      </div>
+
+      <div class="sortie">
+        <div class="quoi"><b>Article rédigé</b>
+          <span>Pour un billet ou une note : texte suivi, carte et tableaux déjà en place.</span></div>
+        <div class="fmts">
+          <button class="btn sm" id="btnArticlePdf">PDF</button>
+          <button class="btn sm" id="btnArticleDoc">Word</button>
+        </div>
+      </div>
+
+      <div class="sortie">
+        <div class="quoi"><b>Tableur</b>
+          <span>Un signalement par ligne, pour retravailler les chiffres.</span></div>
+        <div class="fmts"><button class="btn sm" id="btnCsv">CSV</button></div>
+      </div>
+
+      <div class="sortie">
+        <div class="quoi"><b>Carte seule</b>
+          <span>L'image telle qu'elle est affichée, en haute définition.</span></div>
+        <div class="fmts"><button class="btn sm" id="btnPng">PNG</button></div>
+      </div>
+
+      <section class="group" style="margin-top:18px">
+        <h2>Ce que contiennent le rapport et l'article
+          <span id="optBadge" style="font-weight:600;color:var(--ink-2);text-transform:none;letter-spacing:0">tout</span></h2>
+        <div style="columns:2; column-gap:18px">
+          <label class="check"><input type="checkbox" data-opt="carte"> Carte</label>
+          <label class="check"><input type="checkbox" data-opt="calendrier"> Calendrier</label>
+          <label class="check"><input type="checkbox" data-opt="territoires"> Territoires</label>
+          <label class="check"><input type="checkbox" data-opt="familles"> Familles de risques</label>
+          <label class="check"><input type="checkbox" data-opt="etats"> État du traitement</label>
+          <label class="check"><input type="checkbox" data-opt="etablissements"> Liste des établissements</label>
+        </div>
+        <label class="check" style="padding-left:24px"><input type="checkbox" id="chkTousEtabsOpt">
+          <span id="lblTousEtabsOpt">Tous, pas seulement les 8 premiers</span></label>
+        <label class="check"><input type="checkbox" data-opt="aCompleter">
+          Passages « à compléter » dans l'article</label>
+        <hr style="border:0;border-top:1px solid var(--hairline);margin:10px 0">
+        <label class="check"><input type="checkbox" id="chkAnonyme">
+          Masquer les noms des déclarants</label>
+        <label class="check"><input type="checkbox" id="chkDetail">
+          Joindre le détail des signalements au rapport</label>
+        <label class="check" id="ligneTexteExport" hidden><input type="checkbox" id="chkTexteExport">
+          Joindre le texte des signalements</label>
+        <p class="notice" id="avisTexteExport" hidden style="margin-top:6px">
+          Le texte des fiches est nominatif. Joint à un document, il en fait un
+          document nominatif : à ne pas diffuser au-delà des personnes habilitées.
+        </p>
+      </section>
+    </div>
+  </div>
+</div>
+
 <nav id="mobilebar" aria-label="Navigation">
-  <button id="mbFilters"><span class="n" id="mbFilterCount">0</span>Filtres</button>
+  <button id="mbFilters"><span class="n" id="mbFilterCount">0</span>Critères</button>
   <button id="mbMap">Carte</button>
   <button id="mbDash"><span class="n" id="mbSignalCount">0</span>Synthèse</button>
 </nav>
@@ -1284,10 +1506,11 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
 /* -------------------------------- Modèle -------------------------------- */
 
 const state = {
-  csv: { etabs: null, incidents: null },   // texte brut conservé pour l'export/relecture
-  meta: { etabs: null, incidents: null },  // { name, rows }
+  csv: { etabs: null, incidents: null, textes: null }, // texte brut conservé pour l'export/relecture
+  meta: { etabs: null, incidents: null, textes: null },// { name, rows }
   etabs: new Map(),                        // UAI -> établissement
   incidents: [],                           // signalements rattachés
+  textes: new Map(),                       // numéro d'inscription -> contenu de la fiche
   orphans: [],                             // signalements sans établissement connu
   undated: 0,
   facets: {},                              // clé -> { label, values: Map(valeur -> nombre) }
@@ -1339,9 +1562,73 @@ const FACET_DEFS = [
   { key: 'nature', label: "Type d'établissement" },
 ];
 
+/**
+ * Lit le second fichier : le texte des fiches, produit par `rsst-contenu.js`.
+ *
+ * Il se raccorde au registre par le numéro d'inscription, et rien d'autre :
+ * un rapprochement sur l'établissement et la date confondrait deux
+ * signalements déposés le même jour au même endroit, ce qui arrive.
+ */
+async function lireTextes() {
+  state.textes = new Map();
+  if (!state.csv.textes) return;
+  const rows = await parseCsv(state.csv.textes);
+  const lire = (row, ...noms) => {
+    for (const n of noms) if (row[n] != null && row[n] !== '') return String(row[n]);
+    return '';
+  };
+  for (const row of rows) {
+    const num = lire(row, 'numero', 'numéro', 'number').trim();
+    if (!num) continue;
+    const t = {
+      observation: lire(row, 'observation'),
+      suggestion: lire(row, 'suggestion'),
+      reponses: lire(row, 'reponses', 'réponses'),
+      pj: lire(row, 'pieces_jointes'),
+      caviarde: /^oui$/i.test(lire(row, 'caviarde')),
+      closePar: lire(row, 'cloture_par'),
+      visas: lire(row, 'visas'),
+      erreur: lire(row, 'erreur'),
+    };
+    // Une ligne en échec n'apporte pas de texte : la garder masquerait le
+    // fait que ce signalement n'a pas de contenu connu.
+    if (t.erreur && !t.observation && !t.suggestion && !t.reponses) continue;
+    t.recherche = norm([t.observation, t.suggestion, t.reponses].join(' '));
+    state.textes.set(num, t);
+  }
+}
+
+/** Contenu rattaché à un signalement, s'il a été chargé. */
+function texteDe(inc) {
+  return inc && inc.number ? state.textes.get(String(inc.number).trim()) : undefined;
+}
+
+/**
+ * Le texte des fiches entre-t-il dans les exports ?
+ *
+ * Jamais par défaut : joindre du nominatif à un document doit rester un geste
+ * délibéré, pas un réglage dont on hérite.
+ */
+function veutTexte() {
+  const c = $('#chkTexteExport');
+  return state.textes.size > 0 && !!c && c.checked;
+}
+
+/** Le contenu d'une fiche, mis à plat pour une cellule ou une colonne. */
+function texteLisible(inc) {
+  const t = texteDe(inc);
+  if (!t) return '';
+  const bouts = [];
+  if (t.observation) bouts.push(t.observation);
+  if (t.suggestion) bouts.push('Suggestion : ' + t.suggestion);
+  if (t.reponses) bouts.push('Réponses : ' + t.reponses);
+  return bouts.join('\n\n');
+}
+
 async function buildModel() {
   const etabRows = state.csv.etabs ? await parseCsv(state.csv.etabs) : [];
   const incRows = state.csv.incidents ? await parseCsv(state.csv.incidents) : [];
+  await lireTextes();
 
   state.etabs = new Map();
   state.incidents = [];
@@ -1561,7 +1848,10 @@ function computeFiltered() {
       const hay = norm([inc.etab.name, inc.etabLabel, inc.uai, inc.etab.commune,
                         inc.commune, inc.circo, inc.risk, inc.state,
                         inc.reporter, inc.number].join(' '));
-      if (!hay.includes(q)) return false;
+      // Le texte des fiches, quand il a été chargé, entre dans la recherche :
+      // c'est ce qui permet de retrouver « amiante » ou « plafond ».
+      const t = texteDe(inc);
+      if (!hay.includes(q) && !(t && t.recherche.includes(q))) return false;
     }
     return true;
   };
@@ -2922,23 +3212,33 @@ function construireRapport(visuels) {
   }
 
   doc.addPage([297, 210], 'landscape');
+  const avecTexte = veutTexte();
+  const nTexte = avecTexte ? inc.filter((i) => texteDe(i)).length : 0;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...PDF_C.encre);
   doc.text('Détail des signalements', 16, 18);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
-  doc.text(`${fmtInt(inc.length)} ligne${inc.length > 1 ? 's' : ''}, dans l'ordre chronologique.`, 16, 23);
+  doc.text(pdfSafeProse(`${fmtInt(inc.length)} ligne${inc.length > 1 ? 's' : ''}, dans l'ordre chronologique.`
+    + (avecTexte ? ` Le texte de la fiche figure pour ${fmtInt(nTexte)} d'entre elles.` : '')), 16, 23);
 
   doc.autoTable({
     startY: 28,
-    head: [['Date', 'Établissement', 'Commune', 'Dépt', 'Risque', 'État', 'Signalé par']],
-    body: inc.map((i) => [
-      DATE_FMT.format(i.date), i.etab.name, i.etab.commune, i.etab.dept,
-      i.risk, i.state, declarant(i.reporter),
-    ]),
+    head: [['Date', 'Établissement', 'Commune', 'Dépt', 'Risque', 'État', 'Signalé par']
+      .concat(avecTexte ? ['Ce qui est écrit'] : [])],
+    body: inc.map((i) => {
+      const l = [DATE_FMT.format(i.date), i.etab.name, i.etab.commune, i.etab.dept,
+        i.risk, i.state, declarant(i.reporter)];
+      if (avecTexte) l.push(texteLisible(i));
+      return l;
+    }),
     theme: 'striped',
     styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: PDF_C.encre },
     headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
     alternateRowStyles: { fillColor: [248, 247, 244] },
-    columnStyles: {
+    columnStyles: avecTexte ? {
+      0: { cellWidth: 16 }, 1: { cellWidth: 42 }, 2: { cellWidth: 22 },
+      3: { cellWidth: 18 }, 4: { cellWidth: 46 }, 5: { cellWidth: 17 },
+      6: { cellWidth: 24 }, 7: { cellWidth: 'auto' },
+    } : {
       0: { cellWidth: 18 }, 1: { cellWidth: 58 }, 2: { cellWidth: 30 },
       3: { cellWidth: 26 }, 4: { cellWidth: 74 }, 5: { cellWidth: 22 }, 6: { cellWidth: 'auto' },
     },
@@ -3782,7 +4082,30 @@ function incCard(inc) {
       ${inc.observations ? ' · ' + fmtInt(inc.observations) + ' observation' + (inc.observations > 1 ? 's' : '') : ''}
       ${inc.delay != null ? ' · réponse après ' + fmtInt(inc.delay) + ' j' : ''}
     </div>
+    ${corpsFiche(inc)}
   </article>`;
+}
+
+/**
+ * Le texte de la fiche, replié sous le signalement.
+ *
+ * Replié par défaut : une liste de signalements se lit d'abord en diagonale,
+ * et ce contenu est nominatif — il ne s'ouvre pas sous les yeux d'un voisin
+ * d'open space sans qu'on l'ait demandé.
+ */
+function corpsFiche(inc) {
+  const t = texteDe(inc);
+  if (!t) return '';
+  const bloc = (titre, txt) => txt
+    ? `<div class="ft-b"><b>${titre}</b><p>${esc(txt).replace(/\n/g, '<br>')}</p></div>` : '';
+  const corps = bloc('Observation', t.observation) + bloc('Suggestion', t.suggestion)
+    + bloc('Réponses', t.reponses);
+  if (!corps) return '';
+  const mots = norm(t.observation + t.suggestion).length;
+  return `<details class="ftexte">
+    <summary>Lire la fiche${t.caviarde ? ' <i>· caviardée</i>' : ''}${mots ? '' : ' <i>· sans texte</i>'}</summary>
+    <div class="ft-c">${corps}</div>
+  </details>`;
 }
 
 /* -------------------------------- Exports -------------------------------- */
@@ -3816,16 +4139,23 @@ function exportCsv() {
     const s = String(v ?? '');
     return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
+  const avecTexte = veutTexte();
   const head = ['Date', 'Registre', 'Numero', 'UAI', 'Etablissement', 'Commune', 'Departement',
                 'Type etablissement', 'Famille de risque', 'Risque', 'Etat', 'Clos',
-                'Signale par', 'Observations', 'Delai reponse (j)'];
+                'Signale par', 'Observations', 'Delai reponse (j)']
+    .concat(avecTexte ? ['Observation', 'Suggestion', 'Reponses', 'Caviarde'] : []);
   const lines = [head.join(';')];
   for (const i of current.incidents) {
-    lines.push([
+    const l = [
       DATE_FMT.format(i.date), i.registre, i.number, i.uai, i.etab.name, i.etab.commune,
       i.etab.dept, i.etab.nature, i.family, i.risk, i.state, i.open ? 'non' : 'oui',
       declarant(i.reporter), i.observations, i.delay ?? '',
-    ].map(cell).join(';'));
+    ];
+    if (avecTexte) {
+      const t = texteDe(i) || {};
+      l.push(t.observation || '', t.suggestion || '', t.reponses || '', t.caviarde ? 'oui' : '');
+    }
+    lines.push(l.map(cell).join(';'));
   }
   download(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
            `visu-incidents_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -3959,6 +4289,9 @@ function stopPlay() {
 
 /* ------------------------------ Interface : tiroirs ------------------------------ */
 
+const ETROIT = '(max-width:1000px)';
+const estEtroit = () => window.matchMedia(ETROIT).matches;
+
 function openDrawer(name) { document.body.dataset.drawer = name; syncMobileBar(); }
 function closeDrawer() { delete document.body.dataset.drawer; syncMobileBar(); }
 
@@ -3966,6 +4299,55 @@ function syncMobileBar() {
   const d = document.body.dataset.drawer || 'map';
   const map = { filters: '#mbFilters', dash: '#mbDash', map: '#mbMap' };
   for (const [k, sel] of Object.entries(map)) $(sel).setAttribute('aria-current', String(k === d));
+}
+
+/**
+ * Montre ou cache le panneau des critères.
+ *
+ * Au large il se replie sur place et la carte prend la place ; à l'étroit il
+ * devient un tiroir. Le bouton de la barre haute dit lequel des deux est en
+ * cours, pour que l'état soit lisible sans compter les pixels.
+ */
+function basculerCriteres(force) {
+  if (estEtroit()) {
+    const ouvert = document.body.dataset.drawer === 'filters';
+    const veut = force === undefined ? !ouvert : force;
+    veut ? openDrawer('filters') : closeDrawer();
+  } else {
+    const app = $('#app');
+    const veut = force === undefined ? app.classList.contains('side-hidden') : force;
+    app.classList.toggle('side-hidden', !veut);
+    Prefs.set('criteresCaches', !veut);
+    setTimeout(() => map && map.invalidateSize(), 250);
+  }
+  syncCriteres();
+}
+
+function syncCriteres() {
+  const ouvert = estEtroit()
+    ? document.body.dataset.drawer === 'filters'
+    : !$('#app').classList.contains('side-hidden');
+  $('#btnFiltres').setAttribute('aria-expanded', String(ouvert));
+}
+
+/* ------------------------------ Interface : boîtes de dialogue ------------------------------ */
+
+let fermeeParEchap = null;
+
+function ouvrirModale(id) {
+  const m = $('#' + id);
+  if (!m) return;
+  m.dataset.ouverte = '';
+  // On rend la main au clavier : premier élément actionnable de la boîte.
+  const cible = m.querySelector('input:not([type=file]), button:not([data-fermer])');
+  if (cible) setTimeout(() => cible.focus(), 30);
+  fermeeParEchap = id;
+}
+
+function fermerModale(id) {
+  const m = id ? $('#' + id) : $('.modale[data-ouverte]');
+  if (m) delete m.dataset.ouverte;
+  fermeeParEchap = null;
 }
 
 function selectTab(which) {
@@ -3994,9 +4376,12 @@ async function acceptFile(kind, file) {
   await reload();
 }
 
+const DEPOTS = { etabs: 'Etabs', incidents: 'Incidents', textes: 'Textes' };
+
 function setFileState(kind, label, status) {
-  const dot = $(kind === 'etabs' ? '#dotEtabs' : '#dotIncidents');
-  const lbl = $(kind === 'etabs' ? '#lblEtabs' : '#lblIncidents');
+  const suffixe = DEPOTS[kind] || 'Incidents';
+  const dot = $('#dot' + suffixe);
+  const lbl = $('#lbl' + suffixe);
   dot.className = 'dot' + (status === 'ok' ? ' ok' : status === 'err' ? ' err' : '');
   lbl.textContent = label;
 }
@@ -4015,6 +4400,7 @@ async function reload() {
     `${builtin ? 'Annuaire intégré' : state.meta.etabs.name} — ${fmtInt(state.nAnnuaire)} établissements`, 'ok');
   setFileState('incidents', `${state.meta.incidents.name || 'Signalements'} — ${fmtInt(state.incidents.length)} rattachés`, 'ok');
   $('#btnViderRegistre').hidden = false;
+  syncTextes();
   $('#etabsBadge').textContent = builtin ? 'intégré' : 'remplacé';
   $('#btnRestoreAnnuaire').hidden = builtin || !hasBuiltinAnnuaire();
   syncBuildButtons();
@@ -4122,6 +4508,59 @@ function refresh() {
   $('#mbFilterCount').textContent = activeFilterCount();
   $('#suiviBadge').textContent = Object.keys(Suivi.charger().relances).length;
   $('#btnClearMonth').hidden = !state.filters.month;
+  syncBarreHaute();
+}
+
+/**
+ * Tient à jour la barre haute : ce qui est chargé, et combien de critères
+ * restreignent la vue. Ce sont les deux choses qu'on doit pouvoir lire sans
+ * ouvrir quoi que ce soit.
+ */
+function syncBarreHaute() {
+  const n = activeFilterCount();
+  const puce = $('#nFiltres');
+  puce.hidden = !n;
+  puce.textContent = String(n);
+  $('#subCriteres').textContent = n
+    ? `${n} critère${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`
+    : 'Aucun critère actif';
+
+  const lbl = $('#lblRegistre');
+  const dot = $('#dotTop');
+  if (!state.incidents.length) {
+    lbl.textContent = state.csv.incidents ? 'Registre illisible' : 'Aucun registre';
+    dot.className = 'dot' + (state.csv.incidents ? ' err' : '');
+    return;
+  }
+  const lieux = new Set(state.incidents.map((i) => i.uai)).size;
+  lbl.textContent = `${fmtInt(state.incidents.length)} signalements · ${fmtInt(lieux)} établissements`
+    + (state.textes && state.textes.size ? ' · contenu' : '');
+  dot.className = 'dot ok';
+}
+
+/**
+ * Dit où en est le contenu des fiches : combien de signalements ont été
+ * rapprochés, et quelle part du registre cela couvre.
+ *
+ * Un rapprochement partiel — un export du contenu plus ancien que l'export du
+ * registre, par exemple — se verrait sinon comme une absence de texte.
+ */
+function syncTextes() {
+  const n = state.textes.size;
+  $('#btnViderTextes').hidden = !n;
+  $('#ligneTexteExport').hidden = !n;
+  if (!n) {
+    $('#chkTexteExport').checked = false;
+    $('#avisTexteExport').hidden = true;
+    if (!state.csv.textes) setFileState('textes', 'Aucun fichier', '');
+    return;
+  }
+  const rattaches = state.incidents.filter((i) => texteDe(i)).length;
+  const part = Math.round((rattaches / Math.max(1, state.incidents.length)) * 100);
+  const nom = state.meta.textes && state.meta.textes.name ? state.meta.textes.name : 'Contenu';
+  setFileState('textes', `${nom} — ${fmtInt(rattaches)} fiche${rattaches > 1 ? 's' : ''} rapprochée${rattaches > 1 ? 's' : ''} (${part} %)`,
+    rattaches ? 'ok' : 'err');
+  $('#avisTexteExport').hidden = !$('#chkTexteExport').checked;
 }
 
 /* -------------------------------- Évènements -------------------------------- */
@@ -4139,7 +4578,9 @@ function applyTheme(theme) {
 
 function wireEvents() {
   /* --- Fichiers : sélection + glisser-déposer --- */
-  const pairs = [['etabs', '#fileEtabs', '#dropEtabs'], ['incidents', '#fileIncidents', '#dropIncidents']];
+  const pairs = [['etabs', '#fileEtabs', '#dropEtabs'],
+                 ['incidents', '#fileIncidents', '#dropIncidents'],
+                 ['textes', '#fileTextes', '#dropTextes']];
   for (const [kind, input, drop] of pairs) {
     $(input).addEventListener('change', (e) => acceptFile(kind, e.target.files[0]));
     const zone = $(drop);
@@ -4159,7 +4600,15 @@ function wireEvents() {
     if (!confirm("Retirer l'export du registre ?\n\n"
       + "L'annuaire des établissements, vos marques de relance, vos notes et vos "
       + "réglages sont conservés. Vous pourrez déposer un autre export aussitôt.")) return;
-    await Store.del('incidents');
+    await Store.del('incidents'); await Store.del('textes');
+    location.reload();
+  });
+
+  $('#btnViderTextes').addEventListener('click', async () => {
+    if (!confirm('Retirer le contenu des fiches ?\n\n'
+      + 'Le registre, l\'annuaire et votre suivi sont conservés. Seul le texte '
+      + 'des signalements est effacé de ce navigateur.')) return;
+    await Store.del('textes');
     location.reload();
   });
 
@@ -4167,7 +4616,7 @@ function wireEvents() {
     if (!confirm("Retirer l'annuaire déposé et l'export du registre ?\n\n"
       + "L'annuaire intégré à la page reprendra sa place. Vos marques de relance "
       + "et vos notes sont conservées.")) return;
-    await Store.del('etabs'); await Store.del('incidents');
+    await Store.del('etabs'); await Store.del('incidents'); await Store.del('textes');
     location.reload();
   });
 
@@ -4312,13 +4761,13 @@ function wireEvents() {
   // Options d'export
   const peindreOptions = () => {
     const o = options();
-    $$('#blocOptions [data-opt]').forEach((c) => { c.checked = o[c.dataset.opt] !== false; });
+    $$('#modaleExport [data-opt]').forEach((c) => { c.checked = o[c.dataset.opt] !== false; });
     $('#chkTousEtabsOpt').checked = state.tousEtabs;
     $('#chkTousEtabsOpt').disabled = o.etablissements === false;
     const retirees = Object.keys(OPTIONS_DEFAUT).filter((k) => o[k] === false).length;
     $('#optBadge').textContent = retirees ? `${retirees} retirée${retirees > 1 ? 's' : ''}` : 'tout';
   };
-  $$('#blocOptions [data-opt]').forEach((c) => c.addEventListener('change', () => {
+  $$('#modaleExport [data-opt]').forEach((c) => c.addEventListener('change', () => {
     Prefs.set('optionsExport', { ...options(), [c.dataset.opt]: c.checked });
     peindreOptions();
   }));
@@ -4332,6 +4781,12 @@ function wireEvents() {
   // Anonymat
   $('#chkAnonyme').checked = anonyme();
   $('#chkAnonyme').addEventListener('change', (e) => { Prefs.set('anonyme', e.target.checked); refresh(); });
+
+  // Joindre le texte des fiches reste un geste délibéré : le choix n'est pas
+  // mémorisé d'une session à l'autre, et l'avertissement suit la case.
+  $('#chkTexteExport').addEventListener('change', (e) => {
+    $('#avisTexteExport').hidden = !e.target.checked;
+  });
 
   // Suivi : sauvegarde et reprise
   $('#btnSuiviExport').addEventListener('click', () => {
@@ -4397,9 +4852,45 @@ function wireEvents() {
     setTimeout(() => map.invalidateSize(), 250);
   });
   $('#closeDash').addEventListener('click', closeDrawer);
-  $('#closeFilters').addEventListener('click', closeDrawer);
+  $('#closeFilters').addEventListener('click', () => basculerCriteres(false));
+  $('#btnFiltres').addEventListener('click', () => basculerCriteres());
   $('#scrim').addEventListener('click', closeDrawer);
   $('#mbFilters').addEventListener('click', () => openDrawer('filters'));
+
+  // --- Boîtes de dialogue ---
+  $('#btnDonnees').addEventListener('click', () => ouvrirModale('modaleDonnees'));
+  $('#btnExporter').addEventListener('click', () => ouvrirModale('modaleExport'));
+  $$('.modale').forEach((m) => {
+    m.addEventListener('click', (e) => {
+      // Cliquer le voile ferme ; cliquer la boîte ne doit pas.
+      if (e.target === m || e.target.closest('[data-fermer]')) fermerModale(m.id);
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fermeeParEchap) fermerModale();
+  });
+  // Lancer un export ferme la boîte : le document se fabrique à l'écran,
+  // derrière un voile on ne verrait plus rien de ce qui se passe.
+  $$('#modaleExport .sortie button').forEach((b) =>
+    b.addEventListener('click', () => fermerModale('modaleExport')));
+
+  // --- Réglages posés sur la carte ---
+  $('#btnPopCarte').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const pop = $('#popCarte');
+    pop.hidden = !pop.hidden;
+    $('#btnPopCarte').setAttribute('aria-expanded', String(!pop.hidden));
+  });
+  document.addEventListener('click', (e) => {
+    if (!$('#popCarte').hidden && !e.target.closest('#popCarte, #btnPopCarte')) {
+      $('#popCarte').hidden = true;
+      $('#btnPopCarte').setAttribute('aria-expanded', 'false');
+    }
+  });
+  // À l'étroit, le sélecteur d'affichage se replie dans le même panneau :
+  // les deux doivent commander la même chose.
+  $$('#popCarte [data-vue]').forEach((b) =>
+    b.addEventListener('click', () => $('#vw' + b.dataset.vue[0].toUpperCase() + b.dataset.vue.slice(1)).click()));
   $('#mbDash').addEventListener('click', () => openDrawer('dash'));
   $('#mbMap').addEventListener('click', closeDrawer);
 
@@ -4490,16 +4981,20 @@ function loadDemo() {
 
 (async function start() {
   applyTheme(Prefs.get('theme', 'auto'));
+  if (Prefs.get('criteresCaches', false)) $('#app').classList.add('side-hidden');
   initMap();
   wireEvents();
   syncMobileBar();
+  syncCriteres();
   syncBuildButtons();
   renderNotices();
 
   // Reprise des fichiers de la session précédente.
-  const [e, i] = await Promise.all([Store.get('etabs'), Store.get('incidents')]);
+  const [e, i, t] = await Promise.all([
+    Store.get('etabs'), Store.get('incidents'), Store.get('textes')]);
   if (e) { state.csv.etabs = e.text; state.meta.etabs = { name: e.name }; setFileState('etabs', e.name, 'loading'); }
   if (i) { state.csv.incidents = i.text; state.meta.incidents = { name: i.name }; setFileState('incidents', i.name, 'loading'); }
+  if (t) { state.csv.textes = t.text; state.meta.textes = { name: t.name }; setFileState('textes', t.name, 'loading'); }
 
   // À défaut d'annuaire déposé par l'utilisateur, on prend celui qui est intégré.
   if (!state.csv.etabs && hasBuiltinAnnuaire()) {
@@ -4510,7 +5005,7 @@ function loadDemo() {
     } catch (err) {
       setFileState('etabs', 'Annuaire intégré illisible', 'err');
       renderNotices(err.message + ' Déposez le fichier des établissements à la place.');
-      $('#etabsBlock').open = true;
+      ouvrirModale('modaleDonnees');
     }
   }
 
