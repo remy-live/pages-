@@ -885,6 +885,87 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
 .sortie .quoi span{font-size:11.5px; color:var(--ink-muted); line-height:1.4}
 .sortie .fmts{display:flex; gap:6px; flex:0 0 auto}
 
+/* ---------------- Arrivé récemment ---------------- */
+.pied-recent{
+  display:flex; gap:8px; flex:0 0 auto;
+  padding:11px 16px; border-top:1px solid var(--hairline); background:var(--surface);
+}
+.recent-seg{margin-bottom:14px}
+.recent-tuiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px}
+.recent-tuiles .t{
+  background:var(--surface-2); border:1px solid var(--hairline);
+  border-radius:var(--radius); padding:11px 13px;
+}
+.recent-tuiles .t b{display:block; font-size:25px; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.1}
+.recent-tuiles .t span{font-size:11.5px; color:var(--ink-2)}
+.recent-liste{display:flex; flex-direction:column}
+.recent-l{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  padding:9px 6px; border:0; border-bottom:1px solid var(--hairline);
+  background:none; font:inherit; cursor:pointer; color:var(--ink); border-radius:6px;
+}
+.recent-l:hover{background:var(--surface-2)}
+.recent-l .j{
+  font-size:11px; color:var(--ink-muted); font-variant-numeric:tabular-nums;
+  white-space:nowrap; flex:0 0 62px;
+}
+.recent-l .q{flex:1; min-width:0}
+.recent-l .q b{display:block; font-size:13px; font-weight:600}
+.recent-l .q span{font-size:11.5px; color:var(--ink-muted); display:block;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* ---------------- Liseuse ----------------
+   Une fiche par page. Le texte d'un signalement se lit mal dans une colonne
+   de 360 px : ici il a la largeur d'une page, et rien d'autre autour. */
+.modale.liseuse > .boite{width:min(780px,100%); height:min(88vh,920px)}
+.liseuse .tete h2{font-size:18px; margin:0}
+.liseuse .tete .sub{font-size:12px; color:var(--ink-muted); margin-top:2px}
+.liseuse .compte{
+  font-size:12px; color:var(--ink-2); font-variant-numeric:tabular-nums;
+  background:var(--surface-2); border-radius:20px; padding:4px 11px; white-space:nowrap;
+}
+.liseuse .corps{padding:0}
+.page{padding:30px 34px 34px; max-width:68ch; margin:0 auto}
+.page .ent{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:3px}
+.page .jour{font-size:13px; font-weight:650; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.page h3{
+  font:700 23px/1.25 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.01em; margin:9px 0 7px; color:var(--ink);
+}
+.page .ligne{font-size:12.5px; color:var(--ink-muted); margin-bottom:22px}
+.page .ligne b{color:var(--ink-2); font-weight:600}
+.page section{margin-bottom:22px}
+.page section > h4{
+  font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; font-weight:700;
+  color:var(--ink-muted); margin:0 0 6px;
+}
+/* Descendant et non enfant direct : les paragraphes des réponses sont
+   emboîtés dans .rep, et perdraient sinon leurs retours à la ligne. */
+.page section p{
+  margin:0; font-size:15.5px; line-height:1.72; color:var(--ink);
+  white-space:pre-wrap; overflow-wrap:anywhere;
+}
+.page .rep p{font-size:14.5px; color:var(--ink-2)}
+.page .rep{border-left:2px solid var(--hairline); padding-left:14px; margin-top:12px}
+.page .rep + .rep{margin-top:16px}
+.page .muet{
+  font-size:13.5px; color:var(--ink-muted); font-style:italic;
+  background:var(--surface-2); border-radius:9px; padding:14px 16px;
+}
+.liseuse .pied{
+  display:flex; align-items:center; gap:12px; flex:0 0 auto;
+  padding:11px 16px; border-top:1px solid var(--hairline); background:var(--surface);
+}
+.liseuse .pied .btn{min-width:112px; justify-content:center}
+.pastilles{display:flex; gap:5px; flex:1; justify-content:center; flex-wrap:wrap}
+.pastilles i{
+  width:7px; height:7px; border-radius:50%; background:var(--grid);
+  cursor:pointer; transition:background .15s, transform .15s;
+}
+.pastilles i:hover{transform:scale(1.4)}
+.pastilles i.ici{background:var(--accent); transform:scale(1.25)}
+.pastilles i.ouvert{box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--warning)}
+
 /* ---------------- Réglages posés sur la carte ---------------- */
 #carteReglages{
   display:flex; align-items:center; gap:6px;
@@ -1328,6 +1409,8 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
     <span class="sep"></span>
 
+    <button class="btn" id="btnRecent" aria-haspopup="dialog"
+            title="Ce qui est arrivé ces dernières semaines">Récent<span class="n" id="nRecent" hidden>0</span></button>
     <button class="btn" id="btnFiltres" aria-expanded="true" aria-controls="sidebar"
             title="Afficher ou masquer les critères">Critères<span class="n" id="nFiltres" hidden>0</span></button>
     <button class="btn primaire" id="btnExporter" aria-haspopup="dialog">Exporter…</button>
@@ -1747,6 +1830,41 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           document nominatif : à ne pas diffuser au-delà des personnes habilitées.
         </p>
       </section>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Arrivé récemment ================= -->
+<div class="modale" id="modaleRecent" role="dialog" aria-modal="true" aria-labelledby="ttlRecent">
+  <div class="boite">
+    <div class="tete">
+      <h2 id="ttlRecent">Arrivé récemment</h2>
+      <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="corps" id="recentCorps"></div>
+    <div class="pied-recent">
+      <button class="btn" id="btnHalo" style="flex:1">Entourer sur la carte</button>
+      <button class="btn" id="btnMoisRecents" style="flex:1">Ne garder que ces mois</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Liseuse ================= -->
+<div class="modale liseuse" id="modaleLiseuse" role="dialog" aria-modal="true" aria-labelledby="liseuseTitre">
+  <div class="boite">
+    <div class="tete">
+      <div style="flex:1;min-width:0">
+        <h2 id="liseuseTitre">—</h2>
+        <div class="sub" id="liseuseLieu"></div>
+      </div>
+      <span class="compte" id="liseuseCompte">1 / 1</span>
+      <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="corps" id="liseuseCorps" tabindex="-1"></div>
+    <div class="pied">
+      <button class="btn" id="liseusePrec" aria-label="Fiche précédente">◀ Précédent</button>
+      <div class="pastilles" id="liseusePastilles"></div>
+      <button class="btn" id="liseuseSuiv" aria-label="Fiche suivante">Suivant ▶</button>
     </div>
   </div>
 </div>
@@ -2667,6 +2785,7 @@ const state = {
     selected: {},                          // clé de facette -> Set de valeurs
   },
   view: Prefs.get('view', 'cluster'),
+  recent: 0,                               // fenêtre mise en évidence : 0, 30 ou 60 jours
   maille: Prefs.get('maille', 'etab'),
   taux: Prefs.get('taux', false),
   tousEtabs: Prefs.get('tousEtabs', false),
@@ -3037,7 +3156,7 @@ let current = { incidents: [], places: [], byEtab: new Map() };
 
 /* -------------------------------- Carte -------------------------------- */
 
-let map, clusterLayer, pointLayer, heatLayer;
+let map, clusterLayer, pointLayer, heatLayer, haloLayer;
 
 function initMap() {
   map = L.map('map', { zoomControl: true, preferCanvas: true }).setView([49.5, 2.5], 8);
@@ -3074,7 +3193,28 @@ function initMap() {
     },
   });
   pointLayer = L.layerGroup();
+  // Les halos vivent dans leur propre couche, ajoutée avant les points :
+  // ils doivent se voir derrière, jamais masquer la pastille.
+  haloLayer = L.layerGroup();
   heatLayer = null;
+}
+
+/** Établissements ayant reçu un signalement dans les `jours` derniers jours. */
+function uaisRecents(jours) {
+  const limite = Date.now() - jours * 86400000;
+  const out = new Set();
+  for (const i of state.incidents) {
+    if (i.date && i.date.getTime() >= limite) out.add(i.uai);
+  }
+  return out;
+}
+
+/** Signalements des `jours` derniers jours, du plus récent au plus ancien. */
+function signalementsRecents(jours) {
+  const limite = Date.now() - jours * 86400000;
+  return state.incidents
+    .filter((i) => i.date && i.date.getTime() >= limite)
+    .sort((a, b) => b.date - a.date);
 }
 
 /** Bornes de la rampe séquentielle, recalculées à chaque filtrage. */
@@ -3106,8 +3246,30 @@ function renderMap() {
 
   clusterLayer.clearLayers();
   pointLayer.clearLayers();
-  [clusterLayer, pointLayer].forEach((l) => map.hasLayer(l) && map.removeLayer(l));
+  haloLayer.clearLayers();
+  [clusterLayer, pointLayer, haloLayer].forEach((l) => map.hasLayer(l) && map.removeLayer(l));
   if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+
+  // Mise en évidence du récent : un anneau autour des établissements
+  // concernés, posé avant les points pour rester derrière eux.
+  if (state.recent) {
+    const recents = uaisRecents(state.recent);
+    for (const p of places) {
+      if (!recents.has(p.etab.uai)) continue;
+      if (!Number.isFinite(p.etab.lat) || !Number.isFinite(p.etab.lon)) continue;
+      // Deux anneaux concentriques : lisibles sur un fond clair comme sur
+      // un fond sombre, et repris tels quels par l'export PNG.
+      haloLayer.addLayer(L.circleMarker([p.etab.lat, p.etab.lon], {
+        radius: 15, fill: false, color: token('--warning'),
+        weight: 3, opacity: 0.9, interactive: false,
+      }));
+      haloLayer.addLayer(L.circleMarker([p.etab.lat, p.etab.lon], {
+        radius: 18.5, fill: false, color: token('--warning'),
+        weight: 1.5, opacity: 0.4, interactive: false,
+      }));
+    }
+    if (haloLayer.getLayers().length) map.addLayer(haloLayer);
+  }
 
   if (state.view === 'heat') {
     const pts = places.filter((p) => p.count > 0).map((p) => [p.etab.lat, p.etab.lon, p.count]);
@@ -5173,7 +5335,9 @@ function renderEtab() {
       <div class="hbars" id="barsEtab"></div>
     </div>
 
-    <div class="row wrap" style="margin-top:12px">
+    <button class="btn wide primaire" id="btnLire" style="margin-top:14px">
+      Lire les fiches une par une</button>
+    <div class="row wrap" style="margin-top:6px">
       <button class="btn sm" id="btnZoomEtab" style="flex:1 1 130px">Centrer sur la carte</button>
       <button class="btn sm" id="btnOnlyEtab" style="flex:1 1 130px">N'afficher que celui-ci</button>
     </div>
@@ -5197,6 +5361,8 @@ function renderEtab() {
 
   $('#noteEtab').value = Suivi.note(etab.uai);
   $('#noteEtab').addEventListener('change', (e) => Suivi.ecrireNote(etab.uai, e.target.value));
+  $('#btnLire').disabled = !shown.length;
+  $('#btnLire').addEventListener('click', () => ouvrirLiseuse(etab, shown, 0));
   $('#btnFichePdf').addEventListener('click', () => fichePdf(etab, shown));
   $('#btnFicheTexte').addEventListener('click', () => ficheTexte(etab, shown));
 
@@ -5483,7 +5649,7 @@ let fermeeParEchap = null;
 function ouvrirModale(id) {
   const m = $('#' + id);
   if (!m) return;
-  m.dataset.ouverte = '';
+  m.dataset.ouverte = '1';
   // On rend la main au clavier : premier élément actionnable de la boîte.
   const cible = m.querySelector('input:not([type=file]), button:not([data-fermer])');
   if (cible) setTimeout(() => cible.focus(), 30);
@@ -5494,6 +5660,165 @@ function fermerModale(id) {
   const m = id ? $('#' + id) : $('.modale[data-ouverte]');
   if (m) delete m.dataset.ouverte;
   fermeeParEchap = null;
+}
+
+/* ------------------------------ Arrivé récemment ------------------------------ */
+
+/** Fenêtre affichée dans la boîte « Arrivé récemment » : 30 ou 60 jours. */
+let fenetreRecent = 30;
+
+function peindreRecent() {
+  const box = $('#recentCorps');
+  if (!state.incidents.length) {
+    box.innerHTML = '<div class="emptystate">Aucun registre chargé.</div>';
+    return;
+  }
+
+  const seg = `<div class="seg recent-seg" role="group" aria-label="Fenêtre">
+      <button data-fen="30" aria-pressed="${fenetreRecent === 30}">30 derniers jours</button>
+      <button data-fen="60" aria-pressed="${fenetreRecent === 60}">60 derniers jours</button>
+    </div>`;
+
+  const a30 = signalementsRecents(30);
+  const a60 = signalementsRecents(60);
+  const tuile = (n, lib) => {
+    const ouverts = n.filter((i) => i.open).length;
+    return `<div class="t"><b>${fmtInt(n.length)}</b><span>${lib}<br>
+      ${n.length ? `dont ${fmtInt(ouverts)} non clos` : '—'}</span></div>`;
+  };
+
+  const liste = fenetreRecent === 30 ? a30 : a60;
+
+  // Un registre exporté il y a trois mois n'a rien de « récent » à montrer.
+  // Le dire vaut mieux que d'afficher un zéro qui passerait pour une panne.
+  let avis = '';
+  if (!liste.length) {
+    const dernier = state.incidents.reduce((m, i) => (i.date > m ? i.date : m), new Date(0));
+    avis = dernier.getFullYear() > 2000
+      ? `<p class="notice">Aucun signalement sur la période. Le plus récent du registre
+         remonte au <b>${esc(DATE_FMT.format(dernier))}</b> : l'export date peut-être d'avant.</p>`
+      : '<p class="notice">Aucun signalement daté dans le registre.</p>';
+  }
+
+  box.innerHTML = seg
+    + `<div class="recent-tuiles">${tuile(a30, '30 derniers jours')}${tuile(a60, '60 derniers jours')}</div>`
+    + avis
+    + (liste.length ? `<div class="recent-liste">${liste.slice(0, 60).map((i) => `
+        <button class="recent-l" data-rec="${esc(i.uai)}" data-num="${esc(String(i.number || ''))}">
+          <span class="j">${esc(DATE_FMT.format(i.date))}</span>
+          <span class="q"><b>${esc(i.etab.name)}</b><span>${esc(i.risk)}</span></span>
+          <span class="tag ${{ clos: 'clos', encours: 'encours', vise: 'vise' }[i.stateKey] || 'autre'}">${esc(i.state)}</span>
+        </button>`).join('')}</div>`
+      + (liste.length > 60
+        ? `<p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-top:8px">
+             Les 60 plus récents sur ${fmtInt(liste.length)}.</p>` : '')
+      : '');
+
+  $('#btnHalo').textContent = state.recent === fenetreRecent
+    ? 'Ne plus entourer' : 'Entourer sur la carte';
+  $('#btnHalo').disabled = !liste.length;
+  $('#btnMoisRecents').disabled = !liste.length || !state.months.length;
+}
+
+/** Ouvre la liseuse sur un signalement précis. */
+function ouvrirLiseuseSur(uai, numero) {
+  const bucket = current.byEtab.get(uai);
+  if (!bucket || !bucket.incidents.length) return;
+  const etab = state.etabs.get(uai);
+  if (!etab) return;
+  // La liseuse range du plus récent au plus ancien : on cherche l'index là.
+  const ordre = bucket.incidents.slice().reverse();
+  const i = Math.max(0, ordre.findIndex((x) => String(x.number || '') === String(numero || '')));
+  fermerModale('modaleRecent');
+  state.selectedUai = uai;
+  renderEtab();
+  ouvrirLiseuse(etab, bucket.incidents, i);
+}
+
+/* ------------------------------ Liseuse ------------------------------ */
+
+/**
+ * Lire les signalements d'un établissement, une fiche par page.
+ *
+ * Le texte d'un signalement se lit mal dans la colonne de 360 px du panneau
+ * de droite, et plus mal encore empilé derrière quinze autres. Ici, une seule
+ * fiche à la fois, sur la largeur d'une page.
+ */
+const Liseuse = { incidents: [], i: 0, etab: null };
+
+function ouvrirLiseuse(etab, incidents, depart) {
+  if (!incidents || !incidents.length) return;
+  // Du plus récent au plus ancien : on ouvre sur ce qui vient d'arriver.
+  Liseuse.incidents = incidents.slice().reverse();
+  Liseuse.etab = etab;
+  Liseuse.i = Math.min(Math.max(0, depart || 0), Liseuse.incidents.length - 1);
+  $('#liseuseTitre').textContent = etab.name;
+  $('#liseuseLieu').textContent = [etab.commune, etab.dept].filter(Boolean).join(' · ');
+  peindreLiseuse();
+  ouvrirModale('modaleLiseuse');
+  $('#liseuseCorps').focus();
+}
+
+function tournerLiseuse(pas) {
+  const n = Liseuse.incidents.length;
+  if (!n) return;
+  const avant = Liseuse.i;
+  Liseuse.i = Math.min(Math.max(0, Liseuse.i + pas), n - 1);
+  if (Liseuse.i !== avant) peindreLiseuse();
+}
+
+function peindreLiseuse() {
+  const n = Liseuse.incidents.length;
+  const inc = Liseuse.incidents[Liseuse.i];
+  if (!inc) return;
+  $('#liseuseCompte').textContent = `${Liseuse.i + 1} / ${n}`;
+  $('#liseusePrec').disabled = Liseuse.i === 0;
+  $('#liseuseSuiv').disabled = Liseuse.i >= n - 1;
+
+  // Au-delà d'une vingtaine, les pastilles deviennent illisibles : le
+  // compteur suffit, et il est déjà là.
+  const pastilles = $('#liseusePastilles');
+  pastilles.innerHTML = n <= 24
+    ? Liseuse.incidents.map((x, k) =>
+        `<i data-page="${k}" class="${k === Liseuse.i ? 'ici' : ''}${x.open ? ' ouvert' : ''}"
+            title="${esc(DATE_FMT.format(x.date))}${x.open ? ' · non clos' : ''}"></i>`).join('')
+    : '';
+
+  const t = texteDe(inc);
+  const relance = Suivi.relanceDe(inc);
+  const tagClass = { clos: 'clos', encours: 'encours', vise: 'vise' }[inc.stateKey] || 'autre';
+  const bloc = (titre, txt) => txt
+    ? `<section><h4>${titre}</h4><p>${esc(txt)}</p></section>` : '';
+
+  const reponses = t && t.reponses
+    ? `<section><h4>Réponses portées au registre</h4>${t.reponses.split(/\n{2,}/)
+        .map((r) => `<div class="rep"><p>${esc(r)}</p></div>`).join('')}</section>`
+    : '';
+
+  const corps = t
+    ? bloc('Ce qui a été signalé', t.observation) + bloc('Ce qui est proposé', t.suggestion) + reponses
+      + (t.pj ? `<section><h4>Pièces jointes</h4><p>${esc(t.pj)}</p></section>` : '')
+    : '';
+
+  $('#liseuseCorps').innerHTML = `<article class="page">
+    <div class="ent">
+      <span class="jour">${esc(DATE_FMT.format(inc.date))}</span>
+      <span class="tag ${tagClass}">${esc(inc.state)}</span>
+      ${t && t.caviarde ? '<span class="tag autre">caviardée</span>' : ''}
+      ${relance ? `<span class="relance${inc.open ? ' vaine' : ''}">relancé le ${esc(litJour(relance))}</span>` : ''}
+    </div>
+    <h3>${esc(inc.risk)}</h3>
+    <div class="ligne">
+      ${inc.registre ? esc(inc.registre) : ''}${inc.number ? ' n° <b>' + esc(inc.number) + '</b>' : ''}
+      ${declarant(inc.reporter) ? ' · signalé par ' + esc(declarant(inc.reporter)) : ''}
+      ${inc.delay != null ? ' · réponse après <b>' + fmtInt(inc.delay) + ' j</b>' : ''}
+      ${t && t.closePar ? ' · clôturé par ' + esc(t.closePar) : ''}
+    </div>
+    ${corps || `<div class="muet">${state.textes.size
+      ? "Le texte de cette fiche n'a pas été récupéré. Relancez le relevé depuis le favori « Contenu des signalements »."
+      : "Le registre ne contient pas le texte des signalements. Récupérez-le avec le favori « Contenu des signalements », puis déposez le fichier obtenu."}</div>`}
+  </article>`;
+  $('#liseuseCorps').scrollTop = 0;
 }
 
 function selectTab(which) {
@@ -5670,6 +5995,12 @@ function syncBarreHaute() {
   $('#subCriteres').textContent = n
     ? `${n} critère${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`
     : 'Aucun critère actif';
+
+  const r = state.incidents.length ? signalementsRecents(30).length : 0;
+  const pr = $('#nRecent');
+  pr.hidden = !r;
+  pr.textContent = String(r);
+  $('#btnRecent').classList.toggle('primaire', r > 0 && !state.recent);
 
   const lbl = $('#lblRegistre');
   const dot = $('#dotTop');
@@ -6013,7 +6344,70 @@ function wireEvents() {
     });
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && fermeeParEchap) fermerModale();
+    if (e.key === 'Escape' && fermeeParEchap) { fermerModale(); return; }
+    // Les flèches tournent les pages, sauf si l'on est en train d'écrire.
+    if (!$('#modaleLiseuse').dataset.ouverte) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); tournerLiseuse(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); tournerLiseuse(1); }
+    else if (e.key === 'Home') { e.preventDefault(); Liseuse.i = 0; peindreLiseuse(); }
+    else if (e.key === 'End') { e.preventDefault(); Liseuse.i = Liseuse.incidents.length - 1; peindreLiseuse(); }
+  });
+
+  // --- Arrivé récemment ---
+  $('#btnRecent').addEventListener('click', () => { peindreRecent(); ouvrirModale('modaleRecent'); });
+  $('#recentCorps').addEventListener('click', (e) => {
+    const f = e.target.closest('[data-fen]');
+    if (f) { fenetreRecent = +f.dataset.fen; peindreRecent(); return; }
+    const l = e.target.closest('[data-rec]');
+    if (l) ouvrirLiseuseSur(l.dataset.rec, l.dataset.num);
+  });
+  $('#btnHalo').addEventListener('click', () => {
+    state.recent = state.recent === fenetreRecent ? 0 : fenetreRecent;
+    renderMap();
+    peindreRecent();
+    if (state.recent) fermerModale('modaleRecent');
+  });
+  $('#btnMoisRecents').addEventListener('click', () => {
+    // La période se règle au mois : on prend les mois que la fenêtre touche,
+    // et on l'annonce comme tel plutôt que de promettre trente jours exacts.
+    const liste = signalementsRecents(fenetreRecent);
+    if (!liste.length) return;
+    const mois = [...new Set(liste.map((i) => i.month))].sort();
+    const a = state.months.indexOf(mois[0]);
+    const b = state.months.indexOf(mois[mois.length - 1]);
+    if (a < 0 || b < 0) return;
+    state.filters.timeOn = true;
+    state.filters.from = a;
+    state.filters.to = b;
+    state.filters.month = null;
+    $('#chkTime').checked = true;
+    renderTimeline();
+    fermerModale('modaleRecent');
+    refresh();
+  });
+
+  // --- Liseuse ---
+  $('#liseusePrec').addEventListener('click', () => tournerLiseuse(-1));
+  $('#liseuseSuiv').addEventListener('click', () => tournerLiseuse(1));
+  $('#liseusePastilles').addEventListener('click', (e) => {
+    const i = e.target.closest('[data-page]');
+    if (!i) return;
+    Liseuse.i = +i.dataset.page;
+    peindreLiseuse();
+  });
+  // Au doigt : un glissement horizontal franc tourne la page.
+  let depart = null;
+  const corps = $('#liseuseCorps');
+  corps.addEventListener('pointerdown', (e) => {
+    depart = e.pointerType === 'mouse' ? null : { x: e.clientX, y: e.clientY };
+  });
+  corps.addEventListener('pointerup', (e) => {
+    if (!depart) return;
+    const dx = e.clientX - depart.x;
+    const dy = e.clientY - depart.y;
+    depart = null;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) tournerLiseuse(dx < 0 ? 1 : -1);
   });
   // Lancer un export ferme la boîte : le document se fabrique à l'écran,
   // derrière un voile on ne verrait plus rien de ce qui se passe.

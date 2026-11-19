@@ -10,6 +10,14 @@
  * votre session, puis en tire un second CSV qui se raccorde au premier par le
  * numéro d'inscription au registre.
  *
+ * LE PREMIER RELEVÉ EST LONG, LES SUIVANTS NON
+ * --------------------------------------------
+ * Les fiches lues sont gardées dans le navigateur. Au relevé suivant, le
+ * script parcourt les pages de liste — une minute — et y lit l'état et le
+ * nombre de réponses de chaque signalement. Il ne rouvre que les fiches dont
+ * l'un des deux a changé, plus les nouvelles. En général : quelques dizaines
+ * de pages au lieu de mille cinq cents.
+ *
  * MODE D'EMPLOI
  * -------------
  * Il s'installe en favori depuis `contenu/` : on ouvre le portail, on clique
@@ -17,24 +25,25 @@
  *
  * Pour qui préfère la console (F12) : coller ce fichier, puis
  *
- *     rsstContenu.lancer()          tout le registre
- *     rsstContenu.lancer({pages:[1,10]})   seulement les pages 1 à 10
- *     rsstContenu.csv()             enregistrer ce qui est déjà lu
- *     rsstContenu.stop()            arrêter
+ *     rsstContenu.lancer()          relever ce qui a changé
+ *     rsstContenu.lancer({tout:true})      tout relire
+ *     rsstContenu.lancer({pages:[1,3]})    se limiter aux pages 1 à 3
+ *     rsstContenu.csv()             enregistrer ce qui est en mémoire
+ *     rsstContenu.oublier()         effacer la mémoire
  *
  * CE QUE ÇA FAIT, ET CE QUE ÇA NE FAIT PAS
  * ----------------------------------------
- * Le script lit, et rien d'autre : il n'écrit, ne modifie, ne clôt et ne
- * supprime aucun signalement. Il ne voit que ce que votre compte voit déjà en
- * cliquant. Il laisse un demi-seconde entre deux pages pour ne pas peser sur
- * le serveur. Rien ne sort de votre navigateur : le CSV est fabriqué en
- * mémoire et enregistré sur votre poste.
+ * Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et
+ * ne supprime aucun signalement. Il ne voit que ce que votre compte voit déjà
+ * en cliquant. Il laisse une demi-seconde entre deux pages pour ne pas peser
+ * sur le serveur. Rien ne sort de votre navigateur.
  *
  * CONFIDENTIALITÉ
  * ---------------
- * Le fichier produit contient le texte intégral des signalements et des
- * réponses, avec les noms. C'est un document de travail nominatif : il se
- * traite comme le registre lui-même. Ne le déposez pas sur un espace partagé.
+ * Le fichier produit — et la mémoire qui le prépare — contiennent le texte
+ * intégral des signalements et des réponses, avec les noms. C'est un document
+ * de travail nominatif : il se traite comme le registre lui-même. Sur un poste
+ * partagé, « Tout oublier » efface la mémoire.
  */
 
 (function () {
@@ -44,7 +53,7 @@
   const DELAI_DEFAUT = 500;
 
   /* Relancé une seconde fois (on reclique le favori), on se contente de
-     rouvrir le panneau : les fiches déjà lues restent en mémoire. */
+     rouvrir le panneau : la mémoire et la lecture en cours sont intactes. */
   if (window.rsstContenu) {
     window.rsstContenu.panneau();
     return;
@@ -52,6 +61,7 @@
 
   const etat = {
     fiches: new Map(), // identifiant de fiche -> contenu lu
+    releve: null,      // date du dernier relevé complet
     arret: false,
     encours: false,
   };
@@ -80,6 +90,65 @@
     copie.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
     return copie.textContent.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').trim();
   }
+
+  /* --------------------------------------------------------------- mémoire */
+
+  /**
+   * Les fiches déjà lues, gardées d'une visite à l'autre.
+   *
+   * Dans IndexedDB plutôt que localStorage : mille cinq cents fiches de texte
+   * dépassent le mégaoctet, et localStorage lèverait une erreur de quota en
+   * milieu de parcours, après vingt minutes de lecture.
+   */
+  const Memoire = {
+    _db: null,
+    ouvrir() {
+      if (this._db) return Promise.resolve(this._db);
+      return new Promise((ok, non) => {
+        const rq = indexedDB.open('rsst-contenu', 1);
+        rq.onupgradeneeded = () => {
+          const db = rq.result;
+          if (!db.objectStoreNames.contains('fiches')) db.createObjectStore('fiches');
+          if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta');
+        };
+        rq.onsuccess = () => { this._db = rq.result; ok(rq.result); };
+        rq.onerror = () => non(rq.error);
+      });
+    },
+    async _tx(magasin, mode, fn) {
+      try {
+        const db = await this.ouvrir();
+        return await new Promise((ok, non) => {
+          const tx = db.transaction(magasin, mode);
+          const rq = fn(tx.objectStore(magasin));
+          tx.oncomplete = () => ok(rq ? rq.result : undefined);
+          tx.onerror = () => non(tx.error);
+        });
+      } catch { return undefined; }  // navigation privée, quota, stockage refusé
+    },
+    async charger() {
+      const [cles, valeurs, releve] = await Promise.all([
+        this._tx('fiches', 'readonly', (s) => s.getAllKeys()),
+        this._tx('fiches', 'readonly', (s) => s.getAll()),
+        this._tx('meta', 'readonly', (s) => s.get('releve')),
+      ]);
+      if (!cles || !valeurs) return;
+      cles.forEach((k, i) => etat.fiches.set(String(k), valeurs[i]));
+      etat.releve = releve || null;
+    },
+    ecrire(lot) {
+      return this._tx('fiches', 'readwrite', (s) => {
+        for (const [id, f] of lot) s.put(f, id);
+      });
+    },
+    marquerReleve(d) { return this._tx('meta', 'readwrite', (s) => s.put(d, 'releve')); },
+    async vider() {
+      await this._tx('fiches', 'readwrite', (s) => s.clear());
+      await this._tx('meta', 'readwrite', (s) => s.clear());
+      etat.fiches.clear();
+      etat.releve = null;
+    },
+  };
 
   /* --------------------------------------------------- lecture d'une fiche */
 
@@ -186,21 +255,50 @@
     return nums.length ? Math.max(...nums) : 1;
   }
 
+  const sansAccent = (s) => String(s || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
   /**
-   * Identifiants des signalements listés sur une page.
+   * Les signalements listés sur une page, avec leur signature.
    *
    * On relève les liens plutôt que de supposer que les identifiants se suivent
    * de 1 à N : votre compte ne voit qu'un périmètre, et numéroter à l'aveugle
    * produirait des centaines de requêtes refusées.
+   *
+   * La signature — état du traitement et nombre de réponses — vient de la
+   * liste elle-même. C'est elle qui dit, sans ouvrir la fiche, si son contenu
+   * a pu changer depuis le dernier relevé.
    */
-  async function idsDeLaPage(n) {
+  async function lignesDeLaPage(n) {
     const doc = await page(BASE + 'declarations&page=' + n);
-    const ids = [];
-    for (const a of doc.querySelectorAll('a[href*="action=declaration"]')) {
+
+    // Les colonnes sont repérées par leur intitulé : leur ordre peut changer,
+    // leur nom beaucoup moins.
+    const colonnes = {};
+    const entetes = doc.querySelectorAll('table th');
+    entetes.forEach((th, i) => {
+      const t = sansAccent(th.textContent);
+      if (t.startsWith('etat')) colonnes.etat = i;
+      else if (t.startsWith('reponse')) colonnes.reponses = i;
+    });
+
+    const sorties = [];
+    for (const tr of doc.querySelectorAll('tr')) {
+      const a = tr.querySelector('a[href*="action=declaration"]');
+      if (!a) continue;
       const m = a.getAttribute('href').match(/[?&]id=(\d+)/);
-      if (m && !ids.includes(m[1])) ids.push(m[1]);
+      if (!m) continue;
+      const cells = tr.querySelectorAll('td');
+      const lire = (i) => (i != null && cells[i] ? cells[i].textContent.trim() : '');
+      sorties.push({
+        id: m[1],
+        // Faute d'en-têtes reconnus, la signature reste vide : on relit tout
+        // plutôt que de croire à tort qu'une fiche n'a pas bougé.
+        sig: colonnes.etat == null && colonnes.reponses == null
+          ? '' : lire(colonnes.etat) + '|' + lire(colonnes.reponses),
+      });
     }
-    return ids;
+    return sorties;
   }
 
   /* ------------------------------------------------------------------- CSV */
@@ -232,9 +330,9 @@
 
   function fabriquerCsv() {
     const lignes = [COLONNES.map(([h]) => h).join(';')];
-    for (const f of etat.fiches.values()) {
-      lignes.push(COLONNES.map(([, get]) => cellule(get(f))).join(';'));
-    }
+    const tri = [...etat.fiches.values()]
+      .sort((a, b) => (parseInt(a.numero, 10) || 0) - (parseInt(b.numero, 10) || 0));
+    for (const f of tri) lignes.push(COLONNES.map(([, get]) => cellule(get(f))).join(';'));
     // Le BOM fait ouvrir le fichier en UTF-8 par Excel, accents compris.
     return '﻿' + lignes.join('\r\n') + '\r\n';
   }
@@ -258,7 +356,7 @@
 
   /* --------------------------------------------------------------- panneau */
 
-  let ui = null; // { hote, dire, avancer, boutons }
+  let ui = null;
 
   function construirePanneau() {
     const hote = document.createElement('div');
@@ -268,6 +366,10 @@
     racine.innerHTML = [
       '<style>',
       ':host,*{box-sizing:border-box}',
+      // Une règle d'affichage explicite l'emporte sur le display:none que
+      // le navigateur attache à [hidden] : sans ceci, « Tout oublier »
+      // resterait visible alors qu'il n'y a rien à oublier.
+      '[hidden]{display:none !important}',
       '.p{width:330px;max-width:calc(100vw - 32px);background:#fff;color:#1a1d21;',
       ' border:1px solid #d7dbe0;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22);',
       ' font:13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}',
@@ -278,6 +380,9 @@
       '.c{padding:12px}',
       'p{margin:0 0 9px}',
       '.m{color:#5a6472;font-size:12px}',
+      '.etat{font-size:12px;color:#1a1d21;background:#f0f4f8;border:1px solid #e0e6ec;',
+      ' border-radius:7px;padding:7px 9px;margin-bottom:10px}',
+      '.etat b{font-variant-numeric:tabular-nums}',
       '.r{display:flex;gap:7px;margin-top:10px}',
       'button.a{flex:1;padding:8px 10px;border-radius:8px;border:1px solid #c8cdd4;',
       ' background:#fff;font:inherit;font-weight:600;cursor:pointer;color:#1a1d21}',
@@ -290,12 +395,13 @@
       '.s{font-size:12px;color:#5a6472;min-height:17px}',
       '.w{margin-top:10px;padding:8px 9px;border-radius:7px;background:#fdf4e6;',
       ' border:1px solid #f0d9ae;font-size:11.5px;color:#6b4e18}',
+      '.oubli{display:block;width:100%;margin-top:8px;border:0;background:none;',
+      ' font:inherit;font-size:11.5px;color:#6b7480;text-decoration:underline;cursor:pointer;padding:2px}',
       '</style>',
       '<div class="p">',
       '  <div class="t"><b>Contenu des signalements</b><button class="x" title="Fermer">✕</button></div>',
       '  <div class="c">',
-      '    <p class="m">Ouvre chaque fiche du registre et en tire un CSV qui se',
-      '      raccorde à l\'extraction du portail par le numéro d\'inscription.</p>',
+      '    <div class="etat" data-etat>Mémoire vide.</div>',
       '    <div class="j"><i></i></div>',
       '    <div class="s">Prêt.</div>',
       '    <div class="r">',
@@ -303,21 +409,30 @@
       '      <button class="a" data-stop disabled>Arrêter</button>',
       '      <button class="a" data-csv disabled>Enregistrer</button>',
       '    </div>',
-      '    <div class="w">Le fichier produit est nominatif : il contient le texte',
-      '      des signalements et les noms. À traiter comme le registre lui-même.</div>',
+      '    <div class="w">Le fichier produit — et la mémoire qui le prépare —',
+      '      sont nominatifs : texte des signalements et noms. À traiter comme',
+      '      le registre lui-même.</div>',
+      '    <button class="oubli" data-oubli hidden>Tout oublier</button>',
       '  </div>',
       '</div>',
     ].join('\n');
     document.body.appendChild(hote);
 
     const $ = (s) => racine.querySelector(s);
-    const jauge = $('.j'), barre = $('.j i'), statut = $('.s');
-    const bGo = $('[data-go]'), bStop = $('[data-stop]'), bCsv = $('[data-csv]');
+    const jauge = $('.j'), barre = $('.j i'), statut = $('.s'), resume = $('[data-etat]');
+    const bGo = $('[data-go]'), bStop = $('[data-stop]'), bCsv = $('[data-csv]'), bOubli = $('[data-oubli]');
 
     $('.x').onclick = () => hote.remove();
     bGo.onclick = () => lancer();
     bStop.onclick = () => { etat.arret = true; statut.textContent = 'Arrêt en cours…'; };
     bCsv.onclick = telecharger;
+    bOubli.onclick = async () => {
+      if (!confirm('Effacer les ' + etat.fiches.size + ' fiches gardées dans ce navigateur ?\n\n'
+        + 'Le prochain relevé repartira de zéro et demandera une vingtaine de minutes.')) return;
+      await Memoire.vider();
+      ui.boutons(false);
+      dire('Mémoire effacée.');
+    };
 
     ui = {
       hote,
@@ -327,10 +442,18 @@
         barre.style.width = total ? Math.round((fait / total) * 100) + '%' : '0';
       },
       boutons(encours) {
+        const n = etat.fiches.size;
         bGo.disabled = encours;
         bStop.disabled = !encours;
-        bCsv.disabled = !etat.fiches.size;
-        bGo.textContent = etat.fiches.size && !encours ? 'Reprendre' : 'Lancer';
+        bCsv.disabled = !n;
+        bOubli.hidden = !n;
+        bGo.textContent = n ? 'Mettre à jour' : 'Lancer';
+        resume.innerHTML = n
+          ? '<b>' + n + '</b> fiche' + (n > 1 ? 's' : '') + ' en mémoire'
+            + (etat.releve ? ', relevées le ' + etat.releve : '')
+            + '.<br>La mise à jour ne rouvre que ce qui a changé.'
+          : 'Mémoire vide. Le premier relevé demande une vingtaine de minutes ; '
+            + 'les suivants, une ou deux.';
       },
     };
     ui.boutons(etat.encours);
@@ -360,60 +483,99 @@
     const debut = Date.now();
 
     try {
-      dire('Recherche des signalements…');
+      dire('Parcours des pages de liste…');
       const derniere = await dernierePage();
       const [p1, p2] = o.pages || [1, derniere];
 
-      // 1. relever les identifiants, page de liste après page de liste
-      const ids = [];
+      // 1. relever les signalements et leur signature
+      const lignes = [];
+      const vus = new Set();
       for (let n = p1; n <= p2 && !etat.arret; n++) {
         try {
-          for (const id of await idsDeLaPage(n)) if (!ids.includes(id)) ids.push(id);
+          for (const l of await lignesDeLaPage(n)) {
+            if (vus.has(l.id)) continue;
+            vus.add(l.id);
+            lignes.push(l);
+          }
         } catch (e) {
           console.warn('[rsst-contenu] page ' + n + ' : ' + e.message);
         }
-        dire('Page ' + n + ' sur ' + p2 + ' — ' + ids.length + ' signalements repérés');
+        dire('Page ' + n + ' sur ' + p2 + ' — ' + lignes.length + ' signalements repérés');
         if (ui) ui.avancer(n - p1 + 1, p2 - p1 + 1);
         await attendre(delai);
       }
 
-      // 2. lire chaque fiche
-      const aLire = ids.filter((id) => !etat.fiches.has(id));
-      let lus = 0, rates = 0;
-      for (const id of aLire) {
+      // 2. ne retenir que ce qui a bougé
+      const nouveaux = [], changes = [];
+      for (const l of lignes) {
+        const connue = etat.fiches.get(l.id);
+        if (!connue) nouveaux.push(l);
+        else if (o.tout || !l.sig || connue.sig !== l.sig) changes.push(l);
+      }
+      const aLire = nouveaux.concat(changes);
+
+      if (!aLire.length && !etat.arret) {
+        await Memoire.marquerReleve(new Date().toLocaleDateString('fr-FR'));
+        etat.releve = new Date().toLocaleDateString('fr-FR');
+        dire('Rien de nouveau : les ' + etat.fiches.size + ' fiches sont à jour.');
+        return;
+      }
+      if (!etat.arret) {
+        dire(nouveaux.length + ' nouvelle' + (nouveaux.length > 1 ? 's' : '')
+          + ', ' + changes.length + ' mise' + (changes.length > 1 ? 's' : '') + ' à jour'
+          + ' — ' + Math.ceil(aLire.length * (delai + 150) / 60000) + ' min environ.');
+        await attendre(900);
+      }
+
+      // 3. lire les fiches retenues
+      let lus = 0, rates = 0, lot = [];
+      for (const l of aLire) {
         if (etat.arret) break;
+        let f;
         try {
-          etat.fiches.set(id, lireFiche(await page(BASE + 'declaration&id=' + id), id));
+          f = lireFiche(await page(BASE + 'declaration&id=' + l.id), l.id);
         } catch (e) {
           // On garde une ligne pour la fiche en échec : un signalement
           // silencieusement absent vaut moins qu'un signalement signalé absent.
           rates++;
-          etat.fiches.set(id, {
-            numero: String(id), risque: '', observation: '', suggestion: '',
+          f = {
+            numero: String(l.id), risque: '', observation: '', suggestion: '',
             pj: [], caviarde: false, closePar: '', visas: [], reponses: [],
-            url: location.pathname + '?module=rsst&action=declaration&id=' + id,
+            url: location.pathname + '?module=rsst&action=declaration&id=' + l.id,
             erreur: e.message,
-          });
+          };
         }
+        f.sig = l.sig;
+        etat.fiches.set(l.id, f);
+        lot.push([l.id, f]);
+        // On écrit par paquets : une interruption à la vingtième minute ne
+        // doit pas emporter ce qui a été lu avant.
+        if (lot.length >= 25) { await Memoire.ecrire(lot); lot = []; }
         lus++;
         if (ui) ui.avancer(lus, aLire.length);
         if (lus % 5 === 0 || lus === aLire.length) {
           const reste = Math.ceil((aLire.length - lus) * (delai + 150) / 60000);
-          dire(lus + ' / ' + aLire.length + ' fiches' +
-            (rates ? ' · ' + rates + ' en échec' : '') +
-            (reste > 0 ? ' · encore ~' + reste + ' min' : ''));
+          dire(lus + ' / ' + aLire.length + ' fiches'
+            + (rates ? ' · ' + rates + ' en échec' : '')
+            + (reste > 0 ? ' · encore ~' + reste + ' min' : ''));
         }
         await attendre(delai);
       }
+      if (lot.length) await Memoire.ecrire(lot);
+
+      if (!etat.arret) {
+        etat.releve = new Date().toLocaleDateString('fr-FR');
+        await Memoire.marquerReleve(etat.releve);
+      }
 
       const min = Math.max(1, Math.round((Date.now() - debut) / 60000));
-      dire(etat.fiches.size + ' fiches lues en ' + min + ' min' +
-        (rates ? ', dont ' + rates + ' en échec' : '') +
-        (etat.arret ? ' — arrêté, « Reprendre » continue' : '') + '.');
+      dire(lus + ' fiche' + (lus > 1 ? 's' : '') + ' lue' + (lus > 1 ? 's' : '')
+        + ' en ' + min + ' min' + (rates ? ', dont ' + rates + ' en échec' : '')
+        + (etat.arret ? ' — arrêté, « Mettre à jour » reprend' : '') + '.');
       if (!etat.arret) telecharger();
     } catch (e) {
-      dire('Interrompu : ' + e.message +
-        (etat.fiches.size ? ' — « Enregistrer » garde les ' + etat.fiches.size + ' fiches déjà lues.' : ''));
+      dire('Interrompu : ' + e.message
+        + (etat.fiches.size ? ' — les ' + etat.fiches.size + ' fiches en mémoire sont gardées.' : ''));
     } finally {
       etat.encours = false;
       if (ui) { ui.boutons(false); ui.avancer(0, 0); }
@@ -424,6 +586,7 @@
     lancer,
     csv: telecharger,
     stop() { etat.arret = true; dire('Arrêt demandé…'); },
+    oublier: () => Memoire.vider().then(() => { if (ui) ui.boutons(false); }),
     panneau,
     fiches: etat.fiches,
   };
@@ -437,6 +600,6 @@
     return;
   }
 
-  panneau();
+  Memoire.charger().then(() => { panneau(); });
   console.log('%crsst-contenu prêt.', 'color:#2a78d6;font-weight:bold');
 })();
