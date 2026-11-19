@@ -20,6 +20,28 @@ Un intitulé qui change légèrement d'un export à l'autre ne casse donc rien.
 
 Le fichier déposé est mémorisé : à la prochaine ouverture, il est déjà là.
 
+## Le contenu des signalements
+
+L'extraction du portail donne les métadonnées d'un signalement — date, risque,
+RNE, état, déclarant — mais pas ce qui y est écrit. Le texte n'existe que sur
+la fiche, une page par signalement, et il y en a un millier et demi.
+
+`rsst-contenu.js` les ouvre une à une et en tire un **second CSV**, raccordable
+au premier par la colonne `numero` (le numéro d'inscription au registre). Il
+s'installe en favori depuis [`contenu/`](contenu/) : on ouvre le registre, on
+clique le favori, un panneau s'ouvre en bas à droite de la page.
+
+Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et ne
+supprime aucun signalement, et ne voit que ce que le compte voit déjà en
+cliquant. Il laisse une demi-seconde entre deux pages. Le balayage complet
+demande une vingtaine de minutes ; il s'interrompt et reprend sans relire ce
+qui l'a déjà été, et une fiche illisible garde sa ligne avec le motif en
+colonne `erreur` plutôt que de disparaître.
+
+**Le fichier produit est nominatif** : texte intégral des signalements et des
+réponses, noms des agents et des chefs de service. Il se traite comme le
+registre lui-même.
+
 ## L'annuaire intégré
 
 L'annuaire ne bouge quasiment jamais, alors que l'export du registre change
