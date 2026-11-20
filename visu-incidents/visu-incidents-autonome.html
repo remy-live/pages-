@@ -934,6 +934,16 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
    de 360 px : ici il a la largeur d'une page, et rien d'autre autour. */
 .modale.liseuse > .boite{width:min(780px,100%); height:min(88vh,920px)}
 .liseuse .tete h2{font-size:18px; margin:0}
+/* Le nom mène à la fiche complète : il se lit comme un lien, et le dit. */
+#liseuseTitre{
+  font:inherit; border:0; background:none; padding:0; cursor:pointer;
+  color:var(--accent); text-align:left; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;
+}
+#liseuseTitre:hover{text-decoration:underline}
+#liseuseTitre:focus{outline:none}
+#liseuseTitre:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+#liseuseCorps:focus{outline:none}
 .liseuse .tete .sub{font-size:12px; color:var(--ink-muted); margin-top:2px}
 .liseuse .compte{
   font-size:12px; color:var(--ink-2); font-variant-numeric:tabular-nums;
@@ -971,15 +981,36 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
   display:flex; align-items:center; gap:12px; flex:0 0 auto;
   padding:11px 16px; border-top:1px solid var(--hairline); background:var(--surface);
 }
-.liseuse .pied .btn{min-width:112px; justify-content:center}
-.pastilles{display:flex; gap:5px; flex:1; justify-content:center; flex-wrap:wrap}
-.pastilles i{
-  width:7px; height:7px; border-radius:50%; background:var(--grid);
-  cursor:pointer; transition:background .15s, transform .15s;
+.liseuse .pied .btn:not(.icon){min-width:112px; justify-content:center}
+/* L'étagère : une fiche, un dos de livre. La date se lit, la couleur dit
+   l'état, et la place dans la rangée dit la chronologie. */
+.etagere{
+  display:flex; gap:4px; flex:1; min-width:0; overflow-x:auto; padding:2px 0 4px;
+  scrollbar-width:thin;
+  /* « safe » : centré tant que la rangée tient, aligné à gauche sinon — sans
+     quoi le premier livre serait coupé dès qu'il faut défiler. */
+  justify-content:safe center;
 }
-.pastilles i:hover{transform:scale(1.4)}
-.pastilles i.ici{background:var(--accent); transform:scale(1.25)}
-.pastilles i.ouvert{box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--warning)}
+.etagere::-webkit-scrollbar{height:5px}
+.etagere::-webkit-scrollbar-thumb{background:var(--grid); border-radius:3px}
+.livre{
+  flex:0 0 auto; width:42px; padding:5px 2px 4px; border:1px solid var(--hairline);
+  border-radius:5px; background:var(--surface-2); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font:inherit; color:var(--ink-muted); transition:background .12s, border-color .12s;
+}
+.livre:hover{background:var(--surface); border-color:var(--ring)}
+.livre .dos{display:block; width:100%; height:3px; border-radius:2px; background:currentColor}
+.livre .d{font-size:9.5px; font-variant-numeric:tabular-nums; line-height:1.1; color:var(--ink-2)}
+.livre.clos{color:var(--good)}
+.livre.encours{color:var(--serious)}
+.livre.vise{color:var(--series-1)}
+.livre.autre{color:var(--ink-muted)}
+.livre.ici{
+  background:var(--surface); border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.livre.ici .d{color:var(--ink); font-weight:650}
 
 /* ---------------- Réglages posés sur la carte ---------------- */
 #carteReglages{
@@ -1876,17 +1907,17 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
   <div class="boite">
     <div class="tete">
       <div style="flex:1;min-width:0">
-        <h2 id="liseuseTitre">—</h2>
+        <h2><button type="button" id="liseuseTitre" title="Voir la fiche complète de l'établissement">—</button></h2>
         <div class="sub" id="liseuseLieu"></div>
       </div>
       <span class="compte" id="liseuseCompte">1 / 1</span>
       <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
     </div>
-    <div class="corps" id="liseuseCorps" tabindex="-1"></div>
+    <div class="corps" id="liseuseCorps" tabindex="-1" data-focus></div>
     <div class="pied">
-      <button class="btn" id="liseusePrec" aria-label="Fiche précédente">◀ Précédent</button>
-      <div class="pastilles" id="liseusePastilles"></div>
-      <button class="btn" id="liseuseSuiv" aria-label="Fiche suivante">Suivant ▶</button>
+      <button class="btn icon" id="liseusePrec" aria-label="Fiche précédente">◀</button>
+      <div class="etagere" id="liseuseEtagere"></div>
+      <button class="btn icon" id="liseuseSuiv" aria-label="Fiche suivante">▶</button>
     </div>
   </div>
 </div>
@@ -3311,11 +3342,21 @@ function renderMap() {
   }
 
   if (state.view === 'heat') {
-    const pts = places.filter((p) => p.count > 0).map((p) => [p.etab.lat, p.etab.lon, p.count]);
-    if (pts.length) {
+    const chauds = places.filter((p) => p.count > 0);
+    if (chauds.length) {
+      const maxC = Math.max(1, scale.max || 1);
+      // Intensité entre 0,35 et 1 : un signalement isolé doit rester visible,
+      // et la racine carrée rend la comparaison juste à l'œil, comme pour le
+      // rayon des points.
+      const pts = chauds.map((p) => [p.etab.lat, p.etab.lon,
+        0.35 + 0.65 * Math.sqrt(p.count / maxC)]);
       heatLayer = L.heatLayer(pts, {
-        radius: 26, blur: 22, maxZoom: 12,
-        max: Math.max(1, scale.max || 1),
+        radius: 30, blur: 24, max: 1, minOpacity: 0.3,
+        // La bibliothèque divise l'intensité par 2^(maxZoom - zoom). Laissé à
+        // une valeur fixe, l'ensemble devient seize fois trop pâle dès qu'on
+        // s'éloigne : on la cale sur le zoom courant, et on la recale à chaque
+        // changement de zoom.
+        maxZoom: map.getZoom(),
         gradient: { 0.2: token('--d2'), 0.45: token('--d4'), 0.7: token('--d5'), 1: token('--d7') },
       }).addTo(map);
     }
@@ -5720,7 +5761,8 @@ function ouvrirModale(id) {
   // Pour rendre le focus au bouton qui a ouvert la boîte, une fois fermée.
   rendreLeFocusA = document.activeElement;
   m.dataset.ouverte = '1';
-  const cible = m.querySelector('input:not([type=file]), button:not([data-fermer])');
+  const cible = m.querySelector('[data-focus]')
+    || m.querySelector('input:not([type=file]), button:not([data-fermer])');
   if (cible) setTimeout(() => cible.focus(), 30);
   fermeeParEchap = id;
 }
@@ -5847,7 +5889,14 @@ function ouvrirLiseuse(etab, incidents, depart) {
   Liseuse.etab = etab;
   Liseuse.i = Math.min(Math.max(0, depart || 0), Liseuse.incidents.length - 1);
   $('#liseuseTitre').textContent = etab.name;
-  $('#liseuseLieu').textContent = [etab.commune, etab.dept].filter(Boolean).join(' · ');
+  // Combien de fiches au total, pour qu'on sache si les critères en cachent.
+  const tous = state.incidents.filter((i) => i.uai === etab.uai).length;
+  const ouverts = Liseuse.incidents.filter((i) => i.open).length;
+  const bouts = [etab.commune, etab.dept].filter(Boolean);
+  bouts.push(`${fmtInt(Liseuse.incidents.length)} signalement${Liseuse.incidents.length > 1 ? 's' : ''}`
+    + (tous > Liseuse.incidents.length ? ` sur ${fmtInt(tous)}` : ''));
+  if (ouverts) bouts.push(`${fmtInt(ouverts)} non clos`);
+  $('#liseuseLieu').textContent = bouts.join(' · ');
   peindreLiseuse();
   ouvrirModale('modaleLiseuse');
   $('#liseuseCorps').focus();
@@ -5869,14 +5918,18 @@ function peindreLiseuse() {
   $('#liseusePrec').disabled = Liseuse.i === 0;
   $('#liseuseSuiv').disabled = Liseuse.i >= n - 1;
 
-  // Au-delà d'une vingtaine, les pastilles deviennent illisibles : le
-  // compteur suffit, et il est déjà là.
-  const pastilles = $('#liseusePastilles');
-  pastilles.innerHTML = n <= 24
-    ? Liseuse.incidents.map((x, k) =>
-        `<i data-page="${k}" class="${k === Liseuse.i ? 'ici' : ''}${x.open ? ' ouvert' : ''}"
-            title="${esc(DATE_FMT.format(x.date))}${x.open ? ' · non clos' : ''}"></i>`).join('')
-    : '';
+  // L'étagère : un dos de livre par fiche, dans l'ordre où on les tourne.
+  const etagere = $('#liseuseEtagere');
+  etagere.innerHTML = Liseuse.incidents.map((x, k) => {
+    const cls = { clos: 'clos', encours: 'encours', vise: 'vise' }[x.stateKey] || 'autre';
+    const jour = x.date.getDate() + '/' + (x.date.getMonth() + 1);
+    return `<button type="button" class="livre ${cls}${k === Liseuse.i ? ' ici' : ''}"
+      data-page="${k}" title="${esc(DATE_FMT.format(x.date))} · ${esc(x.state)} — ${esc(x.risk)}">
+      <span class="dos"></span><span class="d">${esc(jour)}</span></button>`;
+  }).join('');
+  // Garder le livre courant sous les yeux quand la rangée est longue.
+  const ici = etagere.querySelector('.livre.ici');
+  if (ici) ici.scrollIntoView({ block: 'nearest', inline: 'center' });
 
   const t = texteDe(inc);
   const relance = Suivi.relanceDe(inc);
@@ -6262,6 +6315,10 @@ function wireEvents() {
     $(sel).setAttribute('aria-pressed', String(name === state.view));
   }
   $('#btnFit').addEventListener('click', fitToResults);
+  // Sans ce recalage, la densité pâlit ou sature à mesure qu'on zoome.
+  map.on('zoomend', () => {
+    if (heatLayer && map.hasLayer(heatLayer)) heatLayer.setOptions({ maxZoom: map.getZoom() });
+  });
 
   $('#selMaille').value = state.maille;
   $('#selMaille').addEventListener('change', (e) => {
@@ -6541,11 +6598,18 @@ function wireEvents() {
   // --- Liseuse ---
   $('#liseusePrec').addEventListener('click', () => tournerLiseuse(-1));
   $('#liseuseSuiv').addEventListener('click', () => tournerLiseuse(1));
-  $('#liseusePastilles').addEventListener('click', (e) => {
+  $('#liseuseEtagere').addEventListener('click', (e) => {
     const i = e.target.closest('[data-page]');
     if (!i) return;
     Liseuse.i = +i.dataset.page;
     peindreLiseuse();
+  });
+  // Le nom mène à la fiche complète de l'établissement : chiffres, frise,
+  // note interne, et les signalements que les critères écartent peut-être.
+  $('#liseuseTitre').addEventListener('click', () => {
+    const uai = Liseuse.etab && Liseuse.etab.uai;
+    fermerModale('modaleLiseuse');
+    if (uai) showEtab(uai);
   });
   // Au doigt : un glissement horizontal franc tourne la page.
   let depart = null;

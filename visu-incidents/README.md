@@ -128,9 +128,13 @@ Deux boutons de la barre haute ouvrent une boîte plutôt qu'un panneau :
   plutôt que d'afficher un zéro qui passerait pour une panne ;
 - **Lire les fiches une par une** ouvre une liseuse : un signalement par page,
   son texte sur la largeur d'une page plutôt que dans une colonne de 360 px.
-  Flèches, pastilles ou glissement du doigt pour tourner. Elle s'ouvre depuis
-  l'onglet Établissement, depuis la bulle d'un point de la carte, depuis la
-  liste des priorités, et depuis chaque ligne d'« Arrivé récemment ».
+  Flèches, glissement du doigt, ou l'**étagère** du bas — un dos de livre par
+  fiche, daté, teinté selon l'état du traitement. Le nom de l'établissement
+  mène à sa fiche complète, et le sous-titre dit combien de signalements il
+  porte en tout, afin qu'on sache si les critères en écartent. Elle s'ouvre
+  depuis l'onglet Établissement, depuis la bulle d'un point de la carte,
+  depuis la liste des priorités, et depuis chaque ligne d'« Arrivé
+  récemment ».
 
 Au clavier : `/` amène à la recherche, `Échap` l'efface, les flèches tournent
 les pages de la liseuse, et la tabulation reste dans la boîte ouverte.
