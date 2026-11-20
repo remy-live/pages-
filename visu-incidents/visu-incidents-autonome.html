@@ -1167,6 +1167,19 @@ input[type=range]{width:100%; accent-color:var(--accent); cursor:pointer; margin
 body.tiles-dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9) saturate(.7)}
 
 .map-overlay{position:absolute; z-index:600; display:flex; gap:6px}
+/* Un calque posé sur la carte ne doit intercepter que ses propres commandes.
+   Celui des étiquettes s'étend sur toute la largeur et celui de la légende
+   occupe le coin : tous deux avalaient les clics sur les points qu'ils
+   recouvrent, sans rien laisser paraître. */
+.map-overlay{pointer-events:none}
+.map-overlay .btn,
+.map-overlay #carteReglages,
+.map-overlay #popCarte,
+.map-overlay .puce,
+.map-overlay .floatcard a,
+.map-overlay .floatcard button{pointer-events:auto}
+/* La toile de densité non plus : les points vivent dessous. */
+canvas.leaflet-heatmap-layer{pointer-events:none !important}
 /* En bas à gauche : les commandes de zoom de Leaflet occupent le coin haut gauche. */
 .map-overlay.bl{bottom:12px; left:10px; flex-direction:column; align-items:flex-start; max-width:min(280px,60%)}
 .map-overlay.tr{top:10px; right:10px}
@@ -2844,7 +2857,7 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
    choses : dire quelle version on utilise, et repérer qu'une plus récente est
    en ligne — un navigateur garde volontiers l'ancienne page en cache, et l'on
    croit alors tester une correction qu'on n'a pas. */
-const VERSION = '2026-11-20 06:54';
+const VERSION = '2026-11-20 06:58';
 
 /**
  * Compare la version chargée à celle du serveur.
@@ -3411,13 +3424,19 @@ function renderMap() {
       // sombre, et la densité ne distinguerait plus rien.
       const plafond = Math.max(2, counts[Math.floor(counts.length * 0.85)] || 1);
       heatLayer = L.heatLayer(chauds.map((p) => [p.etab.lat, p.etab.lon, p.count]), {
-        radius: 18, blur: 14, max: plafond, minOpacity: 0.12,
+        // Opacité plancher relevée : par-dessus un vrai fond de carte, coloré
+        // et détaillé, une teinte à 12 % passe inaperçue. Le plafond reste au
+        // 85e centile, donc la saturation ne bouge pas.
+        radius: 18, blur: 14, max: plafond, minOpacity: 0.26,
         // La bibliothèque divise l'intensité par 2^(maxZoom - zoom). Laissé à
         // une valeur fixe, l'ensemble devient seize fois trop pâle dès qu'on
         // s'éloigne : on la cale sur le zoom courant, et on la recale à chaque
         // changement de zoom.
         maxZoom: map.getZoom(),
-        gradient: { 0.2: token('--d2'), 0.45: token('--d4'), 0.7: token('--d5'), 1: token('--d7') },
+        // Bas de l'échelle décalé : la teinte la plus pâle ne doit pas occuper
+        // le tiers de la rampe, sans quoi la plupart des établissements se
+        // confondent avec le fond.
+        gradient: { 0.1: token('--d3'), 0.35: token('--d4'), 0.6: token('--d5'), 0.85: token('--d6'), 1: token('--d7') },
       }).addTo(map);
       calerLaDensite();
     }

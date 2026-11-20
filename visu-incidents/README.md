@@ -61,6 +61,15 @@ qui ne la porte pas est repris quand même, et ses fiches sont relues une fois.
 réponses, noms des agents et des chefs de service. Il se traite comme le
 registre lui-même.
 
+### Les calques posés sur la carte
+
+Les étiquettes de filtres, la légende et les avertissements sont posés sur la
+carte dans des boîtes qui s'étendent bien au-delà de ce qu'elles affichent —
+celle des étiquettes couvre toute la largeur. Elles ne reçoivent plus les
+clics : seules leurs commandes propres le font, et un point qu'elles
+recouvrent reste cliquable. La toile de densité non plus, les points vivant
+dessous.
+
 ## Savoir quelle version on utilise
 
 Un navigateur garde volontiers la page en cache : on croit alors essayer une
