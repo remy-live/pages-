@@ -3269,6 +3269,20 @@ function initMap() {
   heatLayer = null;
 }
 
+/**
+ * Met la toile de densité derrière les points, et hors d'atteinte des clics.
+ *
+ * Les deux vivent dans le même calque : sans cela, la toile ajoutée en
+ * dernier recouvre les points, les masque et avale les clics — la carte
+ * devient une image.
+ */
+function calerLaDensite() {
+  if (!heatLayer || !heatLayer._canvas) return;
+  heatLayer._canvas.style.pointerEvents = 'none';
+  const calque = map.getPanes().overlayPane;
+  if (calque.firstChild !== heatLayer._canvas) calque.insertBefore(heatLayer._canvas, calque.firstChild);
+}
+
 /** Établissements ayant reçu un signalement dans les `jours` derniers jours. */
 function uaisRecents(jours) {
   const limite = Date.now() - jours * 86400000;
@@ -3344,14 +3358,13 @@ function renderMap() {
   if (state.view === 'heat') {
     const chauds = places.filter((p) => p.count > 0);
     if (chauds.length) {
-      const maxC = Math.max(1, scale.max || 1);
-      // Intensité entre 0,35 et 1 : un signalement isolé doit rester visible,
-      // et la racine carrée rend la comparaison juste à l'œil, comme pour le
-      // rayon des points.
-      const pts = chauds.map((p) => [p.etab.lat, p.etab.lon,
-        0.35 + 0.65 * Math.sqrt(p.count / maxC)]);
-      heatLayer = L.heatLayer(pts, {
-        radius: 30, blur: 24, max: 1, minOpacity: 0.3,
+      const counts = chauds.map((p) => p.count).sort((a, b) => a - b);
+      // Plafond robuste plutôt que le maximum : un seul établissement très
+      // exposé suffirait sinon à pousser toute la carte vers la teinte la plus
+      // sombre, et la densité ne distinguerait plus rien.
+      const plafond = Math.max(2, counts[Math.floor(counts.length * 0.85)] || 1);
+      heatLayer = L.heatLayer(chauds.map((p) => [p.etab.lat, p.etab.lon, p.count]), {
+        radius: 18, blur: 14, max: plafond, minOpacity: 0.12,
         // La bibliothèque divise l'intensité par 2^(maxZoom - zoom). Laissé à
         // une valeur fixe, l'ensemble devient seize fois trop pâle dès qu'on
         // s'éloigne : on la cale sur le zoom courant, et on la recale à chaque
@@ -3359,7 +3372,25 @@ function renderMap() {
         maxZoom: map.getZoom(),
         gradient: { 0.2: token('--d2'), 0.45: token('--d4'), 0.7: token('--d5'), 1: token('--d7') },
       }).addTo(map);
+      calerLaDensite();
     }
+
+    // Des points par-dessus les taches : la densité montre où regarder, les
+    // points permettent d'y aller. Sans eux, la carte n'est plus cliquable.
+    for (const p of places) {
+      if (!p.count || !Number.isFinite(p.etab.lat) || !Number.isFinite(p.etab.lon)) continue;
+      const m = L.circleMarker([p.etab.lat, p.etab.lon], {
+        radius: 3.5, fillColor: token('--ink'), fillOpacity: 0.55,
+        color: token('--surface'), weight: 1.2, viCount: p.count,
+      });
+      m.bindPopup(`<span class="pname">${esc(p.etab.name)}</span>`
+        + `<span class="pmeta">${esc(p.etab.commune)}<br><b>${fmtInt(p.count)}</b> `
+        + `signalement${p.count > 1 ? 's' : ''}</span>`
+        + `<button type="button" class="pact" data-lire="${esc(p.etab.uai)}">Lire les fiches</button>`);
+      m.on('click', () => showEtab(p.etab.uai));
+      pointLayer.addLayer(m);
+    }
+    map.addLayer(pointLayer);
     renderLegend(scale, true);
     return;
   }
@@ -6317,7 +6348,10 @@ function wireEvents() {
   $('#btnFit').addEventListener('click', fitToResults);
   // Sans ce recalage, la densité pâlit ou sature à mesure qu'on zoome.
   map.on('zoomend', () => {
-    if (heatLayer && map.hasLayer(heatLayer)) heatLayer.setOptions({ maxZoom: map.getZoom() });
+    if (heatLayer && map.hasLayer(heatLayer)) {
+      heatLayer.setOptions({ maxZoom: map.getZoom() });
+      calerLaDensite();
+    }
   });
 
   $('#selMaille').value = state.maille;
