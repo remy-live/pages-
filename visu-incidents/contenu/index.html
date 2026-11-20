@@ -161,10 +161,36 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hairline);
   <tr><td>Lecture des fiches</td><td class="c">~1 500</td><td class="c">~16 min</td></tr>
 </table>
 <p>
-  Vous pouvez arrêter en cours de route : « Reprendre » repart des fiches non
-  lues, et « Enregistrer » produit un fichier de ce qui est déjà là. Pour un
-  essai rapide, ouvrez la console (F12) et lancez
-  <code>rsstContenu.lancer({pages:[1,3]})</code>.
+  Vous pouvez arrêter en cours de route : « Enregistrer » produit un fichier de
+  ce qui est déjà là, et la reprise repart des fiches non lues.
+</p>
+
+<h2>Les relevés suivants sont courts</h2>
+<p>
+  Les fiches lues restent dans le navigateur. Au relevé suivant, le script
+  parcourt les pages de liste et y lit l'<strong>état</strong> et le
+  <strong>nombre de réponses</strong> de chaque signalement : il ne rouvre que
+  les fiches dont l'un des deux a changé, plus les nouvelles.
+</p>
+<p>
+  Le menu <strong>Relever</strong> permet de viser plus précisément encore :
+</p>
+<table>
+  <tr><th>Choix</th><th>Ce qui est ouvert</th></tr>
+  <tr><td><em>ce qui a changé</em></td><td>Les nouvelles fiches et celles dont l'état ou le nombre de réponses a bougé. C'est le réglage ordinaire.</td></tr>
+  <tr><td><em>les fiches manquantes</em></td><td>Uniquement celles qui ne sont pas encore en mémoire. Rien d'autre n'est rouvert, même si le portail l'a modifié.</td></tr>
+  <tr><td><em>tout, à nouveau</em></td><td>L'ensemble du registre, comme au premier jour.</td></tr>
+</table>
+<p>
+  <strong>Seulement une période</strong> se combine aux trois : la date de
+  saisie figure dans la liste, le script y restreint avant d'ouvrir la moindre
+  fiche. Relever les deux derniers mois demande ainsi une minute et demie.
+</p>
+<p class="note">
+  <strong>Reprendre un fichier déjà enregistré</strong> réamorce la mémoire à
+  partir d'un CSV produit auparavant — après un changement de poste, ou quand
+  le relevé a été fait par une version qui ne gardait rien. Et
+  <strong>Tout oublier</strong> l'efface.
 </p>
 <p class="note">
   Le script lit, et rien d'autre : il n'écrit, ne modifie, ne vise, ne clôt et
@@ -189,6 +215,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hairline);
   <tr><td class="c">visas</td><td>Qui a visé, et quand</td></tr>
   <tr><td class="c">reponses</td><td>Les observations en réponse, datées et signées</td></tr>
   <tr><td class="c">erreur</td><td>Renseignée si la fiche n'a pas pu être lue</td></tr>
+  <tr><td class="c">etat_liste</td><td>Le repère qui rend les relevés suivants incrémentaux</td></tr>
 </table>
 <p class="note">
   Une fiche illisible garde sa ligne, avec le motif. Un signalement absent sans

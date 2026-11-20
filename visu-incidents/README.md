@@ -43,6 +43,14 @@ rouvre que les fiches dont l'un des deux a changé, plus les nouvelles : en
 général quelques dizaines au lieu de mille cinq cents. Le bouton **Tout
 oublier** efface cette mémoire.
 
+Le menu **Relever** vise plus précisément encore : *ce qui a changé* (les
+nouvelles et celles dont l'état ou le nombre de réponses a bougé), *les fiches
+manquantes* (uniquement ce qui n'est pas en mémoire), ou *tout, à nouveau*.
+**Seulement une période** se combine aux trois : la date de saisie figure dans
+la liste, et le script y restreint avant d'ouvrir la moindre fiche. Sans
+colonne de date reconnue, la période est ignorée et le panneau le dit, plutôt
+que de rendre un fichier vide.
+
 **Reprendre un fichier déjà enregistré** réamorce cette mémoire à partir d'un
 CSV produit précédemment — utile après un changement de poste, ou quand le
 relevé a été fait par une version qui ne gardait rien. La colonne `etat_liste`

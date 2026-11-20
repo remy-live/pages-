@@ -259,6 +259,14 @@
     return nums.length ? Math.max(...nums) : 1;
   }
 
+  /** « 22/9/2024 » -> Date, ou null si la cellule ne porte pas de date. */
+  function enDate(t) {
+    const m = String(t || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!m) return null;
+    const d = new Date(+m[3], +m[2] - 1, +m[1]);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
   const sansAccent = (s) => String(s || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
@@ -284,6 +292,7 @@
       const t = sansAccent(th.textContent);
       if (t.startsWith('etat')) colonnes.etat = i;
       else if (t.startsWith('reponse')) colonnes.reponses = i;
+      else if (t.startsWith('saisie')) colonnes.saisie = i;
     });
 
     const sorties = [];
@@ -300,6 +309,7 @@
         // plutôt que de croire à tort qu'une fiche n'a pas bougé.
         sig: colonnes.etat == null && colonnes.reponses == null
           ? '' : lire(colonnes.etat) + '|' + lire(colonnes.reponses),
+        date: enDate(lire(colonnes.saisie)),
       });
     }
     return sorties;
@@ -459,8 +469,16 @@
       '.etat{font-size:12px;color:#1a1d21;background:#f0f4f8;border:1px solid #e0e6ec;',
       ' border-radius:7px;padding:7px 9px;margin-bottom:10px}',
       '.etat b{font-variant-numeric:tabular-nums}',
+      '.reg{border:1px solid #e0e6ec;border-radius:8px;padding:9px 10px;margin-bottom:10px}',
+      '.reg label{display:flex;align-items:center;gap:7px;font-size:12px;color:#1a1d21}',
+      '.reg label + label{margin-top:7px}',
+      '.reg select{flex:1;min-width:0;padding:4px 6px;font:inherit;font-size:12px;',
+      ' border:1px solid #c8cdd4;border-radius:6px;background:#fff;color:#1a1d21}',
+      '.reg .dates{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:12px;color:#5a6472}',
+      '.reg .dates input{flex:1;min-width:0;padding:4px 6px;font:inherit;font-size:12px;',
+      ' border:1px solid #c8cdd4;border-radius:6px;background:#fff;color:#1a1d21}',
       '.r{display:flex;gap:7px;margin-top:10px}',
-      'button.a{flex:1;padding:8px 10px;border-radius:8px;border:1px solid #c8cdd4;',
+      'button.a{flex:1;padding:8px 6px;border-radius:8px;border:1px solid #c8cdd4;white-space:nowrap;',
       ' background:#fff;font:inherit;font-weight:600;cursor:pointer;color:#1a1d21}',
       'button.a:hover:not(:disabled){background:#f2f5f8}',
       'button.a:disabled{opacity:.45;cursor:default}',
@@ -478,6 +496,20 @@
       '  <div class="t"><b>Contenu des signalements</b><button class="x" title="Fermer">✕</button></div>',
       '  <div class="c">',
       '    <div class="etat" data-etat>Mémoire vide.</div>',
+      '    <div class="reg">',
+      '      <label>Relever',
+      '        <select data-mode>',
+      '          <option value="change">ce qui a changé</option>',
+      '          <option value="manquantes">les fiches manquantes</option>',
+      '          <option value="tout">tout, à nouveau</option>',
+      '        </select>',
+      '      </label>',
+      '      <label><input type="checkbox" data-peron> Seulement une période</label>',
+      '      <div class="dates" data-dates hidden>',
+      '        <input type="date" data-du aria-label="Du"><span>au</span>',
+      '        <input type="date" data-au aria-label="Au">',
+      '      </div>',
+      '    </div>',
       '    <div class="j"><i></i></div>',
       '    <div class="s">Prêt.</div>',
       '    <div class="r">',
@@ -502,7 +534,29 @@
     const bReprise = $('[data-reprise]'), fichier = $('[data-fichier]');
 
     $('.x').onclick = () => hote.remove();
-    bGo.onclick = () => lancer();
+    const selMode = $('[data-mode]'), perOn = $('[data-peron]'), dates = $('[data-dates]');
+    const chDu = $('[data-du]'), chAu = $('[data-au]');
+
+    perOn.onchange = () => { dates.hidden = !perOn.checked; };
+
+    /** Ce que le panneau demande, au moment où on clique. */
+    const reglages = () => {
+      const jour = (v) => {
+        if (!v) return null;
+        const [y, m, d] = v.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      };
+      const o = { mode: selMode.value };
+      if (perOn.checked) {
+        o.du = jour(chDu.value);
+        // Jusqu'à la fin du jour choisi, sinon on exclut ce jour-là.
+        const au = jour(chAu.value);
+        if (au) { au.setHours(23, 59, 59, 999); o.au = au; }
+      }
+      return o;
+    };
+
+    bGo.onclick = () => lancer(reglages());
     bStop.onclick = () => { etat.arret = true; statut.textContent = 'Arrêt en cours…'; };
     bCsv.onclick = telecharger;
     bReprise.onclick = () => fichier.click();
@@ -593,26 +647,53 @@
         await attendre(delai);
       }
 
-      // 2. ne retenir que ce qui a bougé
+      // 2. restreindre à la période demandée, puis choisir quoi ouvrir
+      const mode = o.mode || 'change';
+      let retenues = lignes;
+      let horsPeriode = 0;
+      if (o.du || o.au) {
+        // Sans colonne de date reconnue, filtrer ne retiendrait rien : mieux
+        // vaut ignorer la période en le disant que rendre un fichier vide.
+        if (!lignes.some((l) => l.date)) {
+          dire('Aucune date de saisie dans la liste : la période est ignorée.');
+          await attendre(1600);
+        } else {
+          const avant = retenues.length;
+          retenues = retenues.filter((l) => l.date
+            && (!o.du || l.date >= o.du) && (!o.au || l.date <= o.au));
+          horsPeriode = avant - retenues.length;
+        }
+      }
+
       const nouveaux = [], changes = [];
-      for (const l of lignes) {
+      for (const l of retenues) {
         const connue = etat.fiches.get(l.id);
-        if (!connue) nouveaux.push(l);
-        else if (o.tout || !l.sig || connue.sig !== l.sig) changes.push(l);
+        if (!connue) { nouveaux.push(l); continue; }
+        if (mode === 'manquantes') continue;
+        if (mode === 'tout' || !l.sig || connue.sig !== l.sig) changes.push(l);
       }
       const aLire = nouveaux.concat(changes);
+      const inchangees = retenues.length - aLire.length;
+      const cadre = horsPeriode
+        ? ' (' + horsPeriode + ' hors période)' : '';
 
       if (!aLire.length && !etat.arret) {
-        await Memoire.marquerReleve(new Date().toLocaleDateString('fr-FR'));
         etat.releve = new Date().toLocaleDateString('fr-FR');
-        dire('Rien de nouveau : les ' + etat.fiches.size + ' fiches sont à jour.');
+        await Memoire.marquerReleve(etat.releve);
+        dire(mode === 'manquantes'
+          ? 'Aucune fiche manquante' + cadre + ' : les ' + etat.fiches.size + ' sont déjà là.'
+          : 'Rien de nouveau' + cadre + ' : les ' + retenues.length + ' fiches retenues sont à jour.');
+        if (ui) ui.boutons(false);
         return;
       }
       if (!etat.arret) {
-        dire(nouveaux.length + ' nouvelle' + (nouveaux.length > 1 ? 's' : '')
-          + ', ' + changes.length + ' mise' + (changes.length > 1 ? 's' : '') + ' à jour'
+        const bouts = [];
+        if (nouveaux.length) bouts.push(nouveaux.length + ' nouvelle' + (nouveaux.length > 1 ? 's' : ''));
+        if (changes.length) bouts.push(changes.length + ' à mettre à jour');
+        if (inchangees > 0) bouts.push(inchangees + ' inchangée' + (inchangees > 1 ? 's' : ''));
+        dire(bouts.join(', ') + cadre
           + ' — ' + Math.ceil(aLire.length * (delai + 150) / 60000) + ' min environ.');
-        await attendre(900);
+        await attendre(1400);
       }
 
       // 3. lire les fiches retenues
