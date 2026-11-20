@@ -407,6 +407,12 @@ input::placeholder{color:var(--ink-muted)}
 .seg button{flex:1; padding:6px 8px; font-size:12px; font-weight:550; background:none; border:0; border-radius:6px; cursor:pointer; color:var(--ink-2)}
 .seg button[aria-pressed=true]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.12)}
 
+/* Le mot cherché, retrouvé dans le texte d'une fiche. */
+mark{
+  background:color-mix(in srgb, var(--series-4) 38%, transparent);
+  color:inherit; border-radius:3px; padding:0 1px;
+}
+
 /* Texte d'une fiche, replié sous le signalement */
 .ftexte{margin-top:7px; border-top:1px solid var(--hairline); padding-top:6px}
 .ftexte > summary{
@@ -503,6 +509,15 @@ canvas.leaflet-heatmap-layer{pointer-events:none !important}
 /* En bas à gauche : les commandes de zoom de Leaflet occupent le coin haut gauche. */
 .map-overlay.bl{bottom:12px; left:10px; flex-direction:column; align-items:flex-start; max-width:min(280px,60%)}
 .map-overlay.tr{top:10px; right:10px}
+.map-overlay.ctr{
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  width:min(400px, 78%); justify-content:center;
+}
+.videbox{font-size:13px; line-height:1.5; color:var(--ink-2); text-align:center; padding:16px 18px}
+.videbox b{color:var(--ink)}
+.videbox p{margin:0 0 10px}
+.videbox p:last-child{margin-bottom:0}
+.videbox .btn{margin-top:4px}
 .floatcard{
   background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius);
   box-shadow:var(--shadow); padding:8px 10px;
@@ -795,7 +810,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
     <span class="pousse"></span>
 
-    <input type="search" id="qText" placeholder="Rechercher : établissement, commune, risque…"
+    <input type="search" id="qText" placeholder="Rechercher : établissement, commune, risque, n° 482, ou un mot de la fiche…"
            aria-label="Recherche libre">
 
     <span class="sep"></span>
@@ -881,6 +896,10 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         <div class="labels" id="legendLabels"></div>
         <div class="zero" id="legendZero" hidden><i></i> aucun signalement</div>
       </div>
+    </div>
+
+    <div class="map-overlay ctr" id="vide" hidden>
+      <div class="floatcard videbox"></div>
     </div>
 
     <div class="map-overlay tl" style="top:10px;left:58px;right:96px">
@@ -1310,6 +1329,52 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 ));
 
 /** Clé de comparaison : sans accents, sans ponctuation, en minuscules. */
+/**
+ * Reconnaît une recherche par numéro d'inscription.
+ *
+ * « 482 », « n°482 », « n° 482 », « #482 », « fiche 482 ». Un numéro se
+ * cherche exactement : noyé dans la recherche libre, « 482 » ramènerait tous
+ * les UAI et toutes les dates qui contiennent ces trois chiffres.
+ */
+/* Lettres accentuées, pour que « securite » surligne « sécurité ». */
+const LETTRES = { a: 'aàâä', c: 'cç', e: 'eéèêë', i: 'iîï', o: 'oôö', u: 'uùûü', y: 'yÿ' };
+
+/** Motif tolérant aux accents et à la casse, ou rien si la requête est trop courte. */
+function motifRecherche(q) {
+  const brut = String(q || '').trim();
+  if (brut.length < 2) return null;
+  const corps = [...brut].map((ch) => {
+    const bas = ch.toLowerCase();
+    if (LETTRES[bas]) return `[${LETTRES[bas]}${LETTRES[bas].toUpperCase()}]`;
+    return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }).join('');
+  try { return new RegExp(corps, 'gi'); } catch { return null; }
+}
+
+/**
+ * Échappe un texte et entoure les occurrences cherchées.
+ *
+ * Le découpage se fait sur le texte brut, et chaque morceau est échappé
+ * séparément : surligner après échappement reviendrait à chercher dans du
+ * HTML, et à casser une entité au passage.
+ */
+function surligner(txt, q) {
+  const re = motifRecherche(q);
+  if (!re) return esc(txt);
+  let sortie = '', dernier = 0, m;
+  while ((m = re.exec(txt)) !== null) {
+    if (!m[0]) { re.lastIndex++; continue; }          // garde-fou
+    sortie += esc(txt.slice(dernier, m.index)) + '<mark>' + esc(m[0]) + '</mark>';
+    dernier = m.index + m[0].length;
+  }
+  return sortie + esc(txt.slice(dernier));
+}
+
+function numeroCherche(texte) {
+  const m = String(texte || '').trim().match(/^(?:n\s*[°o]\s*|#\s*|fiche\s+)?(\d{1,7})$/i);
+  return m ? m[1] : null;
+}
+
 const norm = (v) => String(v ?? '')
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -1711,7 +1776,7 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
    choses : dire quelle version on utilise, et repérer qu'une plus récente est
    en ligne — un navigateur garde volontiers l'ancienne page en cache, et l'on
    croit alors tester une correction qu'on n'a pas. */
-const VERSION = '2026-11-20 06:58';
+const VERSION = '2026-11-20 09:06';
 
 /**
  * Compare la version chargée à celle du serveur.
@@ -2069,6 +2134,7 @@ function buildMonths() {
 function computeFiltered() {
   const f = state.filters;
   const q = norm(f.text);
+  const numero = numeroCherche(f.text);
 
   let minTime = -Infinity, maxTime = Infinity;
   if (f.timeOn && state.months.length) {
@@ -2091,12 +2157,13 @@ function computeFiltered() {
     if (!f.selected.circo.has(inc.circo || 'Hors circonscription')) return false;
     if (!f.selected.dept.has(inc.dept)) return false;
     if (!f.selected.nature.has(inc.nature)) return false;
+    if (numero) return String(inc.number || '').trim() === numero;
     if (q) {
       // On cherche aussi sur le libellé tel qu'il figure dans le registre et sur
       // l'UAI : les deux fichiers ne nomment pas toujours l'établissement pareil.
       const hay = norm([inc.etab.name, inc.etabLabel, inc.uai, inc.etab.commune,
                         inc.commune, inc.circo, inc.risk, inc.state,
-                        inc.reporter, inc.number].join(' '));
+                        inc.reporter].join(' '));
       // Le texte des fiches, quand il a été chargé, entre dans la recherche :
       // c'est ce qui permet de retrouver « amiante » ou « plafond ».
       const t = texteDe(inc);
@@ -2128,6 +2195,11 @@ function computeFiltered() {
       if (byEtab.has(e.uai)) continue;
       if (deptOn.size && !deptOn.has(e.dept) && state.facets.dept.values.has(e.dept)) continue;
       if (natureOn.size && !natureOn.has(e.nature) && state.facets.nature.values.has(e.nature)) continue;
+      // La recherche vaut aussi pour eux. Sans cela, chercher un établissement
+      // puis demander à le voir « quand même » couvrait la carte de deux mille
+      // points gris sans rapport avec ce qu'on cherchait.
+      if (numero) continue;                    // un numéro désigne une fiche, pas un lieu
+      if (q && !norm([e.name, e.commune, e.uai, e.dept].join(' ')).includes(q)) continue;
       places.push({ etab: e, count: 0, incidents: [] });
     }
   }
@@ -2184,6 +2256,25 @@ function initMap() {
 }
 
 /**
+ * Redemande le tracé de chaque marqueur.
+ *
+ * Les cercles sont dessinés sur une toile, et la bibliothèque de regroupement
+ * a été écrite pour des marqueurs du document : après une animation de
+ * regroupement ou un zoom, la toile n'est pas toujours repeinte, et des points
+ * manquent jusqu'au prochain déplacement de la carte. Redemander le tracé est
+ * sans effet quand tout va bien, et répare quand ça ne va pas.
+ */
+function repeindreMarqueurs() {
+  for (const couche of [clusterLayer, pointLayer]) {
+    if (!couche || !map.hasLayer(couche)) continue;
+    couche.eachLayer((l) => {
+      if (typeof l.redraw === 'function') l.redraw();
+      else if (l.eachLayer) l.eachLayer((x) => { if (typeof x.redraw === 'function') x.redraw(); });
+    });
+  }
+}
+
+/**
  * Met la toile de densité derrière les points, et hors d'atteinte des clics.
  *
  * Les deux vivent dans le même calque : sans cela, la toile ajoutée en
@@ -2195,6 +2286,64 @@ function calerLaDensite() {
   heatLayer._canvas.style.pointerEvents = 'none';
   const calque = map.getPanes().overlayPane;
   if (calque.firstChild !== heatLayer._canvas) calque.insertBefore(heatLayer._canvas, calque.firstChild);
+}
+
+/**
+ * Explique une vue vide.
+ *
+ * « Aucun résultat » est une réponse, pas une explication : l'établissement
+ * cherché peut très bien figurer à l'annuaire sans porter le moindre
+ * signalement, ou n'être écarté que par un autre critère. On le dit, et on
+ * propose le geste qui débloque.
+ */
+function renderVide() {
+  const box = $('#vide');
+  const carte = box.querySelector('.videbox');
+  // On se tait dès que la carte montre quelque chose — un établissement sans
+  // signalement compris : le message ferait alors doublon avec ce qu'on voit.
+  if (!state.incidents.length || current.places.length) { box.hidden = true; return; }
+
+  const brut = String(state.filters.text || '').trim();
+  const num = numeroCherche(brut);
+  const q = norm(brut);
+  const bouton = (cle, libelle) => `<button class="btn sm" data-vide="${cle}">${libelle}</button>`;
+  const sansTexte = !state.textes.size
+    ? `<p style="font-size:11.5px">Le texte des fiches n'est pas chargé : un mot qui n'y
+       figure que là ne peut pas être trouvé.</p>` : '';
+  let html;
+
+  if (num) {
+    const existe = state.incidents.some((i) => String(i.number || '').trim() === num);
+    html = existe
+      ? `<p>Le signalement <b>n° ${esc(num)}</b> existe, mais vos autres critères l'écartent.</p>`
+        + bouton('seule', 'Ne garder que cette recherche')
+      : `<p>Aucun signalement <b>n° ${esc(num)}</b> dans ce registre.</p>`;
+  } else if (q) {
+    const lieux = [...state.etabs.values()].filter((e) =>
+      norm([e.name, e.commune, e.uai].join(' ')).includes(q));
+    const avec = lieux.filter((e) => state.incidents.some((i) => i.uai === e.uai));
+    if (avec.length) {
+      html = `<p><b>${fmtInt(avec.length)} établissement${avec.length > 1 ? 's' : ''}</b>
+        correspond${avec.length > 1 ? 'ent' : ''} à « ${esc(brut)} » et port${avec.length > 1 ? 'ent' : 'e'}
+        des signalements, mais vos autres critères les écartent.</p>`
+        + bouton('seule', 'Ne garder que cette recherche');
+    } else if (lieux.length) {
+      const l = lieux[0];
+      html = `<p><b>${esc(l.name)}</b>${l.commune ? ' (' + esc(l.commune) + ')' : ''}
+        figure à l'annuaire, mais <b>aucun signalement</b> ne lui est rattaché
+        dans ce registre.</p>`
+        + bouton('zero', 'Le montrer quand même sur la carte');
+    } else {
+      html = `<p>Rien ne correspond à « ${esc(brut)} » : ni un établissement de
+        l'annuaire, ni une commune, ni un risque.</p>` + sansTexte;
+    }
+  } else {
+    html = '<p>Aucun signalement ne correspond aux critères en cours.</p>'
+      + bouton('tout', 'Réinitialiser les critères');
+  }
+
+  carte.innerHTML = html;
+  box.hidden = false;
 }
 
 /** Établissements ayant reçu un signalement dans les `jours` derniers jours. */
@@ -4225,7 +4374,10 @@ function renderPuces() {
   const puces = [];
   const f = state.filters;
 
-  if (f.text) puces.push({ k: 'text', l: 'Recherche', v: f.text });
+  if (f.text) {
+    const n = numeroCherche(f.text);
+    puces.push({ k: 'text', l: n ? 'Signalement' : 'Recherche', v: n ? 'n° ' + n : f.text });
+  }
   if (f.openOnly) puces.push({ k: 'open', l: 'Non clos', v: 'seulement' });
   if (f.month) puces.push({ k: 'month', l: 'Mois', v: MONTH_FMT.format(monthDate(f.month)) });
   if (f.timeOn && state.months.length) {
@@ -4443,8 +4595,9 @@ function incCard(inc) {
 function corpsFiche(inc) {
   const t = texteDe(inc);
   if (!t) return '';
+  const q = numeroCherche(state.filters.text) ? '' : state.filters.text;
   const bloc = (titre, txt) => txt
-    ? `<div class="ft-b"><b>${titre}</b><p>${esc(txt).replace(/\n/g, '<br>')}</p></div>` : '';
+    ? `<div class="ft-b"><b>${titre}</b><p>${surligner(txt, q).replace(/\n/g, '<br>')}</p></div>` : '';
   const corps = bloc('Observation', t.observation) + bloc('Suggestion', t.suggestion)
     + bloc('Réponses', t.reponses);
   if (!corps) return '';
@@ -4459,7 +4612,10 @@ function corpsFiche(inc) {
 
 function filterSummary() {
   const parts = [];
-  if (state.filters.text) parts.push(`recherche « ${state.filters.text} »`);
+  if (state.filters.text) {
+    const n = numeroCherche(state.filters.text);
+    parts.push(n ? `signalement n° ${n}` : `recherche « ${state.filters.text} »`);
+  }
   if (state.filters.openOnly) parts.push('non clos uniquement');
   if (state.filters.month) parts.push(`mois de ${MONTH_FMT.format(monthDate(state.filters.month))}`);
   if (state.filters.timeOn && state.months.length) {
@@ -4885,12 +5041,13 @@ function peindreLiseuse() {
   const t = texteDe(inc);
   const relance = Suivi.relanceDe(inc);
   const tagClass = { clos: 'clos', encours: 'encours', vise: 'vise' }[inc.stateKey] || 'autre';
+  const q = numeroCherche(state.filters.text) ? '' : state.filters.text;
   const bloc = (titre, txt) => txt
-    ? `<section><h4>${titre}</h4><p>${esc(txt)}</p></section>` : '';
+    ? `<section><h4>${titre}</h4><p>${surligner(txt, q)}</p></section>` : '';
 
   const reponses = t && t.reponses
     ? `<section><h4>Réponses portées au registre</h4>${t.reponses.split(/\n{2,}/)
-        .map((r) => `<div class="rep"><p>${esc(r)}</p></div>`).join('')}</section>`
+        .map((r) => `<div class="rep"><p>${surligner(r, q)}</p></div>`).join('')}</section>`
     : '';
 
   const corps = t
@@ -5078,6 +5235,7 @@ function refresh() {
   $('#suiviBadge').textContent = Object.keys(Suivi.charger().relances).length;
   $('#btnClearMonth').hidden = !state.filters.month;
   syncBarreHaute();
+  renderVide();
 }
 
 /**
@@ -5220,6 +5378,30 @@ function wireEvents() {
   $('#chkOpenOnly').addEventListener('change', (e) => { state.filters.openOnly = e.target.checked; refresh(); });
   $('#chkWithZero').addEventListener('change', (e) => { state.filters.withZero = e.target.checked; refresh(); });
 
+  // Les gestes proposés quand la vue est vide.
+  $('#vide').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vide]');
+    if (!b) return;
+    if (b.dataset.vide === 'zero') {
+      state.filters.withZero = true;
+      $('#chkWithZero').checked = true;
+    } else if (b.dataset.vide === 'seule') {
+      // On garde la recherche, on retire tout le reste.
+      state.filters.openOnly = false; $('#chkOpenOnly').checked = false;
+      state.filters.month = null;
+      state.filters.timeOn = false; $('#chkTime').checked = false;
+      state.filters.from = 0; state.filters.to = Math.max(0, state.months.length - 1);
+      for (const { key } of FACET_DEFS) {
+        if (state.facets[key]) state.filters.selected[key] = new Set(state.facets[key].values.keys());
+      }
+      renderTimeline(); renderFacets();
+    } else {
+      $('#btnResetFilters').click();
+      return;
+    }
+    refresh();
+  });
+
   $('#btnResetFilters').addEventListener('click', () => {
     stopPlay();
     state.filters.text = ''; $('#qText').value = '';
@@ -5266,6 +5448,10 @@ function wireEvents() {
     $(sel).setAttribute('aria-pressed', String(name === state.view));
   }
   $('#btnFit').addEventListener('click', fitToResults);
+  clusterLayer.on('animationend', repeindreMarqueurs);
+  map.on('zoomend', repeindreMarqueurs);
+  map.on('moveend', repeindreMarqueurs);
+
   // Sans ce recalage, la densité pâlit ou sature à mesure qu'on zoome.
   map.on('zoomend', () => {
     if (heatLayer && map.hasLayer(heatLayer)) {

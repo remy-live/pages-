@@ -61,6 +61,26 @@ qui ne la porte pas est repris quand même, et ses fiches sont relues une fois.
 réponses, noms des agents et des chefs de service. Il se traite comme le
 registre lui-même.
 
+### Chercher
+
+Le champ de la barre haute cherche dans le nom de l'établissement, la commune,
+l'UAI, la circonscription, le risque, l'état, le déclarant — et dans le **texte
+des fiches** quand il a été chargé. Le mot trouvé est surligné là où il se
+trouve, dans le dépliant d'un signalement comme dans la liseuse, sans tenir
+compte des accents.
+
+Un **numéro de signalement** se cherche à part : `482`, `n° 482`, `#482` ou
+`fiche 482` ramènent cette fiche-là, et elle seule. Noyé dans la recherche
+libre, « 482 » ramènerait aussi tous les UAI qui contiennent ces trois
+chiffres.
+
+Quand rien ne correspond, l'outil **dit pourquoi** plutôt que d'afficher une
+carte vide : l'établissement figure à l'annuaire mais ne porte aucun
+signalement — avec un bouton pour le montrer quand même —, ou bien d'autres
+critères l'écartent — avec un bouton pour ne garder que la recherche —, ou
+bien rien ne correspond du tout, et il rappelle alors que le texte des fiches
+n'est peut-être pas chargé.
+
 ### Les calques posés sur la carte
 
 Les étiquettes de filtres, la légende et les avertissements sont posés sur la
