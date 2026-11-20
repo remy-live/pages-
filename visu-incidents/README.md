@@ -61,6 +61,32 @@ qui ne la porte pas est repris quand même, et ses fiches sont relues une fois.
 réponses, noms des agents et des chefs de service. Il se traite comme le
 registre lui-même.
 
+### Les calques posés sur la carte
+
+Les étiquettes de filtres, la légende et les avertissements sont posés sur la
+carte dans des boîtes qui s'étendent bien au-delà de ce qu'elles affichent —
+celle des étiquettes couvre toute la largeur. Elles ne reçoivent plus les
+clics : seules leurs commandes propres le font, et un point qu'elles
+recouvrent reste cliquable. La toile de densité non plus, les points vivant
+dessous.
+
+## Savoir quelle version on utilise
+
+Un navigateur garde volontiers la page en cache : on croit alors essayer une
+correction qu'on n'a pas. La boîte **Données** affiche donc la version
+chargée, et la page compare cet horodatage à `version.txt` au démarrage — puis
+au retour sur l'onglet, au plus une fois par cinq minutes. Si une version plus
+récente est en ligne, un bouton **Nouvelle version · Recharger** paraît dans la
+barre haute, en disant laquelle.
+
+La demande porte un paramètre qui change à chaque appel, en plus de
+`cache: 'reload'` : un mécanisme dont le seul but est de déjouer le cache ne
+doit pas dépendre d'une sémantique que telle version de navigateur interprète à
+sa façon. Hors ligne, rien n'est signalé.
+
+`build-standalone.py` écrit l'horodatage aux deux endroits à la fois — dans
+`index.html` et dans `version.txt` — pour qu'ils ne puissent pas diverger.
+
 ## L'annuaire intégré
 
 L'annuaire ne bouge quasiment jamais, alors que l'export du registre change
