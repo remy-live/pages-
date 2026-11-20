@@ -13,6 +13,7 @@ reste utilisable sans).
 """
 
 import base64
+import datetime
 import pathlib
 import re
 import sys
@@ -21,6 +22,7 @@ HERE = pathlib.Path(__file__).parent
 VENDOR = HERE / "vendor"
 SOURCE = HERE / "index.html"
 TARGET = HERE / "visu-incidents-autonome.html"
+VERSION_FILE = HERE / "version.txt"
 
 MIME = {".png": "image/png", ".svg": "image/svg+xml", ".gif": "image/gif"}
 
@@ -42,11 +44,32 @@ def inline_css_assets(css: str) -> str:
     return re.sub(r"url\(([^)]+)\)", repl, css)
 
 
+def stamp() -> str:
+    """Horodate la fabrication, dans `index.html` et dans `version.txt`.
+
+    La page compare la valeur qu'elle porte à celle du fichier pour signaler
+    qu'une version plus récente est en ligne. Les deux doivent donc être
+    écrites ensemble, d'où leur place ici plutôt que dans un script à part
+    qu'on oublierait de lancer.
+    """
+    version = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    html = SOURCE.read_text(encoding="utf-8")
+    neuf, n = re.subn(r"const VERSION = '[^']*';", f"const VERSION = '{version}';", html, count=1)
+    if not n:
+        print("Attention : la constante VERSION est introuvable.", file=sys.stderr)
+        return version
+    SOURCE.write_text(neuf, encoding="utf-8")
+    VERSION_FILE.write_text(version + "\n", encoding="utf-8")
+    print(f"version : {version}")
+    return version
+
+
 def main() -> int:
     if not SOURCE.is_file():
         print(f"Introuvable : {SOURCE}", file=sys.stderr)
         return 1
 
+    stamp()
     html = SOURCE.read_text(encoding="utf-8")
     inlined = []
 
