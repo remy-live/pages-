@@ -157,6 +157,20 @@ restent là où on les regarde.
 Sous 1 000 px de large, les deux panneaux deviennent des tiroirs et la barre du
 bas prend le relais.
 
+### Interface simplifiée
+
+Le bouton **Simplifié** retire ce qui relève du réglage fin : quatre des sept
+facettes, la frise de période et son animation, les réglages posés sur la
+carte, les options d'export, les outils de fabrication, les seuils d'urgence.
+Restent la recherche, l'état du traitement, la famille de risque, le
+département, les raccourcis de période, la carte et ses quatre modes, les
+trois onglets, **Récent** et **Exporter**.
+
+Il masque, il ne désactive pas : un critère masqué garde sa valeur, continue
+de s'appliquer, et reste annoncé par le compteur de la barre haute et par son
+étiquette sur la carte. On ne filtre jamais sans le savoir. Le choix est
+retenu d'une visite à l'autre.
+
 ## Ce que fait l'outil
 
 **Carte** — trois lectures : groupes (le nombre affiché est celui des

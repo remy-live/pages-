@@ -170,6 +170,15 @@ h1,h2,h3,h4{font-weight:650; line-height:1.2}
 .btn.primaire:hover{filter:brightness(1.07)}
 .btn.primaire .n{background:rgba(255,255,255,.26); color:#fff}
 
+/* ---------------- Interface simplifiée ----------------
+   Un seul interrupteur retire ce qui relève du réglage fin. Rien n'est
+   désactivé : les filtres masqués gardent leur valeur, la vue ne change pas. */
+body[data-simple] [data-avance]{display:none !important}
+#btnSimple[aria-pressed="true"]{
+  background:var(--accent); border-color:var(--accent); color:var(--accent-ink);
+}
+#btnSimple[aria-pressed="true"]:hover{filter:brightness(1.07)}
+
 /* ---------------- Boîtes de dialogue ---------------- */
 .modale{
   position:fixed; inset:0; z-index:2000; display:none;
@@ -715,6 +724,9 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
   #topbar .marque,#topbar .sep{display:none}
   #btnDonnees{max-width:none; flex:1 1 auto}
   #topbar #qText{display:none}
+  /* La barre du bas porte déjà « Critères » : le garder en haut ferait
+     doublon, et c'est lui qui faisait déborder la barre. */
+  #topbar #btnFiltres{display:none}
   .modale{padding:0; align-items:stretch}
   .modale > .boite{width:100%; max-height:none; border-radius:0; border:0}
   .only-mobile{display:inline-flex !important}
@@ -780,6 +792,8 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
     <button class="btn" id="btnFiltres" aria-expanded="true" aria-controls="sidebar"
             title="Afficher ou masquer les critères">Critères<span class="n" id="nFiltres" hidden>0</span></button>
     <button class="btn primaire" id="btnExporter" aria-haspopup="dialog">Exporter…</button>
+    <button class="btn" id="btnSimple" aria-pressed="false"
+            title="Masquer les réglages fins, ne garder que la lecture">Simplifié</button>
     <button class="btn icon" id="btnTheme" title="Basculer clair / sombre" aria-label="Basculer clair / sombre">◐</button>
   </header>
 
@@ -801,7 +815,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 
         <div style="margin-top:10px">
           <label class="check"><input type="checkbox" id="chkOpenOnly"> Signalements non clos uniquement</label>
-          <label class="check"><input type="checkbox" id="chkWithZero"> Afficher aussi les établissements sans signalement</label>
+          <label class="check" data-avance><input type="checkbox" id="chkWithZero"> Afficher aussi les établissements sans signalement</label>
         </div>
 
         <div id="facets" style="margin-top:10px"></div>
@@ -812,13 +826,13 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
       <!-- Période -->
       <section class="group">
         <h2>Période</h2>
-        <label class="check"><input type="checkbox" id="chkTime"> Restreindre à une période</label>
+        <label class="check" data-avance><input type="checkbox" id="chkTime"> Restreindre à une période</label>
         <div class="row" id="raccourcisPeriode" style="margin:2px 0 9px">
           <button class="btn sm" data-dern="1" style="flex:1">Dernier mois</button>
           <button class="btn sm" data-dern="2" style="flex:1">2 mois</button>
           <button class="btn sm" data-dern="3" style="flex:1">3 mois</button>
         </div>
-        <div class="timeline" id="timeline" aria-disabled="true">
+        <div class="timeline" id="timeline" aria-disabled="true" data-avance>
           <div class="bounds"><span>De <b id="lblFrom">—</b></span><span>à <b id="lblTo">—</b></span></div>
           <input type="range" id="rgFrom" min="0" max="0" value="0" step="1" aria-label="Mois de début">
           <input type="range" id="rgTo" min="0" max="0" value="0" step="1" aria-label="Mois de fin">
@@ -831,7 +845,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
             </select>
           </div>
         </div>
-        <p class="note" id="avisAvantAxe" hidden
+        <p class="note" id="avisAvantAxe" data-avance hidden
            style="font-size:11.5px;color:var(--ink-muted);margin-top:8px"></p>
       </section>
 
@@ -869,7 +883,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button id="vwHeat" aria-pressed="false">Densité</button>
           <button id="vwUrgence" aria-pressed="false">Urgence</button>
         </div>
-        <button class="btn icon" id="btnPopCarte" aria-expanded="false" aria-controls="popCarte"
+        <button class="btn icon" id="btnPopCarte" data-avance aria-expanded="false" aria-controls="popCarte"
                 title="Autres réglages de la carte" aria-label="Autres réglages de la carte">⚙</button>
       </div>
       <button class="btn icon" id="btnFit" title="Recadrer sur les résultats" aria-label="Recadrer sur les résultats">⤢</button>
@@ -961,7 +975,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button class="btn sm wide" id="btnTousEtabs" style="margin-top:8px" hidden></button>
         </div>
 
-        <details class="facet" style="margin-top:16px">
+        <details class="facet" style="margin-top:16px" data-avance>
           <summary>Voir les chiffres sous forme de tableau <span class="badge" id="tblBadge">0</span></summary>
           <div class="facet-body">
             <div class="tablewrap">
@@ -995,7 +1009,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
           <button class="btn sm" id="btnRelancePdf" style="flex:1 1 130px">Courrier de relance (PDF)</button>
         </div>
 
-        <details class="facet" style="margin-top:14px">
+        <details class="facet" style="margin-top:14px" data-avance>
           <summary>Régler les seuils<span class="badge" id="urgBadge">6</span></summary>
           <div class="facet-body">
             <div class="urgset">
@@ -1109,7 +1123,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         </div>
       </section>
 
-      <details class="facet">
+      <details class="facet" data-avance>
         <summary>Avancé</summary>
         <div class="facet-body" style="padding:10px">
           <p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-bottom:6px">
@@ -1176,7 +1190,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
         <div class="fmts"><button class="btn sm" id="btnPng">PNG</button></div>
       </div>
 
-      <section class="group" style="margin-top:18px">
+      <section class="group" style="margin-top:18px" data-avance>
         <h2>Ce que contiennent le rapport et l'article
           <span id="optBadge" style="font-weight:600;color:var(--ink-2);text-transform:none;letter-spacing:0">tout</span></h2>
         <div style="columns:2; column-gap:18px">
@@ -1727,13 +1741,13 @@ function classifyState(rawState, closedFlag) {
 }
 
 const FACET_DEFS = [
-  { key: 'registre', label: 'Registre' },
+  { key: 'registre', label: 'Registre', avance: true },
   { key: 'etat', label: 'État du signalement' },
   { key: 'family', label: 'Famille de risque' },
-  { key: 'risk', label: 'Risque détaillé' },
-  { key: 'circo', label: 'Circonscription' },
+  { key: 'risk', label: 'Risque détaillé', avance: true },
+  { key: 'circo', label: 'Circonscription', avance: true },
   { key: 'dept', label: 'Département' },
-  { key: 'nature', label: "Type d'établissement" },
+  { key: 'nature', label: "Type d'établissement", avance: true },
 ];
 
 /**
@@ -4454,7 +4468,7 @@ function download(blob, filename) {
 
 function renderFacets() {
   const host = $('#facets');
-  host.innerHTML = FACET_DEFS.map(({ key, label }) => {
+  host.innerHTML = FACET_DEFS.map(({ key, label, avance }) => {
     const facet = state.facets[key];
     if (!facet || !facet.values.size) return '';
     const sel = state.filters.selected[key];
@@ -4465,7 +4479,7 @@ function renderFacets() {
         <span class="txt" title="${esc(value)}">${esc(value)}</span>
         <span class="n">${fmtInt(n)}</span>
       </label>`).join('');
-    return `<details class="facet" data-key="${esc(key)}" ${open ? 'open' : ''}>
+    return `<details class="facet" data-key="${esc(key)}"${avance ? ' data-avance' : ''} ${open ? 'open' : ''}>
       <summary>${esc(label)}<span class="badge">${sel.size}/${facet.values.size}</span></summary>
       <div class="facet-body">
         <div class="facet-tools">
@@ -5536,6 +5550,25 @@ function wireEvents() {
     b.addEventListener('click', () => $('#vw' + b.dataset.vue[0].toUpperCase() + b.dataset.vue.slice(1)).click()));
   $('#mbDash').addEventListener('click', () => openDrawer('dash'));
   $('#mbMap').addEventListener('click', closeDrawer);
+
+  /* Interface simplifiée : on masque, on ne désactive pas. Un critère
+     masqué garde sa valeur, et le compteur de la barre haute continue de
+     l'annoncer — sans quoi on filtrerait sans le savoir. */
+  const peindreSimple = () => {
+    const simple = Prefs.get('simple', false);
+    document.body.toggleAttribute('data-simple', simple);
+    $('#btnSimple').setAttribute('aria-pressed', String(simple));
+    $('#btnSimple').title = simple
+      ? 'Revenir à l\'interface complète'
+      : 'Masquer les réglages fins, ne garder que la lecture';
+    if (simple) $('#popCarte').hidden = true;
+    setTimeout(() => map && map.invalidateSize(), 60);
+  };
+  $('#btnSimple').addEventListener('click', () => {
+    Prefs.set('simple', !Prefs.get('simple', false));
+    peindreSimple();
+  });
+  peindreSimple();
 
   $('#btnTheme').addEventListener('click', () => {
     const order = ['auto', 'light', 'dark'];
