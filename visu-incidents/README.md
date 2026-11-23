@@ -102,6 +102,12 @@ amiante ». La comparaison se fait sur le texte normalisé, accents et
 ponctuation retirés, ce qui permet d'écrire « arrêt de travail » et de
 retrouver « arret de travail ».
 
+**Chaque mot se clique.** Le choisir ne garde que ses fiches, et fait
+apparaître les **lieux** où il figure, avec leur nombre — cliquables eux aussi,
+vers la liseuse de l'établissement. Un lien porte alors le mot dans la
+recherche de la barre haute : la carte montre les lieux, la synthèse les
+chiffres, et le mot est surligné dans chaque fiche.
+
 Un champ libre ajoute vos propres mots, gardés dans le navigateur. Cette
 veille ne remplace pas la lecture : elle dit où regarder d'abord. Sans le
 texte des fiches, elle le dit au lieu de rendre une liste vide.
