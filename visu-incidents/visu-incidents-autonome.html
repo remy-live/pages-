@@ -910,6 +910,43 @@ body[data-simple] [data-avance]{display:none !important}
 .lien:hover{color:var(--ink)}
 
 /* ---------------- Arrivé récemment ---------------- */
+#modaleRecent > .boite{width:min(620px, 100%)}
+.recent-tuiles.trois{grid-template-columns:repeat(3, 1fr)}
+.recent-tuiles .t .ec{
+  display:block; margin-top:3px; font-size:10.5px; font-style:normal; color:var(--ink-muted);
+}
+.recent-tuiles .t .ec.hausse{color:var(--critical)}
+.recent-tuiles .t .ec.baisse{color:var(--good)}
+.resume{
+  font-size:13.5px; line-height:1.65; color:var(--ink-2); margin:0 0 14px;
+  padding:12px 14px; background:var(--surface-2); border-radius:var(--radius);
+  border:1px solid var(--hairline);
+}
+.resume b{color:var(--ink); font-weight:650}
+.veille > summary{flex-wrap:wrap}
+.veille .mots{display:flex; gap:4px; flex-wrap:wrap; flex:1}
+.veille .mots i, .recent-l .mot{
+  font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.01em;
+  background:color-mix(in srgb, var(--series-4) 30%, transparent);
+  color:var(--ink); border-radius:4px; padding:1px 5px; white-space:nowrap;
+}
+.recent-l .mot{margin-right:4px}
+.act{margin-bottom:18px}
+.act:last-child{margin-bottom:0}
+.act > h3{
+  font:600 12px/1.2 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-muted);
+  margin:0 0 4px; padding-bottom:5px; border-bottom:1px solid var(--hairline);
+}
+.act .sous{font-size:11.5px; color:var(--ink-muted); margin:5px 0 7px}
+.act .facet{margin-bottom:7px}
+.act .facet-body{padding:4px 8px 8px}
+.recent-l .cpt{
+  flex:0 0 auto; font-size:11.5px; font-weight:650; color:var(--ink-2);
+  background:var(--surface-2); border-radius:20px; padding:2px 9px; white-space:nowrap;
+}
+#motsVeille{margin-top:2px}
+
 .pied-recent{
   display:flex; gap:8px; flex:0 0 auto;
   padding:11px 16px; border-top:1px solid var(--hairline); background:var(--surface);
@@ -1496,7 +1533,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
     <span class="sep"></span>
 
     <button class="btn" id="btnRecent" aria-haspopup="dialog"
-            title="Ce qui est arrivé ces dernières semaines">Récent<span class="n" id="nRecent" hidden>0</span></button>
+            title="Ce qui est arrivé ces dernières semaines">Actualité<span class="n" id="nRecent" hidden>0</span></button>
     <button class="btn" id="btnFiltres" aria-expanded="true" aria-controls="sidebar"
             title="Afficher ou masquer les critères">Critères<span class="n" id="nFiltres" hidden>0</span></button>
     <button class="btn primaire" id="btnExporter" aria-haspopup="dialog">Exporter…</button>
@@ -1941,7 +1978,7 @@ textarea.note-etab{width:100%;min-height:56px;resize:vertical;padding:8px 10px;f
 <div class="modale" id="modaleRecent" role="dialog" aria-modal="true" aria-labelledby="ttlRecent">
   <div class="boite">
     <div class="tete">
-      <h2 id="ttlRecent">Arrivé récemment</h2>
+      <h2 id="ttlRecent">Actualité</h2>
       <button class="btn icon" data-fermer title="Fermer" aria-label="Fermer">✕</button>
     </div>
     <div class="corps" id="recentCorps"></div>
@@ -2922,7 +2959,7 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
    choses : dire quelle version on utilise, et repérer qu'une plus récente est
    en ligne — un navigateur garde volontiers l'ancienne page en cache, et l'on
    croit alors tester une correction qu'on n'a pas. */
-const VERSION = '2026-11-20 09:06';
+const VERSION = '2026-11-23 20:14';
 
 /**
  * Compare la version chargée à celle du serveur.
@@ -6053,8 +6090,150 @@ function piegerTabulation(e) {
 
 /* ------------------------------ Arrivé récemment ------------------------------ */
 
-/** Fenêtre affichée dans la boîte « Arrivé récemment » : 30 ou 60 jours. */
+/** Fenêtre affichée dans la boîte « Actualité » : 30 ou 60 jours. */
 let fenetreRecent = 30;
+
+/** Un signalement non visé : l'état brut le dit, le classement ne le distingue pas. */
+const estNonVise = (i) => /^nonvis/.test(norm(i.state));
+
+/**
+ * Mots à surveiller, par famille.
+ *
+ * Ils sont comparés au texte des fiches une fois celui-ci normalisé — accents
+ * et ponctuation retirés —, ce qui permet d'écrire « arrêt de travail » et de
+ * retrouver « arret de travail ». Cette veille ne remplace pas la lecture :
+ * elle dit où regarder d'abord.
+ */
+const VEILLE = [
+  { label: 'Violences, menaces',
+    mots: ['menace', 'agression', 'agressif', 'violence', 'violent', 'insulte', 'injure',
+           'crachat', 'morsure', 'mordu', 'griffure', 'harcèlement', 'bousculade', 'gifle'] },
+  { label: 'Blessures, soins',
+    mots: ['blessé', 'blessure', 'fracture', 'entorse', 'brûlure', 'saignement',
+           'hospitalisé', 'hospitalisation', 'urgences', 'pompiers', 'SAMU', 'plaie', 'commotion'] },
+  { label: 'Santé des agents',
+    mots: ['arrêt de travail', 'épuisement', 'burn out', 'détresse', 'pleurs',
+           'suicide', 'dépression', 'crise de larmes'] },
+  { label: 'Risques majeurs',
+    mots: ['amiante', 'monoxyde', 'intoxication', 'effondrement', 'électrocution',
+           'fuite de gaz', 'incendie', 'légionelle'] },
+];
+
+/** Les mots ajoutés par l'utilisateur, en plus des familles. */
+const motsPropres = () => String(Prefs.get('motsVeille', '') || '')
+  .split(/[,;\n]/).map((m) => m.trim()).filter(Boolean);
+
+/**
+ * Cherche les mots à surveiller dans le texte des fiches d'une liste.
+ *
+ * Rend une famille par entrée, avec les signalements concernés. Sans texte
+ * chargé, rend une liste vide : on ne devine pas ce qui n'est pas là.
+ */
+function veiller(liste) {
+  if (!state.textes.size) return [];
+  const familles = VEILLE.map((f) => ({ label: f.label, mots: f.mots }));
+  const perso = motsPropres();
+  if (perso.length) familles.push({ label: 'Vos mots', mots: perso });
+
+  const out = familles.map((f) => ({
+    label: f.label,
+    // On garde le mot tel qu'on l'écrit, et sa forme normalisée pour chercher.
+    cles: f.mots.map((m) => ({ mot: m, cherche: norm(m) })).filter((x) => x.cherche),
+    touches: [],
+    vus: new Map(),               // mot -> nombre de fiches où il apparaît
+  }));
+
+  for (const inc of liste) {
+    const t = texteDe(inc);
+    if (!t || !t.recherche) continue;
+    for (const f of out) {
+      const trouves = f.cles.filter((x) => t.recherche.includes(x.cherche)).map((x) => x.mot);
+      if (!trouves.length) continue;
+      f.touches.push({ inc, mots: trouves });
+      for (const m of trouves) f.vus.set(m, (f.vus.get(m) || 0) + 1);
+    }
+  }
+  return out
+    .filter((f) => f.touches.length)
+    .map((f) => ({ ...f, listeMots: [...f.vus.entries()].sort((a, b) => b[1] - a[1]) }));
+}
+
+/** Signalements dont la date tombe entre `depuis` et `jusqu` jours en arrière. */
+function fenetreJours(depuis, jusqu) {
+  const a = Date.now() - depuis * 86400000;
+  const b = Date.now() - jusqu * 86400000;
+  return state.incidents
+    .filter((i) => i.date && i.date.getTime() >= a && i.date.getTime() < b)
+    .sort((x, y) => y.date - x.date);
+}
+
+/** Les établissements du registre entier, regroupés, pour juger des priorités. */
+function placesGlobales() {
+  const m = new Map();
+  for (const i of state.incidents) {
+    let b = m.get(i.uai);
+    if (!b) m.set(i.uai, (b = { etab: i.etab, count: 0, incidents: [] }));
+    b.incidents.push(i);
+    b.count++;
+  }
+  return [...m.values()];
+}
+
+/**
+ * Rédige le résumé de la période.
+ *
+ * Des phrases plutôt que des tuiles : un chiffre seul se lit, mais ne se
+ * recopie pas dans un courriel ni dans un compte rendu. Rien n'y est affirmé
+ * qui ne se lise dans les données.
+ */
+function resumeActualite(f, liste, avant, nonClos, nonVises, chauds, trouves) {
+  const pl = (n, mot, suffixe) => fmtInt(n) + ' ' + mot + (n > 1 ? (suffixe || 's') : '');
+  const jours = (n) => {
+    const d = new Date(Date.now() - n * 86400000);
+    return DATE_FMT.format(d);
+  };
+  const ph = [];
+
+  ph.push(`Du <b>${esc(jours(f))}</b> au <b>${esc(jours(0))}</b>, `
+    + `<b>${esc(pl(liste.length, 'signalement'))}</b> ${liste.length > 1 ? 'ont' : 'a'} été porté`
+    + `${liste.length > 1 ? 's' : ''} au registre`
+    + (avant.length
+      ? liste.length === avant.length
+        ? `, autant que les ${f} jours précédents.`
+        : `, soit <b>${fmtInt(Math.abs(liste.length - avant.length))} de `
+          + `${liste.length > avant.length ? 'plus' : 'moins'}</b> que les ${f} jours précédents.`
+      : '.'));
+
+  if (nonClos.length) {
+    const n = nonClos.length;
+    ph.push((n > 1 ? `<b>${fmtInt(n)}</b> ne sont pas clos` : "<b>Un</b> n'est pas clos")
+      + (nonVises.length
+        ? `, dont <b>${fmtInt(nonVises.length)}</b> jamais visé${nonVises.length > 1 ? 's' : ''}`
+        : '') + '.');
+  } else {
+    ph.push('Tous sont clos.');
+  }
+
+  if (chauds.length) {
+    const tete = chauds[0];
+    const part = chauds.slice(0, 3).reduce((n, c) => n + c.incidents.length, 0);
+    ph.push(`${chauds.length > 2 ? `Les trois lieux les plus touchés concentrent `
+      + `<b>${fmtInt(part)}</b> de ces signalements, ` : ''}`
+      + `<b>${esc(tete.etab.name)}</b>${tete.etab.commune ? ' (' + esc(tete.etab.commune) + ')' : ''} `
+      + `en ${chauds.length > 2 ? 'tête avec' : 'compte'} <b>${fmtInt(tete.incidents.length)}</b>.`);
+  }
+
+  if (trouves.length) {
+    const mots = [];
+    for (const fam of trouves) for (const [m, n] of fam.listeMots) mots.push({ m, n });
+    mots.sort((a, b) => b.n - a.n);
+    ph.push(`Mots relevés dans le texte des fiches : `
+      + mots.slice(0, 8).map((x) => `<b>${esc(x.m)}</b>${x.n > 1 ? ` (${x.n})` : ''}`).join(', ')
+      + (mots.length > 8 ? `, et ${fmtInt(mots.length - 8)} autres` : '') + '.');
+  }
+
+  return `<p class="resume">${ph.join(' ')}</p>`;
+}
 
 function peindreRecent() {
   const box = $('#recentCorps');
@@ -6063,50 +6242,154 @@ function peindreRecent() {
     return;
   }
 
+  const f = fenetreRecent;
+  const liste = fenetreJours(f, 0);
+  const avant = fenetreJours(2 * f, f);
+  const nonClos = liste.filter((i) => i.open);
+  const nonVises = liste.filter(estNonVise);
+
   const seg = `<div class="seg recent-seg" role="group" aria-label="Fenêtre">
-      <button data-fen="30" aria-pressed="${fenetreRecent === 30}">30 derniers jours</button>
-      <button data-fen="60" aria-pressed="${fenetreRecent === 60}">60 derniers jours</button>
+      <button data-fen="30" aria-pressed="${f === 30}">Le mois écoulé</button>
+      <button data-fen="60" aria-pressed="${f === 60}">Les deux derniers mois</button>
     </div>`;
 
-  const a30 = signalementsRecents(30);
-  const a60 = signalementsRecents(60);
-  const tuile = (n, lib) => {
-    const ouverts = n.filter((i) => i.open).length;
-    return `<div class="t"><b>${fmtInt(n.length)}</b><span>${lib}<br>
-      ${n.length ? `dont ${fmtInt(ouverts)} non clos` : '—'}</span></div>`;
+  // L'évolution par rapport à la période précédente de même longueur : un
+  // nombre seul ne dit pas s'il est haut.
+  const ecart = (n, m) => {
+    if (!m) return n ? '<i class="ec">première période</i>' : '';
+    const d = n - m;
+    if (!d) return '<i class="ec">comme avant</i>';
+    return `<i class="ec ${d > 0 ? 'hausse' : 'baisse'}">${d > 0 ? '+' : '−'}${fmtInt(Math.abs(d))} vs ${f} j précédents</i>`;
   };
+  const tuile = (n, lib, cmp) =>
+    `<div class="t"><b>${fmtInt(n)}</b><span>${lib}</span>${cmp === undefined ? '' : ecart(n, cmp)}</div>`;
 
-  const liste = fenetreRecent === 30 ? a30 : a60;
-
-  // Un registre exporté il y a trois mois n'a rien de « récent » à montrer.
-  // Le dire vaut mieux que d'afficher un zéro qui passerait pour une panne.
-  let avis = '';
+  // Un registre exporté il y a trois mois n'a rien de récent à montrer : le
+  // dire vaut mieux qu'un zéro qui passerait pour une panne.
   if (!liste.length) {
     const dernier = state.incidents.reduce((m, i) => (i.date > m ? i.date : m), new Date(0));
-    avis = dernier.getFullYear() > 2000
+    box.innerHTML = seg + (dernier.getFullYear() > 2000
       ? `<p class="notice">Aucun signalement sur la période. Le plus récent du registre
          remonte au <b>${esc(DATE_FMT.format(dernier))}</b> : l'export date peut-être d'avant.</p>`
-      : '<p class="notice">Aucun signalement daté dans le registre.</p>';
+      : '<p class="notice">Aucun signalement daté dans le registre.</p>');
+    $('#btnHalo').disabled = true;
+    $('#btnMoisRecents').disabled = true;
+    return;
   }
 
-  box.innerHTML = seg
-    + `<div class="recent-tuiles">${tuile(a30, '30 derniers jours')}${tuile(a60, '60 derniers jours')}</div>`
-    + avis
-    + (liste.length ? `<div class="recent-liste">${liste.slice(0, 60).map((i) => `
+  /* ---- coins chauds : les lieux les plus touchés sur la période ---- */
+  const parLieu = new Map();
+  for (const i of liste) {
+    let b = parLieu.get(i.uai);
+    if (!b) parLieu.set(i.uai, (b = { etab: i.etab, incidents: [] }));
+    b.incidents.push(i);
+  }
+  const chauds = [...parLieu.values()]
+    .sort((a, b) => b.incidents.length - a.incidents.length
+      || a.etab.name.localeCompare(b.etab.name, 'fr'))
+    .slice(0, 6);
+
+  /* ---- vigilance : le niveau d'urgence, sur le registre entier ---- */
+  const niveaux = new Map();
+  for (const p of computeUrgency(placesGlobales(), new Date())) {
+    if (p.niveau === 'critique' || p.niveau === 'serieux') niveaux.set(p.place.etab.uai, p);
+  }
+  const vigilance = chauds.map((c) => niveaux.get(c.etab.uai)).filter(Boolean)
+    .concat([...parLieu.keys()].map((u) => niveaux.get(u)).filter(Boolean))
+    .filter((v, i, t) => t.indexOf(v) === i)
+    .sort((a, b) => NIVEAUX[b.niveau].rang - NIVEAUX[a.niveau].rang)
+    .slice(0, 6);
+
+  const ligneLieu = (etab, n, extra) => `
+    <button class="recent-l" data-rec="${esc(etab.uai)}" data-num="">
+      <span class="q"><b>${esc(etab.name)}</b><span>${esc(etab.commune || '')}${extra ? ' · ' + extra : ''}</span></span>
+      <span class="cpt">${esc(n)}</span>
+    </button>`;
+
+  const bloc = (titre, corps, note) => corps
+    ? `<section class="act"><h3>${titre}</h3>${note
+        ? `<p class="sous">${note}</p>` : ''}${corps}</section>` : '';
+
+  /* ---- mots à surveiller ---- */
+  const trouves = veiller(liste);
+  const motsHtml = !state.textes.size
+    ? `<p class="sous">Le texte des fiches n'est pas chargé : récupérez-le avec le favori
+       <a href="contenu/" target="_blank" rel="noopener">Contenu des signalements</a>
+       pour que cette veille fonctionne.</p>`
+    : trouves.length
+      ? trouves.map((fam) => `
+        <details class="facet veille">
+          <summary>${esc(fam.label)}
+            <span class="mots">${fam.listeMots.slice(0, 5).map(([m, n]) =>
+              `<i>${esc(m)}${n > 1 ? ' ×' + n : ''}</i>`).join('')}</span>
+            <span class="badge">${fmtInt(fam.touches.length)}</span></summary>
+          <div class="facet-body">${fam.touches.slice(0, 25).map((t) => `
+            <button class="recent-l" data-rec="${esc(t.inc.uai)}" data-num="${esc(String(t.inc.number || ''))}">
+              <span class="j">${esc(DATE_FMT.format(t.inc.date))}</span>
+              <span class="q"><b>${esc(t.inc.etab.name)}</b>
+                <span>${t.mots.map((m) => `<i class="mot">${esc(m)}</i>`).join('')} ${esc(t.inc.risk)}</span></span>
+            </button>`).join('')}
+            ${fam.touches.length > 25 ? `<p class="sous">Les 25 premiers sur ${fmtInt(fam.touches.length)}.</p>` : ''}
+          </div>
+        </details>`).join('')
+      : '<p class="sous">Aucun des mots surveillés n\'apparaît dans les fiches de la période.</p>';
+
+  const annexe = (titre, items) => items.length ? `
+    <details class="facet">
+      <summary>${titre}<span class="badge">${fmtInt(items.length)}</span></summary>
+      <div class="facet-body">${items.slice(0, 40).map((i) => `
         <button class="recent-l" data-rec="${esc(i.uai)}" data-num="${esc(String(i.number || ''))}">
           <span class="j">${esc(DATE_FMT.format(i.date))}</span>
           <span class="q"><b>${esc(i.etab.name)}</b><span>${esc(i.risk)}</span></span>
           <span class="tag ${{ clos: 'clos', encours: 'encours', vise: 'vise' }[i.stateKey] || 'autre'}">${esc(i.state)}</span>
-        </button>`).join('')}</div>`
-      + (liste.length > 60
-        ? `<p class="note" style="font-size:11.5px;color:var(--ink-muted);margin-top:8px">
-             Les 60 plus récents sur ${fmtInt(liste.length)}.</p>` : '')
-      : '');
+        </button>`).join('')}
+        ${items.length > 40 ? `<p class="sous">Les 40 plus récents sur ${fmtInt(items.length)}.</p>` : ''}
+      </div>
+    </details>` : '';
 
-  $('#btnHalo').textContent = state.recent === fenetreRecent
-    ? 'Ne plus entourer' : 'Entourer sur la carte';
-  $('#btnHalo').disabled = !liste.length;
-  $('#btnMoisRecents').disabled = !liste.length || !state.months.length;
+  const trouvesMots = trouves;
+  box.innerHTML = seg
+    + resumeActualite(f, liste, avant, nonClos, nonVises, chauds, trouvesMots)
+    + `<div class="recent-tuiles trois">
+        ${tuile(liste.length, 'signalements', avant.length)}
+        ${tuile(nonClos.length, 'non clos')}
+        ${tuile(nonVises.length, 'non visés')}
+      </div>`
+    + bloc('Coins chauds',
+        chauds.map((c) => ligneLieu(c.etab, c.incidents.length,
+          c.incidents.filter((i) => i.open).length
+            ? fmtInt(c.incidents.filter((i) => i.open).length) + ' non clos' : 'tous clos')).join(''),
+        'Les lieux les plus signalés sur la période.')
+    + bloc('Points de vigilance',
+        vigilance.map((v) => ligneLieu(v.place.etab, NIVEAUX[v.niveau].label,
+          (v.motifs[0] && v.motifs[0].texte) || '')).join(''),
+        'Établissements concernés sur la période, dont le traitement appelle une action.')
+    + bloc('Mots à surveiller', motsHtml,
+        'Repérés dans le texte des fiches. Un signalement peut relever de plusieurs familles.')
+    + `<section class="act"><h3>À reprendre</h3>
+        ${annexe('Signalements non clos', nonClos)}
+        ${annexe('Signalements non visés', nonVises)}
+        ${annexe('Tous les signalements de la période', liste)}
+        ${!nonClos.length && !nonVises.length
+          ? '<p class="sous">Tous les signalements de la période sont clos et visés.</p>' : ''}
+      </section>`
+    + `<section class="act" data-avance>
+        <h3>Vos mots à surveiller</h3>
+        <p class="sous">Séparés par des virgules. Ils s'ajoutent aux familles ci-dessus
+          et restent dans ce navigateur.</p>
+        <input type="text" id="motsVeille" placeholder="amiante, rats, plafond…">
+      </section>`;
+
+  const champ = $('#motsVeille');
+  champ.value = Prefs.get('motsVeille', '');
+  champ.addEventListener('change', () => {
+    Prefs.set('motsVeille', champ.value);
+    peindreRecent();
+  });
+
+  $('#btnHalo').textContent = state.recent === f ? 'Ne plus entourer' : 'Entourer sur la carte';
+  $('#btnHalo').disabled = false;
+  $('#btnMoisRecents').disabled = !state.months.length;
 }
 
 /** Ouvre la liseuse sur un signalement précis. */

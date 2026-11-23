@@ -46,7 +46,9 @@ oublier** efface cette mémoire.
 Le menu **Relever** vise plus précisément encore : *ce qui a changé* (les
 nouvelles et celles dont l'état ou le nombre de réponses a bougé), *les fiches
 manquantes* (uniquement ce qui n'est pas en mémoire), ou *tout, à nouveau*.
-**Seulement une période** se combine aux trois : la date de saisie figure dans
+Le menu **États** limite aux fiches **non closes** ou **non visées** — l'état
+figure dans la liste, la sélection se fait donc avant d'ouvrir quoi que ce
+soit. **Seulement une période** se combine au reste : la date de saisie figure dans
 la liste, et le script y restreint avant d'ouvrir la moindre fiche. Sans
 colonne de date reconnue, la période est ignorée et le panneau le dit, plutôt
 que de rendre un fichier vide.
@@ -89,6 +91,20 @@ celle des étiquettes couvre toute la largeur. Elles ne reçoivent plus les
 clics : seules leurs commandes propres le font, et un point qu'elles
 recouvrent reste cliquable. La toile de densité non plus, les points vivant
 dessous.
+
+### Les mots à surveiller
+
+Quatre familles — violences et menaces, blessures et soins, santé des agents,
+risques majeurs — sont cherchées dans le texte des fiches de la période. Le
+**mot exact** est affiché, sur la famille comme sur chaque signalement
+concerné, et repris dans le texte rédigé : « menace, morsure, blessé,
+amiante ». La comparaison se fait sur le texte normalisé, accents et
+ponctuation retirés, ce qui permet d'écrire « arrêt de travail » et de
+retrouver « arret de travail ».
+
+Un champ libre ajoute vos propres mots, gardés dans le navigateur. Cette
+veille ne remplace pas la lecture : elle dit où regarder d'abord. Sans le
+texte des fiches, elle le dit au lieu de rendre une liste vide.
 
 ## Savoir quelle version on utilise
 
@@ -167,11 +183,16 @@ Quatre zones, et rien d'autre :
 
 Deux boutons de la barre haute ouvrent une boîte plutôt qu'un panneau :
 
-- **Récent** compte les signalements des trente derniers jours. La boîte
-  détaille les fenêtres à trente et soixante jours, liste ce qui est arrivé,
-  et propose d'**entourer sur la carte** les établissements concernés. Si le
-  registre ne contient rien de récent, elle dit à quelle date il s'arrête
-  plutôt que d'afficher un zéro qui passerait pour une panne ;
+- **Actualité** compte les signalements des trente derniers jours et ouvre une
+  note sur la période — le mois écoulé ou les deux derniers mois. Elle s'ouvre
+  sur un **texte rédigé**, recopiable dans un courriel, puis déroule les
+  chiffres avec leur évolution, les **coins chauds**, les **points de
+  vigilance** repris du calcul d'urgence, les **mots relevés** dans le texte
+  des fiches, et en annexe dépliable les signalements non clos, non visés, et
+  tous ceux de la période. Elle propose d'**entourer sur la carte** les
+  établissements concernés. Si le registre ne contient rien de récent, elle
+  dit à quelle date il s'arrête plutôt que d'afficher un zéro qui passerait
+  pour une panne ;
 - **Lire les fiches une par une** ouvre une liseuse : un signalement par page,
   son texte sur la largeur d'une page plutôt que dans une colonne de 360 px.
   Flèches, glissement du doigt, ou l'**étagère** du bas — un dos de livre par

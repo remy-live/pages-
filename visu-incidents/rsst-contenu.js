@@ -310,6 +310,7 @@
         sig: colonnes.etat == null && colonnes.reponses == null
           ? '' : lire(colonnes.etat) + '|' + lire(colonnes.reponses),
         date: enDate(lire(colonnes.saisie)),
+        etat: lire(colonnes.etat),
       });
     }
     return sorties;
@@ -504,6 +505,13 @@
       '          <option value="tout">tout, à nouveau</option>',
       '        </select>',
       '      </label>',
+      '      <label>États',
+      '        <select data-etats>',
+      '          <option value="tous">tous</option>',
+      '          <option value="nonclos">seulement les non closes</option>',
+      '          <option value="nonvise">seulement les non visées</option>',
+      '        </select>',
+      '      </label>',
       '      <label><input type="checkbox" data-peron> Seulement une période</label>',
       '      <div class="dates" data-dates hidden>',
       '        <input type="date" data-du aria-label="Du"><span>au</span>',
@@ -535,6 +543,7 @@
 
     $('.x').onclick = () => hote.remove();
     const selMode = $('[data-mode]'), perOn = $('[data-peron]'), dates = $('[data-dates]');
+    const selEtats = $('[data-etats]');
     const chDu = $('[data-du]'), chAu = $('[data-au]');
 
     perOn.onchange = () => { dates.hidden = !perOn.checked; };
@@ -546,7 +555,7 @@
         const [y, m, d] = v.split('-').map(Number);
         return new Date(y, m - 1, d);
       };
-      const o = { mode: selMode.value };
+      const o = { mode: selMode.value, etats: selEtats.value };
       if (perOn.checked) {
         o.du = jour(chDu.value);
         // Jusqu'à la fin du jour choisi, sinon on exclut ce jour-là.
@@ -665,6 +674,19 @@
         }
       }
 
+      if (o.etats && o.etats !== 'tous') {
+        const clos = (l) => /clos/i.test(sansAccent(l.etat));
+        const nonVise = (l) => /^non\s*vis/.test(sansAccent(l.etat));
+        const avant = retenues.length;
+        if (!lignes.some((l) => l.etat)) {
+          dire('Aucun état dans la liste : le tri par état est ignoré.');
+          await attendre(1600);
+        } else {
+          retenues = retenues.filter(o.etats === 'nonclos' ? (l) => !clos(l) : nonVise);
+          horsPeriode += avant - retenues.length;
+        }
+      }
+
       const nouveaux = [], changes = [];
       for (const l of retenues) {
         const connue = etat.fiches.get(l.id);
@@ -675,7 +697,7 @@
       const aLire = nouveaux.concat(changes);
       const inchangees = retenues.length - aLire.length;
       const cadre = horsPeriode
-        ? ' (' + horsPeriode + ' hors période)' : '';
+        ? ' (' + horsPeriode + ' écartés par la période ou l\'état)' : '';
 
       if (!aLire.length && !etat.arret) {
         etat.releve = new Date().toLocaleDateString('fr-FR');
