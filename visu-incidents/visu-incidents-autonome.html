@@ -925,7 +925,21 @@ body[data-simple] [data-avance]{display:none !important}
 .resume b{color:var(--ink); font-weight:650}
 .veille > summary{flex-wrap:wrap}
 .veille .mots{display:flex; gap:4px; flex-wrap:wrap; flex:1}
-.veille .mots i, .recent-l .mot{
+.veille .mot-b{
+  font:inherit; border:0; cursor:pointer;
+}
+.veille .mot-b.actif{
+  background:var(--accent); color:var(--accent-ink);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.veille .mot-b:hover:not(.actif){filter:brightness(.93)}
+.sousTitre{
+  font:600 10px/1.2 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-muted);
+  margin:10px 0 2px;
+}
+.facet-body > .sousTitre:first-child{margin-top:2px}
+.veille .mot-b, .recent-l .mot{
   font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.01em;
   background:color-mix(in srgb, var(--series-4) 30%, transparent);
   color:var(--ink); border-radius:4px; padding:1px 5px; white-space:nowrap;
@@ -2959,7 +2973,7 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
    choses : dire quelle version on utilise, et repérer qu'une plus récente est
    en ligne — un navigateur garde volontiers l'ancienne page en cache, et l'on
    croit alors tester une correction qu'on n'a pas. */
-const VERSION = '2026-11-23 20:14';
+const VERSION = '2026-11-23 20:26';
 
 /**
  * Compare la version chargée à celle du serveur.
@@ -6093,6 +6107,9 @@ function piegerTabulation(e) {
 /** Fenêtre affichée dans la boîte « Actualité » : 30 ou 60 jours. */
 let fenetreRecent = 30;
 
+/** Mot surveillé sur lequel on s'est arrêté : { famille, mot } ou rien. */
+let motVeille = null;
+
 /** Un signalement non visé : l'état brut le dit, le classement ne le distingue pas. */
 const estNonVise = (i) => /^nonvis/.test(norm(i.state));
 
@@ -6317,21 +6334,50 @@ function peindreRecent() {
        <a href="contenu/" target="_blank" rel="noopener">Contenu des signalements</a>
        pour que cette veille fonctionne.</p>`
     : trouves.length
-      ? trouves.map((fam) => `
-        <details class="facet veille">
+      ? trouves.map((fam) => {
+        // Un mot retenu restreint la famille : ses fiches, et les lieux où
+        // il apparaît. C'est la question qu'on se pose en lisant « menace ».
+        const actif = motVeille && motVeille.famille === fam.label ? motVeille.mot : null;
+        const touches = actif ? fam.touches.filter((t) => t.mots.includes(actif)) : fam.touches;
+
+        const parLieu = new Map();
+        for (const t of touches) {
+          let b = parLieu.get(t.inc.uai);
+          if (!b) parLieu.set(t.inc.uai, (b = { etab: t.inc.etab, n: 0 }));
+          b.n++;
+        }
+        const lieux = [...parLieu.values()].sort((a, b) => b.n - a.n
+          || a.etab.name.localeCompare(b.etab.name, 'fr'));
+
+        return `<details class="facet veille" ${actif ? 'open' : ''}>
           <summary>${esc(fam.label)}
-            <span class="mots">${fam.listeMots.slice(0, 5).map(([m, n]) =>
-              `<i>${esc(m)}${n > 1 ? ' ×' + n : ''}</i>`).join('')}</span>
-            <span class="badge">${fmtInt(fam.touches.length)}</span></summary>
-          <div class="facet-body">${fam.touches.slice(0, 25).map((t) => `
-            <button class="recent-l" data-rec="${esc(t.inc.uai)}" data-num="${esc(String(t.inc.number || ''))}">
-              <span class="j">${esc(DATE_FMT.format(t.inc.date))}</span>
-              <span class="q"><b>${esc(t.inc.etab.name)}</b>
-                <span>${t.mots.map((m) => `<i class="mot">${esc(m)}</i>`).join('')} ${esc(t.inc.risk)}</span></span>
-            </button>`).join('')}
-            ${fam.touches.length > 25 ? `<p class="sous">Les 25 premiers sur ${fmtInt(fam.touches.length)}.</p>` : ''}
+            <span class="mots">${fam.listeMots.map(([m, n]) =>
+              `<button type="button" class="mot-b${m === actif ? ' actif' : ''}"
+                 data-mot="${esc(m)}" data-fam="${esc(fam.label)}"
+                 title="Ne garder que « ${esc(m)} »">${esc(m)}${n > 1 ? ' ×' + fmtInt(n) : ''}</button>`).join('')}</span>
+            <span class="badge">${fmtInt(touches.length)}</span></summary>
+          <div class="facet-body">
+            ${actif ? `<p class="sous">Seulement « <b>${esc(actif)}</b> ».
+              <button class="lien" data-mot-tout="1">Revoir toute la famille</button> ·
+              <button class="lien" data-mot-cherche="${esc(actif)}">Chercher ce mot dans tout le registre</button></p>` : ''}
+            <h4 class="sousTitre">${fmtInt(lieux.length)} lieu${lieux.length > 1 ? 'x' : ''}</h4>
+            ${lieux.slice(0, 20).map((l) => `
+              <button class="recent-l" data-rec="${esc(l.etab.uai)}" data-num="">
+                <span class="q"><b>${esc(l.etab.name)}</b><span>${esc(l.etab.commune || '')}</span></span>
+                <span class="cpt">${fmtInt(l.n)}</span>
+              </button>`).join('')}
+            ${lieux.length > 20 ? `<p class="sous">Les 20 premiers sur ${fmtInt(lieux.length)}.</p>` : ''}
+            <h4 class="sousTitre">${fmtInt(touches.length)} signalement${touches.length > 1 ? 's' : ''}</h4>
+            ${touches.slice(0, 25).map((t) => `
+              <button class="recent-l" data-rec="${esc(t.inc.uai)}" data-num="${esc(String(t.inc.number || ''))}">
+                <span class="j">${esc(DATE_FMT.format(t.inc.date))}</span>
+                <span class="q"><b>${esc(t.inc.etab.name)}</b>
+                  <span>${t.mots.map((m) => `<i class="mot">${esc(m)}</i>`).join('')} ${esc(t.inc.risk)}</span></span>
+              </button>`).join('')}
+            ${touches.length > 25 ? `<p class="sous">Les 25 premiers sur ${fmtInt(touches.length)}.</p>` : ''}
           </div>
-        </details>`).join('')
+        </details>`;
+      }).join('')
       : '<p class="sous">Aucun des mots surveillés n\'apparaît dans les fiches de la période.</p>';
 
   const annexe = (titre, items) => items.length ? `
@@ -7135,7 +7181,31 @@ function wireEvents() {
   $('#btnRecent').addEventListener('click', () => { peindreRecent(); ouvrirModale('modaleRecent'); });
   $('#recentCorps').addEventListener('click', (e) => {
     const f = e.target.closest('[data-fen]');
-    if (f) { fenetreRecent = +f.dataset.fen; peindreRecent(); return; }
+    if (f) { fenetreRecent = +f.dataset.fen; motVeille = null; peindreRecent(); return; }
+
+    // Les mots vivent dans le résumé d'un dépliant : sans cela, les cliquer
+    // replierait la famille qu'on veut justement regarder.
+    const m = e.target.closest('[data-mot]');
+    if (m) {
+      e.preventDefault();
+      const memeMot = motVeille && motVeille.famille === m.dataset.fam && motVeille.mot === m.dataset.mot;
+      motVeille = memeMot ? null : { famille: m.dataset.fam, mot: m.dataset.mot };
+      peindreRecent();
+      return;
+    }
+    if (e.target.closest('[data-mot-tout]')) { motVeille = null; peindreRecent(); return; }
+
+    const ch = e.target.closest('[data-mot-cherche]');
+    if (ch) {
+      // Chercher le mot partout : la carte montre alors les lieux, la
+      // synthèse les chiffres, et le texte est surligné dans chaque fiche.
+      $('#qText').value = ch.dataset.motCherche;
+      state.filters.text = ch.dataset.motCherche;
+      fermerModale('modaleRecent');
+      refresh();
+      return;
+    }
+
     const l = e.target.closest('[data-rec]');
     if (l) ouvrirLiseuseSur(l.dataset.rec, l.dataset.num);
   });
