@@ -112,6 +112,32 @@ Un champ libre ajoute vos propres mots, gardés dans le navigateur. Cette
 veille ne remplace pas la lecture : elle dit où regarder d'abord. Sans le
 texte des fiches, elle le dit au lieu de rendre une liste vide.
 
+### Le bilan de la période, et son tableau
+
+Au milieu de l'Actualité, un **bilan rédigé** en six paragraphes titrés : la
+période et son rythme comparé à celui du registre entier, le traitement — ce
+qui reste à clore, ce qui n'a jamais été visé, le délai médian, la plus vieille
+attente —, les lieux et leur concentration, la nature des risques déclarés, ce
+que dit le texte des fiches, et ce qui appelle une action. Des phrases, pas des
+tuiles : un chiffre seul se lit, mais ne se recopie pas dans un courriel.
+
+Trois boutons le prolongent :
+
+- **Copier le bilan** le met dans le presse-papiers en texte brut. Si le
+  presse-papiers refuse — c'est le cas du fichier autonome ouvert depuis le
+  disque —, le bilan est enregistré en `.txt` plutôt que perdu ;
+- **Tableau (CSV)** donne **une ligne par signalement de la période**,
+  ouvrable dans un tableur : date, ancienneté, numéro, établissement, commune,
+  risque, état, clos, jamais visé, délai, et les **mots relevés** quand le
+  texte des fiches est chargé. Le texte lui-même, nominatif, n'y entre que si
+  la case prévue pour cela est cochée dans Exporter ;
+- **Bilan (PDF)** reprend le texte rédigé, les quatre chiffres clés, le
+  tableau des lieux, celui des mots relevés, et le détail de la période en
+  paysage.
+
+Tout est calculé une seule fois, pour les trois sorties : le bilan affiché, le
+tableau et le PDF ne peuvent pas donner trois chiffres différents.
+
 ## Savoir quelle version on utilise
 
 Un navigateur garde volontiers la page en cache : on croit alors essayer une
@@ -190,15 +216,14 @@ Quatre zones, et rien d'autre :
 Deux boutons de la barre haute ouvrent une boîte plutôt qu'un panneau :
 
 - **Actualité** compte les signalements des trente derniers jours et ouvre une
-  note sur la période — le mois écoulé ou les deux derniers mois. Elle s'ouvre
-  sur un **texte rédigé**, recopiable dans un courriel, puis déroule les
-  chiffres avec leur évolution, les **coins chauds**, les **points de
-  vigilance** repris du calcul d'urgence, les **mots relevés** dans le texte
-  des fiches, et en annexe dépliable les signalements non clos, non visés, et
-  tous ceux de la période. Elle propose d'**entourer sur la carte** les
-  établissements concernés. Si le registre ne contient rien de récent, elle
-  dit à quelle date il s'arrête plutôt que d'afficher un zéro qui passerait
-  pour une panne ;
+  note sur la période — le mois écoulé ou les deux derniers mois. Elle donne
+  les chiffres avec leur évolution, puis un **bilan rédigé** (voir plus bas),
+  les **coins chauds**, les **points de vigilance** repris du calcul
+  d'urgence, les **mots relevés** dans le texte des fiches, et en annexe
+  dépliable les signalements non clos, non visés, et tous ceux de la période.
+  Elle propose d'**entourer sur la carte** les établissements concernés. Si le
+  registre ne contient rien de récent, elle dit à quelle date il s'arrête
+  plutôt que d'afficher un zéro qui passerait pour une panne ;
 - **Lire les fiches une par une** ouvre une liseuse : un signalement par page,
   son texte sur la largeur d'une page plutôt que dans une colonne de 360 px.
   Flèches, glissement du doigt, ou l'**étagère** du bas — un dos de livre par
