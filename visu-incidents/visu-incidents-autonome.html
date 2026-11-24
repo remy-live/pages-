@@ -917,12 +917,22 @@ body[data-simple] [data-avance]{display:none !important}
 }
 .recent-tuiles .t .ec.hausse{color:var(--critical)}
 .recent-tuiles .t .ec.baisse{color:var(--good)}
-.resume{
-  font-size:13.5px; line-height:1.65; color:var(--ink-2); margin:0 0 14px;
+/* Le bilan rédigé : des paragraphes titrés, assez aérés pour se lire d'affilée
+   et se recopier dans un courriel. */
+.bilan{
   padding:12px 14px; background:var(--surface-2); border-radius:var(--radius);
   border:1px solid var(--hairline);
 }
-.resume b{color:var(--ink); font-weight:650}
+.bilan h4{
+  font:600 10px/1.2 "Barlow Condensed", system-ui, sans-serif;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-muted);
+  margin:12px 0 3px;
+}
+.bilan h4:first-child{margin-top:0}
+.bilan p{margin:0; font-size:13.5px; line-height:1.65; color:var(--ink-2)}
+.bilan p b{color:var(--ink); font-weight:650}
+.act-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+.act-actions .btn{flex:1 1 auto; min-width:120px}
 .veille > summary{flex-wrap:wrap}
 .veille .mots{display:flex; gap:4px; flex-wrap:wrap; flex:1}
 .veille .mot-b{
@@ -2973,7 +2983,7 @@ const declarant = (nom) => (anonyme() ? (nom ? 'déclarant masqué' : '') : (nom
    choses : dire quelle version on utilise, et repérer qu'une plus récente est
    en ligne — un navigateur garde volontiers l'ancienne page en cache, et l'on
    croit alors tester une correction qu'on n'a pas. */
-const VERSION = '2026-11-23 20:26';
+const VERSION = '2026-11-24 09:23';
 
 /**
  * Compare la version chargée à celle du serveur.
@@ -5384,17 +5394,8 @@ function ficheTexte(etab, incidents) {
     '',
     `${fmtInt(l.length)} signalement${l.length > 1 ? 's' : ''} au total.`,
   ];
-  const texte = lignes.join('\n');
-  const bouton = $('#btnFicheTexte');
-  const rendre = (msg) => { bouton.textContent = msg; setTimeout(() => { bouton.textContent = 'Copier pour un courriel'; }, 2200); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(texte).then(() => rendre('Copié'), () => rendre('Copie refusée'));
-  } else {
-    // Repli quand le presse-papiers n'est pas accessible (page en file://).
-    download(new Blob([texte], { type: 'text/plain;charset=utf-8' }),
-             `fiche_${etab.uai}.txt`);
-    rendre('Enregistré');
-  }
+  copierOuEnregistrer(lignes.join('\n'), $('#btnFicheTexte'),
+                      'Copier pour un courriel', `fiche_${etab.uai}.txt`);
 }
 
 function fichePdf(etab, incidents) {
@@ -6197,59 +6198,487 @@ function placesGlobales() {
 }
 
 /**
- * Rédige le résumé de la période.
+ * Rassemble la période une fois pour toutes.
+ *
+ * Le bilan rédigé, le tableau exporté et le document PDF lisent tous ce même
+ * objet : trois chemins ne peuvent donc pas donner trois chiffres différents.
+ */
+function donneesActualite(f) {
+  const now = new Date();
+  const liste = fenetreJours(f, 0);
+  const avant = fenetreJours(2 * f, f);
+
+  const parLieu = new Map();
+  for (const i of liste) {
+    let b = parLieu.get(i.uai);
+    if (!b) parLieu.set(i.uai, (b = { etab: i.etab, incidents: [] }));
+    b.incidents.push(i);
+  }
+  const lieux = [...parLieu.values()].sort((a, b) => b.incidents.length - a.incidents.length
+    || a.etab.name.localeCompare(b.etab.name, 'fr'));
+
+  // Le niveau d'urgence se calcule sur le registre entier, pas sur la période :
+  // un établissement qui accumule depuis un an ne doit pas paraître calme parce
+  // qu'il n'a qu'un signalement ce mois-ci.
+  const niveaux = new Map();
+  for (const p of computeUrgency(placesGlobales(), now)) {
+    if (p.niveau === 'critique' || p.niveau === 'serieux') niveaux.set(p.place.etab.uai, p);
+  }
+
+  const nonClos = liste.filter((i) => i.open);
+  const delais = liste.filter((i) => i.delay != null).map((i) => i.delay);
+
+  // La moyenne du registre entier : la période précédente peut avoir été
+  // exceptionnelle, elle ne suffit donc pas comme point de comparaison.
+  let tot = 0, min = Infinity, max = -Infinity;
+  for (const i of state.incidents) {
+    if (!i.date) continue;
+    const t = i.date.getTime();
+    tot++; if (t < min) min = t; if (t > max) max = t;
+  }
+  const etendue = tot > 1 ? (max - min) / (30.44 * 86400000) : 0;
+
+  return {
+    f, now, liste, avant, nonClos,
+    nonVises: liste.filter(estNonVise),
+    lieux, chauds: lieux.slice(0, 6),
+    vigilance: lieux.map((l) => niveaux.get(l.etab.uai)).filter(Boolean)
+      .sort((a, b) => NIVEAUX[b.niveau].rang - NIVEAUX[a.niveau].rang),
+    delais, med: median(delais),
+    attentes: nonClos.map((i) => daysSince(i.date, now)).sort((a, b) => b - a),
+    familles: tally(liste, (i) => i.family),
+    registres: tally(liste, (i) => i.registre),
+    moyenne: etendue >= 2 ? tot / etendue : null,
+    debut: new Date(now.getTime() - f * 86400000),
+    trouves: veiller(liste),
+  };
+}
+
+/* Gras portable : la même phrase se rend en HTML, en texte brut dans un
+   courriel, et en PDF. Écrite une fois, elle ne peut pas diverger. */
+const grasHtml = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const grasTexte = (s) => String(s).replace(/\*\*(.+?)\*\*/g, '$1');
+const enumere = (a) => (a.length < 2 ? (a[0] || '')
+  : a.slice(0, -1).join(', ') + ' et ' + a[a.length - 1]);
+
+/**
+ * Rédige le bilan de la période : des paragraphes titrés, qui se lisent.
  *
  * Des phrases plutôt que des tuiles : un chiffre seul se lit, mais ne se
  * recopie pas dans un courriel ni dans un compte rendu. Rien n'y est affirmé
- * qui ne se lise dans les données.
+ * qui ne se lise dans les données, et ce qui manque est dit comme tel.
  */
-function resumeActualite(f, liste, avant, nonClos, nonVises, chauds, trouves) {
-  const pl = (n, mot, suffixe) => fmtInt(n) + ' ' + mot + (n > 1 ? (suffixe || 's') : '');
-  const jours = (n) => {
-    const d = new Date(Date.now() - n * 86400000);
-    return DATE_FMT.format(d);
+function bilanActualite(d) {
+  const pl = (n, mot, suffixe) => fmtInt(n) + ' ' + mot + (n > 1 ? (suffixe === undefined ? 's' : suffixe) : '');
+  const jour = (dt) => DATE_FMT.format(dt);
+  const parts = [];
+  const n = d.liste.length;
+
+  /* ---------------------------- La période ---------------------------- */
+  {
+    const ph = [`Du **${jour(d.debut)}** au **${jour(d.now)}**, **${pl(n, 'signalement')}** `
+      + `${n > 1 ? 'ont' : 'a'} été porté${n > 1 ? 's' : ''} au registre.`];
+    if (d.avant.length) {
+      const e = n - d.avant.length;
+      ph.push(e === 0
+        ? `C'est **autant** que les ${d.f} jours précédents.`
+        : `C'est **${fmtInt(Math.abs(e))} de ${e > 0 ? 'plus' : 'moins'}** que les `
+          + `${d.f} jours précédents, qui en comptaient ${fmtInt(d.avant.length)}.`);
+    } else {
+      ph.push(`Les ${d.f} jours précédents n'en comptaient aucun.`);
+    }
+    if (d.moyenne) {
+      const attendu = d.moyenne * (d.f / 30.44);
+      const pc = Math.round((Math.abs(n - attendu) / attendu) * 100);
+      const sens = n > attendu ? 'au-dessus' : 'en deçà';
+      // Au-delà d'un facteur deux et demi, le pourcentage cesse d'informer :
+      // il dit surtout que l'historique du registre n'est pas comparable.
+      ph.push(`Le rythme habituel du registre est d'environ **${fmtInt(attendu)}** sur une telle durée`
+        + (pc < 15 ? ' : la période s\'y tient.'
+          : pc > 150 ? ` : la période est donc **bien ${sens}**.`
+            : ` : la période est donc **${sens}** d'environ ${pc} %.`));
+    }
+    parts.push({ titre: 'La période', phrases: ph });
+  }
+
+  /* --------------------------- Le traitement -------------------------- */
+  {
+    const ph = [];
+    if (d.nonClos.length) {
+      const c = d.nonClos.length;
+      ph.push(`**${pl(c, 'signalement')}** ${c > 1 ? 'restent' : 'reste'} à clore`
+        + (d.nonVises.length
+          ? `, dont **${fmtInt(d.nonVises.length)}** que personne n'a visé${d.nonVises.length > 1 ? 's' : ''}`
+          : '') + '.');
+      const vieux = d.attentes.filter((j) => j > 60).length;
+      if (vieux) {
+        ph.push(`${vieux > 1 ? `**${fmtInt(vieux)}** attendent` : '**Un** attend'} depuis plus de `
+          + `deux mois, le plus ancien depuis **${pl(d.attentes[0], 'jour')}**.`);
+      } else if (d.attentes.length) {
+        ph.push(`Le plus ancien attend depuis **${pl(d.attentes[0], 'jour')}**.`);
+      }
+    } else {
+      ph.push('**Tous** les signalements de la période sont clos.');
+    }
+    ph.push(d.med == null
+      ? 'Aucune réponse datée ne permet de mesurer un délai sur cette période.'
+      : `Là où une réponse est datée, le délai médian est de **${pl(d.med, 'jour')}**, `
+        + `sur ${pl(d.delais.length, 'réponse')}.`);
+    parts.push({ titre: 'Le traitement', phrases: ph });
+  }
+
+  /* ----------------------------- Les lieux ---------------------------- */
+  {
+    const nl = d.lieux.length;
+    const ph = [`**${pl(nl, 'établissement')}** ${nl > 1 ? 'sont' : 'est'} concerné${nl > 1 ? 's' : ''}.`];
+    // À trois lieux exactement, « les trois premiers en concentrent 100 % »
+    // n'apprend rien : la concentration ne se dit que s'il y a un reste.
+    if (nl > 3) {
+      const trois = d.lieux.slice(0, 3).reduce((s, l) => s + l.incidents.length, 0);
+      ph.push(`Les trois premiers en concentrent **${fmtInt(trois)}**, soit `
+        + `${Math.round((trois / n) * 100)} % de la période.`);
+    }
+    const tete = d.lieux[0];
+    if (tete) {
+      const ouverts = tete.incidents.filter((i) => i.open).length;
+      ph.push(`**${tete.etab.name}**${tete.etab.commune ? ` (${tete.etab.commune})` : ''} vient en `
+        + `tête avec **${fmtInt(tete.incidents.length)}**`
+        + (ouverts ? `, dont ${fmtInt(ouverts)} non clos.` : ', tous clos.'));
+    }
+    const seuls = d.lieux.filter((l) => l.incidents.length === 1).length;
+    if (seuls && nl > 1) {
+      ph.push(`**${fmtInt(seuls)}** n'en ${seuls > 1 ? 'comptent' : 'compte'} qu'un seul.`);
+    }
+    parts.push({ titre: 'Les lieux', phrases: ph });
+  }
+
+  /* ---------------------------- La nature ----------------------------- */
+  {
+    const ph = [];
+    const fam = d.familles.slice(0, 3);
+    if (fam.length) {
+      const reste = d.familles.length - fam.length;
+      ph.push('Les risques déclarés relèvent d\'abord de '
+        + enumere(fam.map(([l, c]) => `**${l}** (${fmtInt(c)})`))
+        + (reste === 0 ? '.'
+          : reste === 1 ? ', puis d\'une autre famille.'
+            : `, puis de ${fmtInt(reste)} autres familles.`));
+    }
+    if (d.registres.length > 1) {
+      ph.push('Ils se répartissent entre '
+        + enumere(d.registres.map(([l, c]) => `**${l}** (${fmtInt(c)})`)) + '.');
+    } else if (d.registres.length === 1) {
+      ph.push(`Tous relèvent du registre **${d.registres[0][0]}**.`);
+    }
+    if (ph.length) parts.push({ titre: 'La nature des signalements', phrases: ph });
+  }
+
+  /* ------------------------ Le texte des fiches ----------------------- */
+  {
+    const ph = [];
+    if (!state.textes.size) {
+      ph.push('Le texte des fiches n\'est pas chargé : cette lecture reste à faire. '
+        + 'Le favori « Contenu des signalements » la rend possible.');
+    } else {
+      const mots = [];
+      const touchees = new Set();
+      for (const fam of d.trouves) {
+        for (const [m, c] of fam.listeMots) mots.push({ m, c });
+        for (const t of fam.touches) touchees.add(t.inc);
+      }
+      mots.sort((a, b) => b.c - a.c);
+      if (!mots.length) {
+        ph.push('Aucun des mots surveillés n\'apparaît dans le texte des fiches de la période.');
+      } else {
+        ph.push(`**${pl(touchees.size, 'fiche')}** sur ${fmtInt(n)} `
+          + `${touchees.size > 1 ? 'contiennent' : 'contient'} au moins un mot surveillé : `
+          + mots.slice(0, 10).map((x) => `**${x.m}**${x.c > 1 ? ` (${fmtInt(x.c)})` : ''}`).join(', ')
+          + (mots.length > 10 ? `, et ${fmtInt(mots.length - 10)} autres` : '') + '.');
+        if (d.trouves.length > 1) {
+          const dom = d.trouves.slice().sort((a, b) => b.touches.length - a.touches.length)[0];
+          ph.push(`La famille la plus représentée est **${dom.label}**, `
+            + `dans ${pl(dom.touches.length, 'fiche')}.`);
+        }
+      }
+      const sansTexte = d.liste.filter((i) => !texteDe(i)).length;
+      if (sansTexte) {
+        ph.push(sansTexte > 1
+          ? `**${fmtInt(sansTexte)}** fiches de la période n'ont pas encore été relevées : `
+            + 'ce décompte ne les couvre pas.'
+          : "**Une** fiche de la période n'a pas encore été relevée : ce décompte ne la couvre pas.");
+      }
+    }
+    parts.push({ titre: 'Ce que dit le texte des fiches', phrases: ph });
+  }
+
+  /* --------------------------- À surveiller --------------------------- */
+  {
+    const v = d.vigilance;
+    const ph = [];
+    if (v.length) {
+      ph.push(`${v.length > 1 ? `**${fmtInt(v.length)}** des établissements concernés appellent`
+        : '**Un** des établissements concernés appelle'} une action au vu de leur historique `
+        + 'complet, période comprise : '
+        + enumere(v.slice(0, 4).map((x) =>
+          `**${x.place.etab.name}** (${NIVEAUX[x.niveau].label.toLowerCase()})`))
+        + (v.length > 4 ? `, et ${fmtInt(v.length - 4)} autres.` : '.'));
+      const m = v[0].motifs && v[0].motifs[0];
+      if (m && m.texte) {
+        const t = String(m.texte).replace(/\.$/, '');
+        ph.push(`Pour le premier : ${t.charAt(0).toLowerCase() + t.slice(1)}.`);
+      }
+    } else {
+      ph.push('Aucun établissement concerné ne ressort du calcul de priorité.');
+    }
+    ph.push('Ce bilan décrit ce qui a été écrit au registre. Aucun signalement ne vaut pas '
+      + 'absence de risque : un établissement absent peut être un établissement où l\'on n\'écrit pas.');
+    parts.push({ titre: 'À surveiller', phrases: ph });
+  }
+
+  return parts.filter((p) => p.phrases.length);
+}
+
+/** Le bilan en HTML, pour l'écran. */
+const bilanHtml = (parts) => '<div class="bilan">' + parts.map((p) =>
+  `<h4>${esc(p.titre)}</h4><p>${p.phrases.map(grasHtml).join(' ')}</p>`).join('') + '</div>';
+
+/** Le même bilan en texte brut, pour un courriel ou un compte rendu. */
+function bilanTexteBrut(d, parts) {
+  const l = [`BILAN D'ACTUALITÉ — ${d.f === 30 ? 'le mois écoulé' : `les ${d.f} derniers jours`}`,
+             `Registres santé et sécurité au travail · édité le ${DATE_FMT.format(d.now)}`
+             + (anonyme() ? ' · noms des déclarants masqués' : ''), ''];
+  for (const p of parts) {
+    l.push(p.titre.toUpperCase(), grasTexte(p.phrases.join(' ')), '');
+  }
+  l.push(`Lieux les plus signalés : ` + (d.chauds.map((c) =>
+    `${c.etab.name}${c.etab.commune ? ` (${c.etab.commune})` : ''} ${fmtInt(c.incidents.length)}`)
+    .join(' · ') || 'aucun') + '.');
+  return l.join('\n');
+}
+
+/**
+ * Met un texte dans le presse-papiers, et l'enregistre si c'est refusé.
+ *
+ * Le presse-papiers existe presque partout, mais il refuse d'écrire hors d'un
+ * site servi — sur le fichier autonome ouvert depuis le disque, notamment. Un
+ * refus doit laisser le texte entre les mains de l'utilisateur, pas un message
+ * d'échec : on l'enregistre alors en fichier.
+ */
+function copierOuEnregistrer(texte, bouton, libelle, nomFichier) {
+  const rendre = (msg) => {
+    bouton.textContent = msg;
+    setTimeout(() => { bouton.textContent = libelle; }, 2200);
   };
-  const ph = [];
+  const enregistrer = () => {
+    download(new Blob([texte], { type: 'text/plain;charset=utf-8' }), nomFichier);
+    rendre('Enregistré');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texte).then(() => rendre('Copié'), enregistrer);
+  } else enregistrer();
+}
 
-  ph.push(`Du <b>${esc(jours(f))}</b> au <b>${esc(jours(0))}</b>, `
-    + `<b>${esc(pl(liste.length, 'signalement'))}</b> ${liste.length > 1 ? 'ont' : 'a'} été porté`
-    + `${liste.length > 1 ? 's' : ''} au registre`
-    + (avant.length
-      ? liste.length === avant.length
-        ? `, autant que les ${f} jours précédents.`
-        : `, soit <b>${fmtInt(Math.abs(liste.length - avant.length))} de `
-          + `${liste.length > avant.length ? 'plus' : 'moins'}</b> que les ${f} jours précédents.`
-      : '.'));
+/** Copie le bilan rédigé, pour un courriel ou un compte rendu. */
+function copierBilan(bouton) {
+  const d = donneesActualite(fenetreRecent);
+  if (!d.liste.length) { alert('Aucun signalement sur la période.'); return; }
+  copierOuEnregistrer(bilanTexteBrut(d, bilanActualite(d)), bouton,
+                      'Copier le bilan', `bilan_${AUJ()}.txt`);
+}
 
-  if (nonClos.length) {
-    const n = nonClos.length;
-    ph.push((n > 1 ? `<b>${fmtInt(n)}</b> ne sont pas clos` : "<b>Un</b> n'est pas clos")
-      + (nonVises.length
-        ? `, dont <b>${fmtInt(nonVises.length)}</b> jamais visé${nonVises.length > 1 ? 's' : ''}`
-        : '') + '.');
-  } else {
-    ph.push('Tous sont clos.');
+/** Les mots surveillés trouvés, rangés par signalement. */
+function motsParSignalement(trouves) {
+  const m = new Map();
+  for (const fam of trouves) {
+    for (const t of fam.touches) {
+      const vus = m.get(t.inc) || [];
+      for (const mot of t.mots) if (!vus.includes(mot)) vus.push(mot);
+      m.set(t.inc, vus);
+    }
+  }
+  return m;
+}
+
+/**
+ * Le tableau de l'actualité : une ligne par signalement de la période.
+ *
+ * Une seule table, pivotable dans un tableur. La colonne des mots relevés
+ * n'existe que si le texte des fiches est chargé ; le texte lui-même, qui est
+ * nominatif, ne sort qu'avec l'option prévue pour cela.
+ */
+function exportActuCsv() {
+  const d = donneesActualite(fenetreRecent);
+  if (!d.liste.length) { alert('Aucun signalement sur la période.'); return; }
+  const cell = (v) => {
+    const s = String(v ?? '');
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const mots = motsParSignalement(d.trouves);
+  const avecMots = state.textes.size > 0;
+  const avecTexte = veutTexte();
+  const head = ['Date', 'Jours ecoules', 'Registre', 'Numero', 'UAI', 'Etablissement',
+                'Commune', 'Departement', 'Type etablissement', 'Famille de risque',
+                'Risque', 'Etat', 'Clos', 'Jamais vise', 'Delai reponse (j)',
+                'Signale par', 'Observations']
+    .concat(avecMots ? ['Mots releves'] : [])
+    .concat(avecTexte ? ['Observation', 'Suggestion', 'Reponses'] : []);
+  const lignes = [head.join(';')];
+  for (const i of d.liste) {
+    const l = [
+      DATE_FMT.format(i.date), daysSince(i.date, d.now), i.registre, i.number, i.uai,
+      i.etab.name, i.etab.commune, i.etab.dept, i.etab.nature, i.family, i.risk, i.state,
+      i.open ? 'non' : 'oui', estNonVise(i) ? 'oui' : '', i.delay ?? '',
+      declarant(i.reporter), i.observations,
+    ];
+    if (avecMots) l.push((mots.get(i) || []).join(', '));
+    if (avecTexte) {
+      const t = texteDe(i) || {};
+      l.push(t.observation || '', t.suggestion || '', t.reponses || '');
+    }
+    lignes.push(l.map(cell).join(';'));
+  }
+  download(new Blob(['﻿' + lignes.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
+           `actualite_${d.f}j_${AUJ()}.csv`);
+}
+
+/**
+ * Le bilan en PDF : le texte rédigé, puis les tableaux qui le fondent.
+ *
+ * Les lieux et les mots d'abord, parce qu'on les regarde ; le détail des
+ * signalements ensuite, parce qu'on y revient.
+ */
+function exportActuPdf() {
+  const d = donneesActualite(fenetreRecent);
+  if (!d.liste.length) { alert('Aucun signalement sur la période.'); return; }
+  const parts = bilanActualite(d);
+  const doc = pdfDoc({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const periode = `du ${DATE_FMT.format(d.debut)} au ${DATE_FMT.format(d.now)}`;
+  const perimetre = `Visu-Incidents · bilan d'actualité, ${periode}`;
+
+  doc.setFillColor(...PDF_C.critique);
+  doc.rect(0, 0, 4, 40, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(...PDF_C.encre);
+  doc.text("Bilan d'actualité", A4.marge, 20);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...PDF_C.encre2);
+  doc.text(`Registres santé et sécurité au travail, ${periode}`, A4.marge, 27);
+  doc.setFontSize(8.5); doc.setTextColor(...PDF_C.muet);
+  doc.text(`Édité le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    + (anonyme() ? ' · noms des déclarants masqués' : ''), A4.marge, 33);
+
+  let y = 42;
+  const lg = (UTILE - 3 * 4) / 4;
+  const ecart = d.avant.length ? d.liste.length - d.avant.length : null;
+  pdfTuile(doc, A4.marge, y, lg, 24, fmtInt(d.liste.length), 'Signalements',
+    ecart === null ? 'première période'
+      : ecart === 0 ? `autant qu'avant` : `${ecart > 0 ? '+' : '−'}${fmtInt(Math.abs(ecart))} vs avant`);
+  pdfTuile(doc, A4.marge + (lg + 4), y, lg, 24, fmtInt(d.nonClos.length), 'Non clos',
+    `${Math.round((d.nonClos.length / d.liste.length) * 100)} % de la période`,
+    d.nonClos.length ? PDF_C.serieux : PDF_C.bon);
+  pdfTuile(doc, A4.marge + 2 * (lg + 4), y, lg, 24, fmtInt(d.nonVises.length), 'Non visés',
+    d.nonVises.length ? 'jamais visés par la hiérarchie' : 'tous visés',
+    d.nonVises.length ? PDF_C.critique : PDF_C.bon);
+  pdfTuile(doc, A4.marge + 3 * (lg + 4), y, lg, 24, d.med == null ? '—' : `${fmtInt(d.med)} j`,
+    'Délai médian', d.med == null ? 'aucune réponse datée' : `sur ${fmtInt(d.delais.length)} réponses`);
+  y += 32;
+
+  /* ---------- Le bilan rédigé ---------- */
+  const INTERLIGNE = 1.4;
+  const PAS = 9 * 0.35278 * INTERLIGNE;          // la hauteur d'une ligne, en mm
+  for (const p of parts) {
+    // La découpe dépend de la police en cours : la régler d'abord, sinon les
+    // lignes sont calculées pour un corps et tracées dans un autre, et le
+    // texte déborde de la marge.
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    const corps = doc.splitTextToSize(grasTexte(p.phrases.join(' ')), UTILE);
+    const h = 5 + corps.length * PAS;
+    if (y + h > A4.h - 24) { doc.addPage(); y = 22; }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.encre);
+    doc.text(p.titre, A4.marge, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...PDF_C.encre2);
+    doc.text(corps, A4.marge, y + 5, { lineHeightFactor: INTERLIGNE });
+    y += h + 4;
   }
 
-  if (chauds.length) {
-    const tete = chauds[0];
-    const part = chauds.slice(0, 3).reduce((n, c) => n + c.incidents.length, 0);
-    ph.push(`${chauds.length > 2 ? `Les trois lieux les plus touchés concentrent `
-      + `<b>${fmtInt(part)}</b> de ces signalements, ` : ''}`
-      + `<b>${esc(tete.etab.name)}</b>${tete.etab.commune ? ' (' + esc(tete.etab.commune) + ')' : ''} `
-      + `en ${chauds.length > 2 ? 'tête avec' : 'compte'} <b>${fmtInt(tete.incidents.length)}</b>.`);
+  /* ---------- Les lieux ---------- */
+  doc.addPage();
+  y = pdfTitre(doc, 22, 'Les lieux concernés',
+    `${fmtInt(d.lieux.length)} établissements, du plus signalé au moins signalé.`);
+  doc.autoTable({
+    startY: y,
+    head: [['Établissement', 'Commune', 'Dépt', 'Signalements', 'Non clos', 'Dernier']],
+    body: d.lieux.map((l) => [
+      l.etab.name, l.etab.commune, l.etab.dept,
+      fmtInt(l.incidents.length), fmtInt(l.incidents.filter((i) => i.open).length),
+      DATE_FMT.format(l.incidents.reduce((m, i) => (i.date > m ? i.date : m), l.incidents[0].date)),
+    ]),
+    theme: 'striped',
+    styles: { fontSize: 7.5, cellPadding: 1.4, overflow: 'linebreak', textColor: PDF_C.encre },
+    headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [248, 247, 244] },
+    columnStyles: {
+      0: { cellWidth: 62 }, 1: { cellWidth: 32 }, 2: { cellWidth: 22 },
+      3: { cellWidth: 22, halign: 'right' }, 4: { cellWidth: 18, halign: 'right' },
+      5: { cellWidth: 22, halign: 'right' },
+    },
+    margin: { left: A4.marge, right: A4.marge, bottom: 16 },
+  });
+
+  /* ---------- Les mots relevés ---------- */
+  if (d.trouves.length) {
+    const rangs = [];
+    for (const fam of d.trouves) for (const [m, c] of fam.listeMots) rangs.push([m, fam.label, c]);
+    rangs.sort((a, b) => b[2] - a[2] || a[0].localeCompare(b[0], 'fr'));
+    let ym = (doc.lastAutoTable && doc.lastAutoTable.finalY) || 22;
+    if (ym > 200) { doc.addPage(); ym = 22; }
+    ym = pdfTitre(doc, ym + 10, 'Les mots relevés dans le texte des fiches',
+      'Un signalement peut relever de plusieurs familles.');
+    doc.autoTable({
+      startY: ym,
+      head: [['Mot', 'Famille', 'Fiches']],
+      body: rangs.map((r) => [r[0], r[1], fmtInt(r[2])]),
+      theme: 'striped',
+      styles: { fontSize: 7.5, cellPadding: 1.4, overflow: 'linebreak', textColor: PDF_C.encre },
+      headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [248, 247, 244] },
+      columnStyles: { 0: { cellWidth: 54 }, 1: { cellWidth: 70 }, 2: { cellWidth: 20, halign: 'right' } },
+      margin: { left: A4.marge, right: A4.marge, bottom: 16 },
+    });
   }
 
-  if (trouves.length) {
-    const mots = [];
-    for (const fam of trouves) for (const [m, n] of fam.listeMots) mots.push({ m, n });
-    mots.sort((a, b) => b.n - a.n);
-    ph.push(`Mots relevés dans le texte des fiches : `
-      + mots.slice(0, 8).map((x) => `<b>${esc(x.m)}</b>${x.n > 1 ? ` (${x.n})` : ''}`).join(', ')
-      + (mots.length > 8 ? `, et ${fmtInt(mots.length - 8)} autres` : '') + '.');
-  }
+  /* ---------- Le détail de la période ---------- */
+  doc.addPage([297, 210], 'landscape');
+  const mots = motsParSignalement(d.trouves);
+  const avecMots = state.textes.size > 0;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...PDF_C.encre);
+  doc.text('Les signalements de la période', 16, 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...PDF_C.muet);
+  doc.text(`${fmtInt(d.liste.length)} lignes, du plus récent au plus ancien.`, 16, 23);
+  doc.autoTable({
+    startY: 28,
+    head: [['Date', 'Nº', 'Établissement', 'Commune', 'Risque', 'État', 'Signalé par']
+      .concat(avecMots ? ['Mots relevés'] : [])],
+    body: d.liste.map((i) => {
+      const l = [DATE_FMT.format(i.date), String(i.number || ''), i.etab.name, i.etab.commune,
+                 i.risk, i.state, declarant(i.reporter)];
+      if (avecMots) l.push((mots.get(i) || []).join(', '));
+      return l;
+    }),
+    theme: 'striped',
+    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: PDF_C.encre },
+    headStyles: { fillColor: PDF_C.encre, textColor: 255, fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [248, 247, 244] },
+    columnStyles: avecMots ? {
+      0: { cellWidth: 16 }, 1: { cellWidth: 12 }, 2: { cellWidth: 50 }, 3: { cellWidth: 26 },
+      4: { cellWidth: 56 }, 5: { cellWidth: 22 }, 6: { cellWidth: 26 }, 7: { cellWidth: 'auto' },
+    } : {
+      0: { cellWidth: 18 }, 1: { cellWidth: 14 }, 2: { cellWidth: 62 }, 3: { cellWidth: 32 },
+      4: { cellWidth: 74 }, 5: { cellWidth: 24 }, 6: { cellWidth: 'auto' },
+    },
+    margin: { left: 16, right: 16, bottom: 14 },
+  });
 
-  return `<p class="resume">${ph.join(' ')}</p>`;
+  pdfPieds(doc, perimetre);
+  doc.save(`visu-incidents_bilan_${d.f}j_${AUJ()}.pdf`);
 }
 
 function peindreRecent() {
@@ -6260,10 +6689,8 @@ function peindreRecent() {
   }
 
   const f = fenetreRecent;
-  const liste = fenetreJours(f, 0);
-  const avant = fenetreJours(2 * f, f);
-  const nonClos = liste.filter((i) => i.open);
-  const nonVises = liste.filter(estNonVise);
+  const d = donneesActualite(f);
+  const { liste, avant, nonClos, nonVises } = d;
 
   const seg = `<div class="seg recent-seg" role="group" aria-label="Fenêtre">
       <button data-fen="30" aria-pressed="${f === 30}">Le mois écoulé</button>
@@ -6294,28 +6721,8 @@ function peindreRecent() {
     return;
   }
 
-  /* ---- coins chauds : les lieux les plus touchés sur la période ---- */
-  const parLieu = new Map();
-  for (const i of liste) {
-    let b = parLieu.get(i.uai);
-    if (!b) parLieu.set(i.uai, (b = { etab: i.etab, incidents: [] }));
-    b.incidents.push(i);
-  }
-  const chauds = [...parLieu.values()]
-    .sort((a, b) => b.incidents.length - a.incidents.length
-      || a.etab.name.localeCompare(b.etab.name, 'fr'))
-    .slice(0, 6);
-
-  /* ---- vigilance : le niveau d'urgence, sur le registre entier ---- */
-  const niveaux = new Map();
-  for (const p of computeUrgency(placesGlobales(), new Date())) {
-    if (p.niveau === 'critique' || p.niveau === 'serieux') niveaux.set(p.place.etab.uai, p);
-  }
-  const vigilance = chauds.map((c) => niveaux.get(c.etab.uai)).filter(Boolean)
-    .concat([...parLieu.keys()].map((u) => niveaux.get(u)).filter(Boolean))
-    .filter((v, i, t) => t.indexOf(v) === i)
-    .sort((a, b) => NIVEAUX[b.niveau].rang - NIVEAUX[a.niveau].rang)
-    .slice(0, 6);
+  const chauds = d.chauds;
+  const vigilance = d.vigilance.slice(0, 6);
 
   const ligneLieu = (etab, n, extra) => `
     <button class="recent-l" data-rec="${esc(etab.uai)}" data-num="">
@@ -6328,7 +6735,7 @@ function peindreRecent() {
         ? `<p class="sous">${note}</p>` : ''}${corps}</section>` : '';
 
   /* ---- mots à surveiller ---- */
-  const trouves = veiller(liste);
+  const trouves = d.trouves;
   const motsHtml = !state.textes.size
     ? `<p class="sous">Le texte des fiches n'est pas chargé : récupérez-le avec le favori
        <a href="contenu/" target="_blank" rel="noopener">Contenu des signalements</a>
@@ -6393,14 +6800,23 @@ function peindreRecent() {
       </div>
     </details>` : '';
 
-  const trouvesMots = trouves;
   box.innerHTML = seg
-    + resumeActualite(f, liste, avant, nonClos, nonVises, chauds, trouvesMots)
     + `<div class="recent-tuiles trois">
         ${tuile(liste.length, 'signalements', avant.length)}
         ${tuile(nonClos.length, 'non clos')}
         ${tuile(nonVises.length, 'non visés')}
       </div>`
+    /* Le bilan rédigé : ce qu'on lit d'abord, et ce qu'on emporte. */
+    + `<section class="act"><h3>Bilan de la période</h3>`
+    + bilanHtml(bilanActualite(d))
+    + `<div class="act-actions">
+        <button class="btn sm" data-bilan="copier">Copier le bilan</button>
+        <button class="btn sm" data-bilan="csv">Tableau (CSV)</button>
+        <button class="btn sm" data-bilan="pdf">Bilan (PDF)</button>
+      </div>
+      <p class="sous">Le tableau donne une ligne par signalement de la période, ouvrable
+        dans un tableur. Le PDF reprend ce bilan, les lieux, les mots relevés et le détail.</p>
+      </section>`
     + bloc('Coins chauds',
         chauds.map((c) => ligneLieu(c.etab, c.incidents.length,
           c.incidents.filter((i) => i.open).length
@@ -7182,6 +7598,14 @@ function wireEvents() {
   $('#recentCorps').addEventListener('click', (e) => {
     const f = e.target.closest('[data-fen]');
     if (f) { fenetreRecent = +f.dataset.fen; motVeille = null; peindreRecent(); return; }
+
+    const b = e.target.closest('[data-bilan]');
+    if (b) {
+      if (b.dataset.bilan === 'copier') copierBilan(b);
+      else if (b.dataset.bilan === 'csv') exportActuCsv();
+      else exportActuPdf();
+      return;
+    }
 
     // Les mots vivent dans le résumé d'un dépliant : sans cela, les cliquer
     // replierait la famille qu'on veut justement regarder.
